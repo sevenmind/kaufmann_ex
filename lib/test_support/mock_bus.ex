@@ -87,7 +87,7 @@ defmodule Kaufmann.TestSupport.MockBus do
       "#{event_name} was not triggered"
     )
 
-    verify_event_confrorms_to_schema(event_name, message_payload, meta)
+    assert_matches_schema(event_name, message_payload, meta)
 
     assert {message_name, message_payload} == {event_name, payload}
   end
@@ -100,12 +100,12 @@ defmodule Kaufmann.TestSupport.MockBus do
 
     assert message_name == event_name
 
-    verify_event_confrorms_to_schema(event_name, message_payload, meta)
+    assert_matches_schema(event_name, message_payload, meta)
 
     %{payload: message_payload, meta: meta} |> Map.Helpers.atomize_keys()
   end
 
-  def verify_event_confrorms_to_schema(event_name, payload, meta) do
+  def assert_matches_schema(event_name, payload, meta) do
     schema_name = schema_name_if_query(event_name)
     assert MockSchemaRegistry.defined_event?(schema_name), "Schema #{schema_name} not registered"
 
