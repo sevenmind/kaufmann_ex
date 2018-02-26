@@ -20,7 +20,10 @@ defmodule Kaufmann.SchemasTest do
       end)
 
       {:error, message} = Schemas.encode_message("UnknownEvent", %{hello: "world"})
-      assert message == %{"error_code" => "40401", "message" => "Subject not found."}
+
+      assert message ==
+               {:schema_encoding_error,
+                %{"error_code" => "40401", "message" => "Subject not found."}}
     end
 
     test "when message doesn't match schema", %{bypass: bypass} do
@@ -54,7 +57,10 @@ defmodule Kaufmann.SchemasTest do
       end)
 
       {:error, message} = Schemas.decode_message("UnknownEvent", encoded)
-      assert message == %{"error_code" => "40401", "message" => "Subject not found."}
+
+      assert message ==
+               {:schema_decoding_error,
+                %{"error_code" => "40401", "message" => "Subject not found."}}
     end
 
     test "when message doesn't match schema", %{bypass: bypass, encoded: encoded} do

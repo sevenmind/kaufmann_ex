@@ -10,4 +10,7 @@ defmodule Kaufmann.Config do
   def producer_mod, do: Application.get_env(:kaufmann, :producer_mod)
   def schema_path, do: Application.get_env(:kaufmann, :schema_path)
   def schema_registry_uri, do: Application.get_env(:kaufmann, :schema_registry_uri)
+
+  def service_name, do: System.get_env("SERVICE_NAME")
+  def service_id, do: System.get_env("HOST_NAME")
 end

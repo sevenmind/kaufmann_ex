@@ -121,7 +121,8 @@ defmodule Kaufmann.TestSupport.MockBus do
       emitter_service: Nanoid.generate(),
       emitter_service_id: Nanoid.generate(),
       callback_id: callback_id,
-      message_name: event_name |> to_string
+      message_name: event_name |> to_string,
+      timestamp: DateTime.to_string(DateTime.utc_now())
     }
   end
 

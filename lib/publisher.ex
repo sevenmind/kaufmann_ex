@@ -77,10 +77,11 @@ defmodule Kaufmann.Publisher do
     # TODO pull real emitter_service and service_id from ENV
     %{
       message_id: Nanoid.generate(),
-      emitter_service: Nanoid.generate(),
-      emitter_service_id: Nanoid.generate(),
+      emitter_service: Kaufmann.Config.service_name(),
+      emitter_service_id: Kaufmann.Config.service_id(),
       callback_id: context[:callback_id],
-      message_name: event_name |> to_string
+      message_name: event_name |> to_string,
+      timestamp: DateTime.to_string(DateTime.utc_now())
     }
   end
 end
