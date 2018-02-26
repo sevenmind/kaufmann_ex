@@ -20,6 +20,8 @@ defmodule Kaufmann.Schemas do
       encode_message_with_schema(schema, stringified)
     else
       {:error, error_message} ->
+        Logger.debug(fn -> "Error Encoding #{message_name}, #{inspect(payload)}" end)
+
         {:error, {:schema_encoding_error, error_message}}
     end
   end

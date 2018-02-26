@@ -21,6 +21,7 @@ defmodule Kaufmann.Publisher do
   @spec produce(String.t(), String.t(), term()) :: :ok | {:error, any}
   def produce(topic, message_name, data) do
     with {:ok, payload} <- Kaufmann.Schemas.encode_message(message_name, data) do
+      Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}" end)
       message = %Message{value: payload, key: message_name}
 
       produce_request = %Request{
