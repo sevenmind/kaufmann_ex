@@ -10,11 +10,11 @@ defmodule Kaufmann.Publisher do
   @topic Kaufmann.Config.default_topic()
 
   def producer(message_name, payload) when is_atom(message_name) do
-    produce(message_name |> to_string, payload)
+    produce(Atom.to_string(message_name), payload)
   end
 
   @spec produce(String.t(), term()) :: :ok | {:error, any}
-  def produce(message_name, payload) do
+  def produce(message_name, payload) when is_binary(message_name) do
     produce(@topic, message_name, payload)
   end
 
