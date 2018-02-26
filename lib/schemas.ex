@@ -20,7 +20,7 @@ defmodule Kaufmann.Schemas do
       encode_message_with_schema(schema, stringified)
     else
       {:error, error_message} ->
-        {:error, error_message}
+        {:error, {:schema_encoding_error, error_message}}
     end
   end
 
@@ -32,7 +32,7 @@ defmodule Kaufmann.Schemas do
       |> atomize_keys()
     else
       {:error, error_message} ->
-        {:error, error_message}
+        {:error, {:schema_decoding_error, error_message}}
     end
   end
 

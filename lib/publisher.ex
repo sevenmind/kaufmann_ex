@@ -13,24 +13,26 @@ defmodule Kaufmann.Publisher do
     produce(message_name |> to_string, payload)
   end
 
-  @spec produce(String.t(), term()) :: :ok
+  @spec produce(String.t(), term()) :: :ok | {:error, any}
   def produce(message_name, payload) do
     produce(@topic, message_name, payload)
   end
 
-  @spec produce(String.t(), String.t(), term()) :: :ok
+  @spec produce(String.t(), String.t(), term()) :: :ok | {:error, any}
   def produce(topic, message_name, data) do
-    {:ok, payload} = Kaufmann.Schemas.encode_message(message_name, data)
+    with {:ok, payload} <- Kaufmann.Schemas.encode_message(message_name, data) do
+      message = %Message{value: payload, key: message_name}
 
-    message = %Message{value: payload, key: message_name}
+      produce_request = %Request{
+        partition: 0,
+        topic: topic,
+        messages: [message]
+      }
 
-    produce_request = %Request{
-      partition: 0,
-      topic: topic,
-      messages: [message]
-    }
-
-    KafkaEx.produce(produce_request)
+      KafkaEx.produce(produce_request)
+    else
+      {:error, error} -> {:error, error}
+    end
   end
 
   def cmd_to_event(command_name) do
