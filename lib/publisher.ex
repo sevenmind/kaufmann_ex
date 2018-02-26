@@ -9,7 +9,7 @@ defmodule Kaufmann.Publisher do
 
   @topic Kaufmann.Config.default_topic()
 
-  def producer(message_name, payload) when is_atom(message_name) do
+  def produce(message_name, payload) when is_atom(message_name) do
     produce(Atom.to_string(message_name), payload)
   end
 
