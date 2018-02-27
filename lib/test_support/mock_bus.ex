@@ -128,6 +128,8 @@ defmodule Kaufmann.TestSupport.MockBus do
 
   def produce(event_name, payload) do
     send(:producer, {:produce, {event_name, payload}})
+
+    :ok
   end
 
   def schema_name_if_query(event_name) do
