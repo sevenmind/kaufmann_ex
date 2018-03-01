@@ -12,7 +12,16 @@ defmodule Kaufmann.Supervisor do
   def init(_) do
     consumer_group = Kaufmann.Config.consumer_group()
     topics = Kaufmann.Config.default_topics()
-    consumer_group_opts = [Kaufmann.GenConsumer, consumer_group, topics, []]
+
+    consumer_group_opts = [
+      Kaufmann.GenConsumer,
+      consumer_group,
+      topics,
+      [
+        commit_interval: 200,
+        heartbeat_interval: 200
+      ]
+    ]
 
     children = [
       %{

@@ -1,7 +1,8 @@
 defmodule Kaufmann.Publisher do
   @moduledoc """
-    Publishes Avro encoded messages to the default topic.
+    Publishes Avro encoded messages to the default topic (`Kaufmann.Config.default_topic/0`).
 
+    
   """
   require Logger
   alias KafkaEx.Protocol.Produce.Message

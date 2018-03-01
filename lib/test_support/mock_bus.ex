@@ -4,7 +4,7 @@ defmodule Kaufmann.TestSupport.MockBus do
   @moduledoc """
     Helper module for testing event flows. 
 
-    Currently only works with one given_event and one then_event.
+    Currently only works with one `given_event` and one `then_event`.
      * Validates events against schemas registered with Schema registry
      * Injects generic Meta payload into event
 

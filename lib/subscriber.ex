@@ -18,6 +18,9 @@ defmodule Kaufmann.Subscriber do
     {:ok, []}
   end
 
+  @doc """
+  Receives messages from `Kaufmann.Stages.Producer`, uses `Flow`/`GenStage` to proccess messages in parallel in the module specified in `Kaufmann.Config.event_handler/0`
+  """
   def handle_messages() do
     Kaufmann.Stages.Producer
     |> Flow.from_stage()

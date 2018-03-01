@@ -1,8 +1,8 @@
 defmodule OkPipe do
   @moduledoc """
-    Convience method for piping results from functions that return {:ok, result}
+    Convience method for piping results from functions that return `{:ok, result}`
 
-    Instead of 
+    For Example: 
     ```
     def mymethod(args) do
       {:ok, res_a} = ModuleM.method(args)
@@ -11,6 +11,7 @@ defmodule OkPipe do
     end
     ```
 
+    can become 
     ```
     defmodule MyModule do
       use OkPipe
@@ -32,6 +33,11 @@ defmodule OkPipe do
     end
   end
 
+  @doc """
+  Asserts left produces a result of `{:ok, result}`.  Pipes `result` as first arg to righthand side.
+
+  Mostly usedful if you really don't want to use a `with/1` form.
+  """
   defmacro left ~> right do
     quote do
       case unquote(left) do
