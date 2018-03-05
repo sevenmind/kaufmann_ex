@@ -22,6 +22,7 @@ defmodule Kaufmann.Subscriber do
   Receives messages from `Kaufmann.Stages.Producer`, uses `Flow`/`GenStage` to proccess messages in parallel in the module specified in `Kaufmann.Config.event_handler/0`
   """
   def handle_messages() do
+    # Maybe use `ConsumerSupervisor` instead of flow (creates process per stage event)
     Kaufmann.Stages.Producer
     |> Flow.from_stage()
     |> Flow.map(&decode_event/1)

@@ -40,7 +40,8 @@ defmodule Kaufmann.MixProject do
       {:mock, "~> 0.3.0", only: :test},
       {:bypass, "~> 0.8", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
-      {:distillery, "~> 1.5", runtime: false}
+      {:distillery, "~> 1.5", runtime: false},
+      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false}
     ]
   end
 
