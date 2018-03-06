@@ -193,4 +193,25 @@ defmodule Kaufmann.TestSupport.MockBus do
         event_string
     end
   end
+
+  def encoded_event(event_name, payload, callback_id \\ nil) do
+    %Event{
+      meta: fake_meta(event_name, callback_id),
+      payload: payload
+    }
+    |> Map.from_struct()
+    |> Map.drop([:name])
+    |> Map.Helpers.stringify_keys()
+    |> encode_payload(event_name)
+  end
+
+  defp encode_payload(payload, event_name) do
+    schema_name = schema_name_if_query(event_name)
+    MockSchemaRegistry.encode_event(schema_name, payload)
+  end
+
+  defp inspect_r(thing) do
+    IO.inspect(thing)
+    thing
+  end
 end
