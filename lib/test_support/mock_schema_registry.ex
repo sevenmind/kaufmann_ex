@@ -1,6 +1,8 @@
 defmodule Kaufmann.TestSupport.MockSchemaRegistry do
   @moduledoc """
   A simple immitation schema registry that verifies Test Events against the schemas we have saved to file
+
+  Looks for Schemas at `Application.get_env(:kaufmann, :schema_path)`
   """
   def fetch_event_schema(schema_name) do
     schema_name

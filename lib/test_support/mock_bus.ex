@@ -6,10 +6,14 @@ defmodule Kaufmann.TestSupport.MockBus do
 
     Cannot be run Async, relies on sending messages to `self()`
 
-    Fro every`given_event` and `then_event`.
+    For every `given_event/2` and `then_event/2`.
      * Validates events against schemas registered with Schema registry
      * Injects generic Meta payload into given_event
 
+    `then_event/2` asserts that the given event is emitted and verifies or returned the payload
+
+    ### Example Usage
+    
     ```
     defmodule EvenHandlerTests
       use Kaufmann.TestSupport.MockBus
@@ -24,7 +28,6 @@ defmodule Kaufmann.TestSupport.MockBus do
     end
     ```
   """
-  # TODO rewrite into DSL
 
   setup do
     default_producer_mod = bus_setup()
@@ -124,10 +127,18 @@ defmodule Kaufmann.TestSupport.MockBus do
     %{payload: message_payload, meta: meta} |> Map.Helpers.atomize_keys()
   end
 
+  @doc """
+  Asserts no more events will be emitted
+  """
+  @spec then_no_event :: boolean
   def then_no_event do
     refute_received({:produce, _}, "No events expected")
   end
 
+  @doc """
+  Assert an event will not be emitted
+  """
+  @spec then_no_event(atom) :: boolean
   def then_no_event(message_name) do
     refute_received({:produce, {^message_name, _}}, "Unexpected #{message_name} recieved")
   end
@@ -158,6 +169,7 @@ defmodule Kaufmann.TestSupport.MockBus do
     }
   end
 
+  # Internal Produce call, sends to self for assertion
   @doc false
   def produce(event_name, payload) do
     send(:producer, {:produce, {event_name, payload}})
@@ -165,6 +177,7 @@ defmodule Kaufmann.TestSupport.MockBus do
     :ok
   end
 
+  # Rename events were we use a generic schema for entire classes of events
   @doc false
   def schema_name_if_query(event_name) do
     event_string = event_name |> to_string

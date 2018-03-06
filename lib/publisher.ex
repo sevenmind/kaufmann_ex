@@ -1,7 +1,7 @@
 defmodule Kaufmann.Publisher do
   @moduledoc """
     Publishes Avro encoded messages to the default topic (`Kaufmann.Config.default_topic/0`).
-
+    
     
   """
   require Logger
@@ -15,6 +15,9 @@ defmodule Kaufmann.Publisher do
     produce(Atom.to_string(message_name), payload)
   end
 
+  @doc """
+  calls `produce/3` with with the default topic
+  """
   @spec produce(String.t(), term()) :: :ok | {:error, any}
   def produce(message_name, payload) when is_binary(message_name) do
     produce(@topic, message_name, payload)
@@ -33,7 +36,8 @@ defmodule Kaufmann.Publisher do
       Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}" end)
       message = %Message{value: payload, key: message_name}
 
-      # TODO: Pull Partition Info from somewhere, choose random partition or use md5 hash of message?
+      # TODO: Pull Partition Info from somewhere 
+      # maybe choose random partition or use md5 hash of message?
       produce_request = %Request{
         partition: 0,
         topic: topic,
@@ -47,6 +51,10 @@ defmodule Kaufmann.Publisher do
     end
   end
 
+  @doc """
+  Replace "command." with "event." in event names
+  """
+  @spec cmd_to_event(atom) :: atom
   def cmd_to_event(command_name) do
     command_name
     |> to_string
@@ -56,7 +64,10 @@ defmodule Kaufmann.Publisher do
 
   @doc """
     Publishes error for a given event
+
+    prepends the message_name with "event.error"
   """
+  @spec publish_error(String.t() | atom, any, any, any) :: :ok | {:error, any}
   def publish_error(event_name, error, _orig_payload, meta \\ %{}) do
     error_payload = %{
       error: error
@@ -65,6 +76,12 @@ defmodule Kaufmann.Publisher do
     publish(:"event.error.#{event_name}", error_payload, meta)
   end
 
+  @doc """
+    Publishes error for a given event
+
+    prepends the message_name with "event.error"
+  """
+  @spec publish_error(Kaufmann.Schemas.Event.t(), term) :: :ok | {:error, any}
   def publish_error(%Kaufmann.Schemas.Event{} = event, error) do
     error_payload = %{
       error: error
@@ -78,7 +95,7 @@ defmodule Kaufmann.Publisher do
 
   Inserted metadata conforms to the `event_metadata/2` 
 
-  Events with Metadata are produced to the Producer set in config `:kaufmann, :producer_mod`. This defaults to `Kaufmann.Publisher
+  Events with Metadata are produced to the Producer set in config `:kaufmann, :producer_mod`. This defaults to `Kaufmann.Publisher`
   """
   @spec publish(atom, map, map) :: :ok
   def publish(event_name, payload, context \\ %{}) do

@@ -41,7 +41,7 @@ defmodule Kaufmann.Subscriber do
 
   Returns `{key, value}`
   """
-  @spec decode_event(map) :: %Kaufmann.Schemas.Event{} | %Kaufmann.Schemas.ErrorEvent{}
+  @spec decode_event(map) :: Kaufmann.Schemas.Event.t() | Kaufmann.Schemas.ErrorEvent.t()
   def decode_event(%{key: key, value: value}) do
     event_name = key |> String.to_atom()
 
