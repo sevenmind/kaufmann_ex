@@ -1,6 +1,10 @@
-defmodule Kaufmann.TestSupport.MockSchemaRegistry do
+defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
+  use OkPipe
+
   @moduledoc """
   A simple immitation schema registry that verifies Test Events against the schemas we have saved to file
+
+  Looks for Schemas at `Application.get_env(:kaufmann_ex, :schema_path)`
   """
   def fetch_event_schema(schema_name) do
     schema_name
@@ -23,6 +27,14 @@ defmodule Kaufmann.TestSupport.MockSchemaRegistry do
     |> AvroEx.encodable?(payload)
   end
 
+  def encode_event(schema_name, payload) do
+    schema_name
+    |> load_schema
+    |> inject_metadata
+    |> parse_schema
+    ~> AvroEx.encode(payload)
+  end
+
   defp inject_metadata(schema) do
     # Decode + encode here is dumb and time consuming
     schema
@@ -41,12 +53,16 @@ defmodule Kaufmann.TestSupport.MockSchemaRegistry do
     schema
   end
 
+  defp parse_schema(schema) do
+    AvroEx.parse_schema(schema)
+  end
+
   defp load_metadata do
     load_schema("event_metadata")
     |> Poison.decode!()
   end
 
   defp schema_path do
-    Kaufmann.Config.schema_path()
+    KaufmannEx.Config.schema_path()
   end
 end

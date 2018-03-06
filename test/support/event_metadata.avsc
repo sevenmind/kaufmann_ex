@@ -28,6 +28,11 @@
       "type": "string",
       "doc":
         "name of the event. Even if the name is defined elsewhere meta should always include the event name"
+    },
+    {
+      "name": "timestamp",
+      "type": "string",
+      "doc": "UTC time stamp of event publication"
     }
   ]
 }

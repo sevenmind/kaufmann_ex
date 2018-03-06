@@ -10,6 +10,7 @@ defmodule Mix.Tasks.Schemas.Migrate do
     run with `mix schemas.migrate`
 
     reset all registered schemas to the version specified `priv/schemas` (useful for testing)
+    
     ```
     mix schemas.migrate --reset
     ```
@@ -18,7 +19,7 @@ defmodule Mix.Tasks.Schemas.Migrate do
   use OkPipe
 
   require Logger
-  alias Kaufmann.Schemas
+  alias KaufmannEx.Schemas
 
   @schema_path 'priv/schemas'
   @switches [reset: :boolean]

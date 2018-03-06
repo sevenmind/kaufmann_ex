@@ -10,11 +10,11 @@ use Mix.Config
 
 # You can configure your application as:
 #
-#     config :kaufmann, key: :value
+#     config :kaufmann_ex, key: :value
 #
 # and access this configuration in your application as:
 #
-#     Application.get_env(:kaufmann, :key)
+#     Application.get_env(:kaufmann_ex, :key)
 #
 # You can also configure a 3rd-party app:
 #
@@ -39,10 +39,10 @@ config :kafka_ex,
   use_ssl: false,
   consumer_group: System.get_env("CONSUMER_GROUP")
 
-config :kuafmann,
+config :kaufmann_ex,
   consumer_group: System.get_env("CONSUMER_GROUP"),
   default_topic: System.get_env("KAFKA_TOPIC"),
   event_handler_mod: nil,
-  producer_mod: Kaufmann.Publisher,
+  producer_mod: KaufmannEx.Publisher,
   schema_path: "priv/schemas",
   schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH")

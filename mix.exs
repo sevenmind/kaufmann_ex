@@ -1,14 +1,18 @@
-defmodule Kaufmann.MixProject do
+defmodule KaufmannEx.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :kaufmann,
-      version: "0.1.0",
+      app: :kaufmann_ex,
+      version: "0.1.1",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      aliases: aliases()
+      aliases: aliases(),
+      docs: [
+        main: "readme",
+        extras: ["README.md"]
+      ]
     ]
   end
 
@@ -16,7 +20,6 @@ defmodule Kaufmann.MixProject do
   def application do
     [
       extra_applications: [:logger, :kafka_ex]
-      # mod: {Kaufmann.Supervisor, []}
     ]
   end
 
@@ -27,6 +30,7 @@ defmodule Kaufmann.MixProject do
       {:flow, "~> 0.11"},
       # kafka Client
       {:kafka_ex, "~> 0.8.1"},
+      {:snappy, git: "https://github.com/fdmanana/snappy-erlang-nif"},
       # JSON lib
       {:poison, "~> 3.1"},
       # HTTP lib, overrride b/c some other libs specify older versions
@@ -40,13 +44,14 @@ defmodule Kaufmann.MixProject do
       {:mock, "~> 0.3.0", only: :test},
       {:bypass, "~> 0.8", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
-      {:distillery, "~> 1.5", runtime: false}
+      {:distillery, "~> 1.5", runtime: false},
+      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false}
     ]
   end
 
   defp aliases do
     [
-      test: "test --no-start"
+      test: "test --no-start --exclude integration"
     ]
   end
 end

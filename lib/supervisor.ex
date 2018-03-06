@@ -1,4 +1,4 @@
-defmodule Kaufmann.Supervisor do
+defmodule KaufmannEx.Supervisor do
   @moduledoc false
 
   require Logger
@@ -10,23 +10,32 @@ defmodule Kaufmann.Supervisor do
   end
 
   def init(_) do
-    consumer_group = Kaufmann.Config.consumer_group()
-    topics = Kaufmann.Config.default_topics()
-    consumer_group_opts = [Kaufmann.GenConsumer, consumer_group, topics, []]
+    consumer_group_name = KaufmannEx.Config.consumer_group()
+    topics = KaufmannEx.Config.default_topics()
+
+    consumer_group_opts = [
+      KaufmannEx.GenConsumer,
+      consumer_group_name,
+      topics,
+      [
+        commit_interval: 200,
+        heartbeat_interval: 200
+      ]
+    ]
 
     children = [
+      %{
+        id: KaufmannEx.Stages.Producer,
+        start: {KaufmannEx.Stages.Producer, :start_link, []}
+      },
+      %{
+        id: KaufmannEx.Subscriber,
+        start: {KaufmannEx.Subscriber, :start_link, []}
+      },
       %{
         id: KafkaEx.ConsumerGroup,
         start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor
-      },
-      %{
-        id: Kaufmann.Stages.Producer,
-        start: {Kaufmann.Stages.Producer, :start_link, []}
-      },
-      %{
-        id: Kaufmann.Subscriber,
-        start: {Kaufmann.Subscriber, :start_link, []}
       }
     ]
 

@@ -1,7 +1,8 @@
 defmodule Map.Helpers do
   @moduledoc """
-  Functions to transform maps
-  Source: https://gist.github.com/kipcole9/0bd4c6fb6109bfec9955f785087f53fb
+  Helper Functions for working with `Map`.
+
+  Based on [this helpful gist](https://gist.github.com/kipcole9/0bd4c6fb6109bfec9955f785087f53fb)
   """
 
   @doc """
@@ -53,9 +54,9 @@ defmodule Map.Helpers do
     not_a_map
   end
 
-  def atomize_string(string) when is_binary(string), do: String.to_atom(string)
+  defp atomize_string(string) when is_binary(string), do: String.to_atom(string)
 
-  def atomize_string(not_a_string) do
+  defp atomize_string(not_a_string) do
     not_a_string
   end
 
@@ -83,11 +84,11 @@ defmodule Map.Helpers do
     not_a_map
   end
 
-  def stringify_atom(atom) when is_atom(atom) do
+  defp stringify_atom(atom) when is_atom(atom) do
     Atom.to_string(atom)
   end
 
-  def stringify_atom(not_a_atom), do: not_a_atom
+  defp stringify_atom(not_a_atom), do: not_a_atom
 
   @doc """
   Deep merge two maps

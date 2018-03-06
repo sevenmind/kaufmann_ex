@@ -1,21 +1,21 @@
-defmodule Kaufmann.Stages.Producer do
+defmodule KaufmannEx.Stages.Producer do
   @moduledoc """
-  GenStage Producer to introduce backpressure between Kafka.GenConsumer and Flow in Subscriber
+  `GenStage` Producer to introduce backpressure between `KafkaEx.GenConsumer` and `Flow` stage in `KaufmannEx.Subscriber`
   """
 
   require Logger
   use GenStage
 
-  def start_link do
+  def start_link(message_set \\ []) do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
-    GenStage.start_link(__MODULE__, [], name: __MODULE__)
+    GenStage.start_link(__MODULE__, message_set, name: __MODULE__)
   end
 
-  def init([]) do
-    {:producer, %{message_set: [], demand: 0, from: nil}}
+  def init(message_set) do
+    {:producer, %{message_set: message_set, demand: 0, from: nil}}
   end
 
-  def notify(message_set, timeout \\ 5000) do
+  def notify(message_set, timeout \\ 50_000) do
     GenStage.call(__MODULE__, {:notify, message_set}, timeout)
   end
 
@@ -31,11 +31,16 @@ defmodule Kaufmann.Stages.Producer do
     {:noreply, to_dispatch, %{state | message_set: remaining, demand: 0}}
   end
 
-  # request 
+  # When demand & messages
   def handle_demand(demand, %{message_set: message_set} = state) when demand > 0 do
     new_state = %{state | message_set: [], demand: demand - length(message_set)}
     GenStage.reply(state.from, :ok)
     {:noreply, message_set, new_state}
+  end
+
+  # When no demand, wait for demand
+  def handle_demand(demand, %{message_set: message_set} = state) when demand == 0 do
+    {:noreply, [], %{state | demand: demand}}
   end
 
   # When no demand, save messages to state, wait.
@@ -43,6 +48,7 @@ defmodule Kaufmann.Stages.Producer do
     {:noreply, [], %{state | message_set: message_set, from: from}}
   end
 
+  # When more messages than demand, dispatch to meet demand, wait for more demand
   def handle_call({:notify, message_set}, from, %{demand: demand} = state)
       when length(message_set) > demand do
     {to_dispatch, remaining} = Enum.split(message_set, demand)
@@ -57,6 +63,7 @@ defmodule Kaufmann.Stages.Producer do
     {:noreply, to_dispatch, new_state}
   end
 
+  # When demand greater than message count, reply for more messages
   def handle_call({:notify, message_set}, _from, %{demand: demand} = state) do
     new_state = %{state | demand: demand - length(message_set)}
 

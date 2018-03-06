@@ -1,11 +1,11 @@
-defmodule Kaufmann.Schemas do
+defmodule KaufmannEx.Schemas do
   @moduledoc """
     Handles registration, retrieval, validation and parsing of Avro Schemas
 
 
     Depends on 
-     - Schemex - calls to Confluent Schema Registry
-     - avro_ex - serializing and deserializing avro encoded messages
+     - `Schemex` - calls to Confluent Schema Registry
+     - `AvroEx` - serializing and deserializing avro encoded messages
   """
 
   # Todo: Convert this module into a service that can cache loaded schemas
@@ -38,11 +38,11 @@ defmodule Kaufmann.Schemas do
     end
   end
 
-  def atomize_keys({:ok, args}) do
+  defp atomize_keys({:ok, args}) do
     {:ok, Map.Helpers.atomize_keys(args)}
   end
 
-  def atomize_keys(args), do: args
+  defp atomize_keys(args), do: args
 
   def get(subject) do
     schema_registry_uri()
@@ -88,7 +88,7 @@ defmodule Kaufmann.Schemas do
   end
 
   defp schema_registry_uri do
-    Kaufmann.Config.schema_registry_uri()
+    KaufmannEx.Config.schema_registry_uri()
   end
 
   defp encode_message_with_schema(schema, message) do
