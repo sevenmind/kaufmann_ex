@@ -13,9 +13,15 @@ defmodule Kaufmann.Subscriber do
   end
 
   def init(_arg) do
+    # Triggers immediate timeout, starts loop
+    {:ok, [], 0}
+  end
+
+  # Use Timeout Loop to keep Flow running
+  def handle_info(:timeout, []) do
     handle_messages()
 
-    {:ok, []}
+    {:ok, [], 0}
   end
 
   @doc """

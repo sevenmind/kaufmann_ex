@@ -7,6 +7,7 @@ defmodule Kaufmann.GenConsumer do
   use KafkaEx.GenConsumer
 
   def handle_message_set(message_set, state) do
+    # What happens if this notify times out?
     Kaufmann.Stages.Producer.notify(message_set)
 
     {:async_commit, state}
