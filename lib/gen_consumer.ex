@@ -8,6 +8,7 @@ defmodule Kaufmann.GenConsumer do
 
   def handle_message_set(message_set, state) do
     # What happens if this notify times out?
+    # /!\ GenConsumer will be started once per topic partition What happens Then?
     Kaufmann.Stages.Producer.notify(message_set)
 
     {:async_commit, state}

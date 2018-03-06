@@ -27,6 +27,7 @@ defmodule Kaufmann.MixProject do
       {:flow, "~> 0.11"},
       # kafka Client
       {:kafka_ex, "~> 0.8.1"},
+      {:snappy, git: "https://github.com/fdmanana/snappy-erlang-nif"},
       # JSON lib
       {:poison, "~> 3.1"},
       # HTTP lib, overrride b/c some other libs specify older versions
@@ -47,7 +48,7 @@ defmodule Kaufmann.MixProject do
 
   defp aliases do
     [
-      test: "test --no-start"
+      test: "test --no-start --exclude integration"
     ]
   end
 end

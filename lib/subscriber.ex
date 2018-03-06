@@ -21,7 +21,7 @@ defmodule Kaufmann.Subscriber do
   def handle_info(:timeout, []) do
     handle_messages()
 
-    {:ok, [], 0}
+    {:noreply, [], 0}
   end
 
   @doc """

@@ -15,7 +15,7 @@ defmodule Kaufmann.Stages.Producer do
     {:producer, %{message_set: message_set, demand: 0, from: nil}}
   end
 
-  def notify(message_set, timeout \\ 5000) do
+  def notify(message_set, timeout \\ 50_000) do
     GenStage.call(__MODULE__, {:notify, message_set}, timeout)
   end
 
@@ -31,11 +31,16 @@ defmodule Kaufmann.Stages.Producer do
     {:noreply, to_dispatch, %{state | message_set: remaining, demand: 0}}
   end
 
-  # request 
+  # When demand & messages
   def handle_demand(demand, %{message_set: message_set} = state) when demand > 0 do
     new_state = %{state | message_set: [], demand: demand - length(message_set)}
     GenStage.reply(state.from, :ok)
     {:noreply, message_set, new_state}
+  end
+
+  # When no demand, wait for demand
+  def handle_demand(demand, %{message_set: message_set} = state) when demand == 0 do
+    {:noreply, [], %{state | demand: demand}}
   end
 
   # When no demand, save messages to state, wait.

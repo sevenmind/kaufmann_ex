@@ -8,8 +8,9 @@ defmodule Kaufmann.Publisher do
   alias KafkaEx.Protocol.Produce.Message
   alias KafkaEx.Protocol.Produce.Request
 
-  @topic Kaufmann.Config.default_topic()
+  @topic Kaufmann.Config.default_topic() || "default_topic"
 
+  @spec produce(atom(), term()) :: :ok | {:error, any}
   def produce(message_name, payload) when is_atom(message_name) do
     produce(Atom.to_string(message_name), payload)
   end
@@ -19,16 +20,25 @@ defmodule Kaufmann.Publisher do
     produce(@topic, message_name, payload)
   end
 
+  @doc """
+  Publishes encoded message
+
+  Encodes messages into Avro Schema with ` Kaufmann.Schemas.encode_message/2`
+
+  Defaults to partition 0 for publication. This is less than ideal.
+  """
   @spec produce(String.t(), String.t(), term()) :: :ok | {:error, any}
   def produce(topic, message_name, data) do
     with {:ok, payload} <- Kaufmann.Schemas.encode_message(message_name, data) do
       Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}" end)
       message = %Message{value: payload, key: message_name}
 
+      # TODO: Pull Partition Info from somewhere, choose random partition or use md5 hash of message?
       produce_request = %Request{
         partition: 0,
         topic: topic,
-        messages: [message]
+        messages: [message],
+        compression: :snappy
       }
 
       KafkaEx.produce(produce_request)
@@ -63,6 +73,13 @@ defmodule Kaufmann.Publisher do
     publish(:"event.error.#{event.name}", error_payload, event.meta)
   end
 
+  @doc """
+  Injects metadata then calls `produce/2`
+
+  Inserted metadata conforms to the `event_metadata/2` 
+
+  Events with Metadata are produced to the Producer set in config `:kaufmann, :producer_mod`. This defaults to `Kaufmann.Publisher
+  """
   @spec publish(atom, map, map) :: :ok
   def publish(event_name, payload, context \\ %{}) do
     message_body = %{
@@ -74,9 +91,22 @@ defmodule Kaufmann.Publisher do
     producer.produce(event_name, message_body)
   end
 
+  @doc """
+  generate metadata for an event 
+
+  ```
+  %{
+      message_id: Nanoid.generate(),
+      emitter_service: Kaufmann.Config.service_name(), # env var SERVICE_NAME
+      emitter_service_id: Kaufmann.Config.service_id(), # env var HOST_NAME
+      callback_id: context[:callback_id],
+      message_name: event_name |> to_string,
+      timestamp: DateTime.to_string(DateTime.utc_now())
+    }
+  ```
+  """
   @spec event_metadata(atom, map) :: map
   def event_metadata(event_name, context) do
-    # TODO pull real emitter_service and service_id from ENV
     %{
       message_id: Nanoid.generate(),
       emitter_service: Kaufmann.Config.service_name(),
