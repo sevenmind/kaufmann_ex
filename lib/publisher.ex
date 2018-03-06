@@ -1,6 +1,6 @@
-defmodule Kaufmann.Publisher do
+defmodule KaufmannEx.Publisher do
   @moduledoc """
-    Publishes Avro encoded messages to the default topic (`Kaufmann.Config.default_topic/0`).
+    Publishes Avro encoded messages to the default topic (`KaufmannEx.Config.default_topic/0`).
     
     
   """
@@ -8,7 +8,7 @@ defmodule Kaufmann.Publisher do
   alias KafkaEx.Protocol.Produce.Message
   alias KafkaEx.Protocol.Produce.Request
 
-  @topic Kaufmann.Config.default_topic() || "default_topic"
+  @topic KaufmannEx.Config.default_topic() || "default_topic"
 
   @spec produce(atom(), term()) :: :ok | {:error, any}
   def produce(message_name, payload) when is_atom(message_name) do
@@ -26,13 +26,13 @@ defmodule Kaufmann.Publisher do
   @doc """
   Publishes encoded message
 
-  Encodes messages into Avro Schema with ` Kaufmann.Schemas.encode_message/2`
+  Encodes messages into Avro Schema with ` KaufmannEx.Schemas.encode_message/2`
 
   Defaults to partition 0 for publication. This is less than ideal.
   """
   @spec produce(String.t(), String.t(), term()) :: :ok | {:error, any}
   def produce(topic, message_name, data) do
-    with {:ok, payload} <- Kaufmann.Schemas.encode_message(message_name, data) do
+    with {:ok, payload} <- KaufmannEx.Schemas.encode_message(message_name, data) do
       Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}" end)
       message = %Message{value: payload, key: message_name}
 
@@ -81,8 +81,8 @@ defmodule Kaufmann.Publisher do
 
     prepends the message_name with "event.error"
   """
-  @spec publish_error(Kaufmann.Schemas.Event.t(), term) :: :ok | {:error, any}
-  def publish_error(%Kaufmann.Schemas.Event{} = event, error) do
+  @spec publish_error(KaufmannEx.Schemas.Event.t(), term) :: :ok | {:error, any}
+  def publish_error(%KaufmannEx.Schemas.Event{} = event, error) do
     error_payload = %{
       error: error
     }
@@ -95,7 +95,7 @@ defmodule Kaufmann.Publisher do
 
   Inserted metadata conforms to the `event_metadata/2` 
 
-  Events with Metadata are produced to the Producer set in config `:kaufmann, :producer_mod`. This defaults to `Kaufmann.Publisher`
+  Events with Metadata are produced to the Producer set in config `:kaufmann_ex, :producer_mod`. This defaults to `KaufmannEx.Publisher`
   """
   @spec publish(atom, map, map) :: :ok
   def publish(event_name, payload, context \\ %{}) do
@@ -104,7 +104,7 @@ defmodule Kaufmann.Publisher do
       meta: event_metadata(event_name, context)
     }
 
-    producer = Application.fetch_env!(:kaufmann, :producer_mod)
+    producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
     producer.produce(event_name, message_body)
   end
 
@@ -114,8 +114,8 @@ defmodule Kaufmann.Publisher do
   ```
   %{
       message_id: Nanoid.generate(),
-      emitter_service: Kaufmann.Config.service_name(), # env var SERVICE_NAME
-      emitter_service_id: Kaufmann.Config.service_id(), # env var HOST_NAME
+      emitter_service: KaufmannEx.Config.service_name(), # env var SERVICE_NAME
+      emitter_service_id: KaufmannEx.Config.service_id(), # env var HOST_NAME
       callback_id: context[:callback_id],
       message_name: event_name |> to_string,
       timestamp: DateTime.to_string(DateTime.utc_now())
@@ -126,8 +126,8 @@ defmodule Kaufmann.Publisher do
   def event_metadata(event_name, context) do
     %{
       message_id: Nanoid.generate(),
-      emitter_service: Kaufmann.Config.service_name(),
-      emitter_service_id: Kaufmann.Config.service_id(),
+      emitter_service: KaufmannEx.Config.service_name(),
+      emitter_service_id: KaufmannEx.Config.service_id(),
       callback_id: context[:callback_id],
       message_name: event_name |> to_string,
       timestamp: DateTime.to_string(DateTime.utc_now())

@@ -1,11 +1,11 @@
-defmodule Kaufmann.TestSupport.MockBusTest do
-  use Kaufmann.TestSupport.MockBus
+defmodule KaufmannEx.TestSupport.MockBusTest do
+  use KaufmannEx.TestSupport.MockBus
 
   defmodule ExampleEventHandler do
     def given_event(event) do
       case event.payload do
         "no_event" -> :ok
-        _ -> Kaufmann.Publisher.publish(event.name, event.payload)
+        _ -> KaufmannEx.Publisher.publish(event.name, event.payload)
       end
     end
   end
@@ -16,8 +16,8 @@ defmodule Kaufmann.TestSupport.MockBusTest do
     System.put_env("HOST_NAME", System.get_env("HOST_NAME") || Nanoid.generate())
 
     # event_handler_mod must be set
-    Application.put_env(:kaufmann, :event_handler_mod, ExampleEventHandler)
-    Application.put_env(:kaufmann, :schema_path, "test/support")
+    Application.put_env(:kaufmann_ex, :event_handler_mod, ExampleEventHandler)
+    Application.put_env(:kaufmann_ex, :schema_path, "test/support")
 
     :ok
   end

@@ -1,4 +1,4 @@
-defmodule Kaufmann.Subscriber do
+defmodule KaufmannEx.Subscriber do
   @moduledoc """
   Behavior module for consuming messages from Kafka bus. 
   """
@@ -25,12 +25,12 @@ defmodule Kaufmann.Subscriber do
   end
 
   @doc """
-  Receives messages from `Kaufmann.Stages.Producer`, uses `Flow`/`GenStage` to proccess messages in parallel in the module specified in `Kaufmann.Config.event_handler/0`
+  Receives messages from `KaufmannEx.Stages.Producer`, uses `Flow`/`GenStage` to proccess messages in parallel in the module specified in `KaufmannEx.Config.event_handler/0`
   """
   def handle_messages() do
     # Maybe use `ConsumerSupervisor` instead of flow (creates process per stage event)
     # |> Flow.map(&handle_with_rescue/1)
-    Kaufmann.Stages.Producer
+    KaufmannEx.Stages.Producer
     |> Flow.from_stage()
     |> Flow.map(&decode_event/1)
     |> Flow.map(&handle_with_rescue/1)
@@ -42,7 +42,7 @@ defmodule Kaufmann.Subscriber do
   rescue
     error ->
       Logger.warn("Error Publishing #{event.name} #{inspect(error)}")
-      handler = Kaufmann.Config.event_handler()
+      handler = KaufmannEx.Config.event_handler()
 
       event
       |> error_from_event(error)
@@ -50,7 +50,7 @@ defmodule Kaufmann.Subscriber do
   end
 
   def handle_event(event) do
-    handler = Kaufmann.Config.event_handler()
+    handler = KaufmannEx.Config.event_handler()
     handler.given_event(event)
   end
 
@@ -59,13 +59,13 @@ defmodule Kaufmann.Subscriber do
 
   Returns `{key, value}`
   """
-  @spec decode_event(map) :: Kaufmann.Schemas.Event.t() | Kaufmann.Schemas.ErrorEvent.t()
+  @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
   def decode_event(%{key: key, value: value}) do
     event_name = key |> String.to_atom()
 
-    case Kaufmann.Schemas.decode_message(key, value) do
+    case KaufmannEx.Schemas.decode_message(key, value) do
       {:ok, parsed} ->
-        %Kaufmann.Schemas.Event{
+        %KaufmannEx.Schemas.Event{
           name: event_name,
           meta: parsed[:meta],
           payload: parsed[:payload]
@@ -74,7 +74,7 @@ defmodule Kaufmann.Subscriber do
       {:error, error} ->
         Logger.warn(fn -> "Error Encoding #{key} #{inspect(error)}" end)
 
-        %Kaufmann.Schemas.ErrorEvent{
+        %KaufmannEx.Schemas.ErrorEvent{
           name: key,
           error: error,
           message_payload: value
@@ -83,7 +83,7 @@ defmodule Kaufmann.Subscriber do
   end
 
   defp error_from_event(event, error) do
-    %Kaufmann.Schemas.ErrorEvent{
+    %KaufmannEx.Schemas.ErrorEvent{
       name: event.name,
       error: error,
       message_payload: event.payload

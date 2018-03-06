@@ -1,8 +1,8 @@
-defmodule Kaufmann do
+defmodule KaufmannEx do
   @moduledoc """
-  Kaufmann is a library tieing together `KafkaEx`, `AvroEx`, and `Schemex`
+  KaufmannEx is a library tieing together `KafkaEx`, `AvroEx`, and `Schemex`
 
-  Kaufmann exists to make it easy to decode Avro encoded messages off of a kafka broker.
+  KaufmannEx exists to make it easy to decode Avro encoded messages off of a kafka broker.
 
   """
 end

@@ -1,10 +1,10 @@
-defmodule Kaufmann.TestSupport.MockSchemaRegistry do
+defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   use OkPipe
 
   @moduledoc """
   A simple immitation schema registry that verifies Test Events against the schemas we have saved to file
 
-  Looks for Schemas at `Application.get_env(:kaufmann, :schema_path)`
+  Looks for Schemas at `Application.get_env(:kaufmann_ex, :schema_path)`
   """
   def fetch_event_schema(schema_name) do
     schema_name
@@ -63,6 +63,6 @@ defmodule Kaufmann.TestSupport.MockSchemaRegistry do
   end
 
   defp schema_path do
-    Kaufmann.Config.schema_path()
+    KaufmannEx.Config.schema_path()
   end
 end

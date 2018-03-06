@@ -1,6 +1,6 @@
-defmodule Kaufmann.Stages.Producer do
+defmodule KaufmannEx.Stages.Producer do
   @moduledoc """
-  `GenStage` Producer to introduce backpressure between `KafkaEx.GenConsumer` and `Flow` stage in `Kaufmann.Subscriber`
+  `GenStage` Producer to introduce backpressure between `KafkaEx.GenConsumer` and `Flow` stage in `KaufmannEx.Subscriber`
   """
 
   require Logger

@@ -1,4 +1,4 @@
-defmodule Kaufmann.TestSupport.MockBus do
+defmodule KaufmannEx.TestSupport.MockBus do
   use ExUnit.CaseTemplate
 
   @moduledoc """
@@ -16,7 +16,7 @@ defmodule Kaufmann.TestSupport.MockBus do
     
     ```
     defmodule EvenHandlerTests
-      use Kaufmann.TestSupport.MockBus
+      use KaufmannEx.TestSupport.MockBus
 
       test "event emission" do
         given_event(:"TestCommand", %{new_key: "test"})
@@ -39,20 +39,20 @@ defmodule Kaufmann.TestSupport.MockBus do
 
   using do
     quote do
-      import Kaufmann.TestSupport.MockBus
+      import KaufmannEx.TestSupport.MockBus
     end
   end
 
   require Map.Helpers
   import ExUnit.Assertions
-  alias Kaufmann.Schemas.Event
-  alias Kaufmann.TestSupport.MockSchemaRegistry
+  alias KaufmannEx.Schemas.Event
+  alias KaufmannEx.TestSupport.MockSchemaRegistry
 
   # Setup Helper
   @doc false
   def bus_setup do
-    default_producer_mod = Application.get_env(:kaufmann, :producer_mod)
-    Application.put_env(:kaufmann, :producer_mod, Kaufmann.TestSupport.MockBus)
+    default_producer_mod = Application.get_env(:kaufmann_ex, :producer_mod)
+    Application.put_env(:kaufmann_ex, :producer_mod, KaufmannEx.TestSupport.MockBus)
     Process.register(self(), :producer)
 
     default_producer_mod
@@ -61,7 +61,7 @@ defmodule Kaufmann.TestSupport.MockBus do
   # Setup Helper
   @doc false
   def teardown(producer_mod) do
-    Application.put_env(:kaufmann, :producer_mod, producer_mod)
+    Application.put_env(:kaufmann_ex, :producer_mod, producer_mod)
   end
 
   @doc """
@@ -88,7 +88,7 @@ defmodule Kaufmann.TestSupport.MockBus do
     assert MockSchemaRegistry.encodable?(schema_name, encodable_payload),
            "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
 
-    event_consumer = Application.fetch_env!(:kaufmann, :event_handler_mod)
+    event_consumer = Application.fetch_env!(:kaufmann_ex, :event_handler_mod)
     event_consumer.given_event(event)
   end
 

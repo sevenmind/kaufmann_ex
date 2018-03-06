@@ -1,11 +1,12 @@
-defmodule Kaufmann.SchemasTest do
+defmodule KaufmannEx.SchemasTest do
   use ExUnit.Case
-  alias Kaufmann.Schemas
+  alias KaufmannEx.Schemas
 
   setup do
-    previous_schema_uri = Application.get_env(:kaufmann, :schema_registry_uri)
-    Application.put_env(:kaufmann, :schema_registry_uri, "http://localhost:1188")
-    on_exit(fn -> Application.put_env(:kaufmann, :schema_registry_uri, previous_schema_uri) end)
+    previous_schema_uri = Application.get_env(:kaufmann_ex, :schema_registry_uri)
+    Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:1188")
+
+    on_exit(fn -> Application.put_env(:kaufmann_ex, :schema_registry_uri, previous_schema_uri) end)
 
     bypass = Bypass.open(port: 1188)
 

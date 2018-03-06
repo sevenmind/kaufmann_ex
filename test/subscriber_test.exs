@@ -1,23 +1,23 @@
-defmodule Kaufmann.SubscriberTest do
+defmodule KaufmannEx.SubscriberTest do
   use ExUnit.Case
-  alias Kaufmann.TestSupport.MockBus
+  alias KaufmannEx.TestSupport.MockBus
 
   defmodule TestEventHandler do
     def given_event(
-          %Kaufmann.Schemas.Event{name: :"test.event.publish", payload: "raise_error"} = event
+          %KaufmannEx.Schemas.Event{name: :"test.event.publish", payload: "raise_error"} = event
         ) do
       raise ArgumentError, "You know what you did"
 
       :ok
     end
 
-    def given_event(%Kaufmann.Schemas.Event{} = event) do
+    def given_event(%KaufmannEx.Schemas.Event{} = event) do
       :erlang.send(:subscriber, :event_recieved)
 
       :ok
     end
 
-    def given_event(%Kaufmann.Schemas.ErrorEvent{} = event) do
+    def given_event(%KaufmannEx.Schemas.ErrorEvent{} = event) do
       :erlang.send(:subscriber, :handled_error)
 
       :ok
@@ -26,15 +26,15 @@ defmodule Kaufmann.SubscriberTest do
 
   setup do
     bypass = Bypass.open()
-    Application.put_env(:kaufmann, :schema_registry_uri, "http://localhost:#{bypass.port}")
+    Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
 
-    Application.put_env(:kaufmann, :event_handler_mod, TestEventHandler)
-    Application.put_env(:kaufmann, :schema_path, "test/support")
+    Application.put_env(:kaufmann_ex, :event_handler_mod, TestEventHandler)
+    Application.put_env(:kaufmann_ex, :schema_path, "test/support")
 
     Process.register(self(), :subscriber)
 
-    {:ok, pid} = Kaufmann.Stages.Producer.start_link([])
-    {:ok, s_pid} = Kaufmann.Subscriber.start_link([])
+    {:ok, pid} = KaufmannEx.Stages.Producer.start_link([])
+    {:ok, s_pid} = KaufmannEx.Subscriber.start_link([])
 
     {:ok, bypass: bypass}
   end
@@ -46,7 +46,7 @@ defmodule Kaufmann.SubscriberTest do
 
       event = encode_event(:"test.event.publish", "Hello")
 
-      Kaufmann.Stages.Producer.notify([event])
+      KaufmannEx.Stages.Producer.notify([event])
 
       assert_receive :event_recieved
     end
@@ -58,7 +58,7 @@ defmodule Kaufmann.SubscriberTest do
       first_event = encode_event(:"test.event.publish", "raise_error")
       second_event = encode_event(:"test.event.publish", "Hello")
 
-      Kaufmann.Stages.Producer.notify([first_event, second_event, second_event, second_event])
+      KaufmannEx.Stages.Producer.notify([first_event, second_event, second_event, second_event])
 
       assert_receive :event_recieved
       assert_receive :handled_error

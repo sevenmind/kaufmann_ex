@@ -1,5 +1,5 @@
-defmodule Kaufmann.Schemas.Event do
-  @type t :: %Kaufmann.Schemas.Event{
+defmodule KaufmannEx.Schemas.Event do
+  @type t :: %KaufmannEx.Schemas.Event{
           name: atom,
           meta: map,
           payload: term
@@ -8,8 +8,8 @@ defmodule Kaufmann.Schemas.Event do
   defstruct [:name, :meta, :payload]
 end
 
-defmodule Kaufmann.Schemas.ErrorEvent do
-  @type t :: %Kaufmann.Schemas.ErrorEvent{
+defmodule KaufmannEx.Schemas.ErrorEvent do
+  @type t :: %KaufmannEx.Schemas.ErrorEvent{
           name: atom,
           error: term,
           message_payload: term

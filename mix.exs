@@ -1,9 +1,9 @@
-defmodule Kaufmann.MixProject do
+defmodule KaufmannEx.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :kaufmann,
+      app: :kaufmann_ex,
       version: "0.1.1",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
