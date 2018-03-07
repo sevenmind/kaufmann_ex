@@ -43,10 +43,10 @@ defmodule KaufmannEx.MixProject do
       # JSON lib
       {:poison, "~> 3.1"},
       # HTTP lib, overrride b/c some other libs specify older versions
-      {:httpoison, "~> 1.0", override: true},
+      {:httpoison, "~> 1.0"},
       {:nanoid, "~> 1.0"},
       {:avro_ex, "~> 0.1.0-beta.0"},
-      {:schemex, "~> 0.1.0"},
+      {:schemex, "~> 0.1.1"},
       {:credo, "~> 0.9.0-rc2", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:benchwarmer, ">= 0.0.0", only: [:dev]},
