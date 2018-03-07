@@ -82,6 +82,7 @@ defmodule KaufmannEx.Subscriber do
     end
   end
 
+  # if loop of error events, just emit whatever we got
   defp error_from_event(%KaufmannEx.Schemas.ErrorEvent{} = event, error) do
     event
   end
@@ -90,7 +91,8 @@ defmodule KaufmannEx.Subscriber do
     %KaufmannEx.Schemas.ErrorEvent{
       name: event.name,
       error: inspect(error),
-      message_payload: event.payload
+      message_payload: event.payload,
+      meta: event.meta
     }
   end
 end
