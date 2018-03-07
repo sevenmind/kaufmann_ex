@@ -12,9 +12,10 @@ defmodule KaufmannEx.Schemas.ErrorEvent do
   @type t :: %KaufmannEx.Schemas.ErrorEvent{
           name: atom,
           error: term,
-          message_payload: term
+          message_payload: term,
+          meta: term | nil
         }
 
   @moduledoc false
-  defstruct [:name, :error, :message_payload]
+  defstruct [:name, :error, :message_payload, meta: %{}]
 end

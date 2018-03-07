@@ -82,6 +82,10 @@ defmodule KaufmannEx.Subscriber do
     end
   end
 
+  defp error_from_event(%KaufmannEx.Schemas.ErrorEvent{} = event, error) do
+    event
+  end
+
   defp error_from_event(event, error) do
     %KaufmannEx.Schemas.ErrorEvent{
       name: event.name,
