@@ -1,5 +1,5 @@
 %{
-  "avro_ex": {:hex, :avro_ex, "0.1.0-beta.3", "4efb392147ca95f4314a32c02651855053194e459958c14207bc19ca80c9d63b", [:mix], [{:ecto, "~> 2.1.0 or ~> 2.2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:poison, "~> 3.1.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
+  "avro_ex": {:hex, :avro_ex, "0.1.0-beta.4", "fd4860e7a25daa41f3e2153efc7650e6cca5b52e3d013d7f0e3d915d5df82089", [:mix], [{:ecto, "~> 2.1.0 or ~> 2.2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:poison, "~> 3.1.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "benchwarmer": {:hex, :benchwarmer, "0.0.2", "902e5c020608647b07c38b82103e4af6d2667dfd5d5d13c67382238de6943136", [:mix], [], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "bypass": {:hex, :bypass, "0.8.1", "16d409e05530ece4a72fabcf021a3e5c7e15dcc77f911423196a0c551f2a15ca", [:mix], [{:cowboy, "~> 1.0", [hex: :cowboy, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},

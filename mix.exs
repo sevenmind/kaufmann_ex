@@ -16,6 +16,16 @@ defmodule KaufmannEx.MixProject do
     ]
   end
 
+  def package do
+    [
+      maintaners: ["sevenmind", "Grant McLendon"],
+      links: %{
+        GitHub: "https://github.com/sevenmind/kaufmann_ex"
+      },
+      licesnses: ["MIT"]
+    ]
+  end
+
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
@@ -30,7 +40,6 @@ defmodule KaufmannEx.MixProject do
       {:flow, "~> 0.11"},
       # kafka Client
       {:kafka_ex, "~> 0.8.1"},
-      {:snappy, git: "https://github.com/fdmanana/snappy-erlang-nif"},
       # JSON lib
       {:poison, "~> 3.1"},
       # HTTP lib, overrride b/c some other libs specify older versions

@@ -41,8 +41,7 @@ defmodule KaufmannEx.Publisher do
       produce_request = %Request{
         partition: 0,
         topic: topic,
-        messages: [message],
-        compression: :snappy
+        messages: [message]
       }
 
       KafkaEx.produce(produce_request)
