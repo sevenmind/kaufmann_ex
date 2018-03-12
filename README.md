@@ -1,6 +1,10 @@
 # KaufmannEx
 
-KaufmannEx is a library tieing together `KafkaEx`, `AvroEx`, and `Schemex`
+The goal of KaufmannEx is to provide a simple to use library for building kafka based microservices.
+
+It should be simple and fast to write new microservices with [Avro](https://avro.apache.org/docs/current/) event schemas backed by [schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html).
+
+Tieing `KafkaEx`, `AvroEx`, and `Schemex`.
 
 KaufmannEx exists to make it easy to decode Avro encoded messages off of a kafka broker.
 
@@ -12,7 +16,7 @@ by adding `kaufmann_ex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:kaufmann_ex, "~> 0.1.1"}
+    {:kaufmann_ex, "~> 0.1.2"}
   ]
 end
 ```
@@ -101,11 +105,11 @@ KaufmannEx assumes every event has a matching event Avro Event Schema.
 
 All events are expected to include a `meta` metadata key.
 
-If an Event causes an exception it will emit an error event with `"event.error.#{event.name}"` as the `event_name`. Events that raise exceptions are not retried or put in a deadletter queue. If you want to do that, write a deadletter queue service.
+If an Event causes an exception it will emit an error event with `"event.error.#{event.name}"` as the `event_name`. Events that raise exceptions are not retried or persisted beyond emitting this error event. If specific handling of failing events is important to you, implement a dead-letter queue service or similar.
 
 ## Internals
 
-KaufmannEx uses `KafkaEx.ConsumerGroup` to subscribe to kafka topic/s. Events are consumed by a `GenStage` producer stage which in turn is used as the entrypoint for a `GenStage`/`Flow` flow.
+KaufmannEx uses `KafkaEx.ConsumerGroup` to subscribe to kafka topic/s. Events are consumed by a `GenStage` producer stage to a `GenStage.ConsumerSupervisor` which has a limited demand (default 50) and spawns a task to process each event.
 
 ```
 Kafka
@@ -114,14 +118,17 @@ Kafka
 KafkaEx.ConsumerGroup
    |   |   | (Per Partition)
    V   V   V
-KaufmannEx.GenConsumer
-  |   |   |
-  V   V   V
+KaufmannEx.Stages.GenConsumer
+   |
+   V
 KaufmannEx.Stages.Producer
-    |  (Flow.from_stage/1)
+    |
     V
-Subscriber.handle_messages/0
-  |   |   | (parallelized by Flow)
+KaufmannEx.Stages.Consumer
+  |   |   | (ConsumerSupervisor spawns workers for each event received)
+  V   V   V
+KaufmannEx.Stages.EventHandler
+  |   |   |
   V   V   V
 Application.EventHandler.given_event/1
 ```

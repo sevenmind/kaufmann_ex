@@ -1,4 +1,4 @@
-defmodule KaufmannEx.SubscriberTest do
+defmodule KaufmannEx.Stages.EventHandlerTest do
   use ExUnit.Case
   alias KaufmannEx.TestSupport.MockBus
   alias KafkaEx.Protocol.Fetch.Message
@@ -38,8 +38,8 @@ defmodule KaufmannEx.SubscriberTest do
     Process.register(self(), :subscriber)
 
     {:ok, pid} = KaufmannEx.Stages.Producer.start_link([])
-    {:ok, s_pid} = KaufmannEx.Subscriber.start_link([])
-    {:ok, state} = KaufmannEx.GenConsumer.init(@topic, @partition)
+    {:ok, s_pid} = KaufmannEx.Stages.Consumer.start_link()
+    {:ok, state} = KaufmannEx.Stages.GenConsumer.init(@topic, @partition)
 
     {:ok, bypass: bypass, state: state}
   end
@@ -51,7 +51,7 @@ defmodule KaufmannEx.SubscriberTest do
 
       event = encode_event(:"test.event.publish", "Hello")
 
-      KaufmannEx.GenConsumer.handle_message_set([event], state)
+      KaufmannEx.Stages.GenConsumer.handle_message_set([event], state)
 
       assert_receive :event_recieved
     end
@@ -63,7 +63,7 @@ defmodule KaufmannEx.SubscriberTest do
       first_event = encode_event(:"test.event.publish", "raise_error")
       second_event = encode_event(:"test.event.publish", "Hello")
 
-      KaufmannEx.GenConsumer.handle_message_set(
+      KaufmannEx.Stages.GenConsumer.handle_message_set(
         [
           first_event,
           second_event,

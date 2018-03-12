@@ -1,40 +1,17 @@
-defmodule KaufmannEx.Subscriber do
+defmodule KaufmannEx.Stages.EventHandler do
   @moduledoc """
   Behavior module for consuming messages from Kafka bus. 
+
+  Spawns tasks to process each event. Should still be within the KaufmannEx supervision tree.
   """
   require Logger
-  use GenServer
 
-  def start_link(_), do: start_link()
-
-  def start_link() do
-    :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
-    GenServer.start_link(__MODULE__, [])
-  end
-
-  def init(_arg) do
-    # Triggers immediate timeout, starts loop
-    {:ok, [], 0}
-  end
-
-  # Use Timeout Loop to keep Flow running
-  def handle_info(:timeout, []) do
-    handle_messages()
-
-    {:noreply, [], 0}
-  end
-
-  @doc """
-  Receives messages from `KaufmannEx.Stages.Producer`, uses `Flow`/`GenStage` to proccess messages in parallel in the module specified in `KaufmannEx.Config.event_handler/0`
-  """
-  def handle_messages() do
-    # Maybe use `ConsumerSupervisor` instead of flow (creates process per stage event)
-    # |> Flow.map(&handle_with_rescue/1)
-    KaufmannEx.Stages.Producer
-    |> Flow.from_stage()
-    |> Flow.map(&decode_event/1)
-    |> Flow.map(&handle_with_rescue/1)
-    |> Flow.run()
+  def start_link(event) do
+    Task.start_link(fn ->
+      event
+      |> decode_event()
+      |> handle_with_rescue()
+    end)
   end
 
   def handle_with_rescue(event) do
@@ -83,7 +60,7 @@ defmodule KaufmannEx.Subscriber do
   end
 
   # if loop of error events, just emit whatever we got
-  defp error_from_event(%KaufmannEx.Schemas.ErrorEvent{} = event, error) do
+  defp error_from_event(%KaufmannEx.Schemas.ErrorEvent{} = event, _error) do
     event
   end
 

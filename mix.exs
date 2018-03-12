@@ -37,7 +37,7 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:flow, "~> 0.11"},
+      {:gen_stage, "~> 0.12"},
       # kafka Client
       {:kafka_ex, "~> 0.8.1"},
       # JSON lib

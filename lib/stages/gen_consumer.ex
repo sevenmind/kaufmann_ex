@@ -1,4 +1,4 @@
-defmodule KaufmannEx.GenConsumer do
+defmodule KaufmannEx.Stages.GenConsumer do
   @moduledoc """
     `KafkaEx.GenConsumer` listening for Kafka messages. 
 
