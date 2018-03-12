@@ -1,0 +1,24 @@
+language: elixir
+elixir:
+  - 1.6.1
+otp_release:
+  - 20.2
+
+env:
+ global:
+   - MIX_ENV=test
+   - PRONTO_PULL_REQUEST_ID=$TRAVIS_PULL_REQUEST
+
+before_script:
+  - rvm install ruby-2.3.1
+  - gem install pronto-credo
+
+script:
+  - if [ $PULL_REQUEST_ID != false ]; then pronto run -f github_pr; fi
+  - mix test
+
+cache:
+ directories:
+   - /home/travis/.rvm/
+   - /home/travis/otp/
+   - /home/travis/.kiex/

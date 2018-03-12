@@ -1,5 +1,7 @@
 # KaufmannEx
 
+[![Build Status](https://travis-ci.org/sevenmind/kaufmann_ex.svg?branch=master)](https://travis-ci.org/sevenmind/kaufmann_ex)
+
 The goal of KaufmannEx is to provide a simple to use library for building kafka based microservices.
 
 It should be simple and fast to write new microservices with [Avro](https://avro.apache.org/docs/current/) event schemas backed by [schema Registry](https://docs.confluent.io/current/schema-registry/docs/index.html).
