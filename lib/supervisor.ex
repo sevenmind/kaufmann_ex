@@ -14,7 +14,7 @@ defmodule KaufmannEx.Supervisor do
     topics = KaufmannEx.Config.default_topics()
 
     consumer_group_opts = [
-      KaufmannEx.GenConsumer,
+      KaufmannEx.Stages.GenConsumer,
       consumer_group_name,
       topics,
       [
@@ -33,8 +33,8 @@ defmodule KaufmannEx.Supervisor do
         start: {KaufmannEx.Stages.Consumer, :start_link, []}
       },
       %{
-        id: KafkaEx.Stages.ConsumerGroup,
-        start: {KafkaEx.Stages.ConsumerGroup, :start_link, consumer_group_opts},
+        id: KafkaEx.ConsumerGroup,
+        start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor
       }
     ]
