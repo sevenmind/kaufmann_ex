@@ -7,7 +7,7 @@ otp_release:
 env:
  global:
    - MIX_ENV=test
-   - PULL_REQUEST_ID=$TRAVIS_PULL_REQUEST
+   - PRONTO_PULL_REQUEST_ID=$TRAVIS_PULL_REQUEST
 
 before_script:
   - rvm install ruby-2.3.1
@@ -16,3 +16,9 @@ before_script:
 script:
   - if [ $PULL_REQUEST_ID != false ]; then pronto run -f github_pr; fi
   - mix test
+
+cache:
+ directories:
+   - /home/travis/.rvm/
+   - /home/travis/otp/
+   - /home/travis/.kiex/
