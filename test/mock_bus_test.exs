@@ -2,12 +2,14 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
   use KaufmannEx.TestSupport.MockBus
 
   defmodule ExampleEventHandler do
-    def given_event(event) do
+    def given_event(%KaufmannEx.Schemas.Event{} = event) do
       case event.payload do
         "no_event" -> :ok
         _ -> KaufmannEx.Publisher.publish(event.name, event.payload)
       end
     end
+
+    def given_event(error_event), do: :ok
   end
 
   setup do

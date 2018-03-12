@@ -35,7 +35,8 @@ defmodule KaufmannEx.SchemasTest do
       mock_get_fake_event(bypass, event_name, fake_schema)
       mock_get_metadata_schema(bypass)
 
-      {:error, :unmatching_schema} = Schemas.encode_message(event_name, %{"hello" => "world"})
+      {:error, :data_does_not_match_schema, _, _} =
+        Schemas.encode_message(event_name, %{"hello" => "world"})
     end
 
     test "when schema exists and is encodable", %{bypass: bypass} do

@@ -46,7 +46,7 @@ defmodule KaufmannEx.Publisher do
 
       KafkaEx.produce(produce_request)
     else
-      {:error, error} -> {:error, error}
+      error -> error
     end
   end
 

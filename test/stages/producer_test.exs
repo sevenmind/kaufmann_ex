@@ -57,47 +57,49 @@ defmodule KaufmannEx.Stages.ProducerTest do
     end
   end
 
-  defmodule TestSubscriber do
-    use GenServer
+  defmodule TestEventHandler do
+    def start_link(parent, n) do
+      Task.start_link(fn ->
+        send(parent, n)
+      end)
+    end
+  end
 
-    def start_link(parent, demand \\ 5) do
-      GenServer.start_link(__MODULE__, {parent, demand}, name: __MODULE__)
+  defmodule TestConsumer do
+    use ConsumerSupervisor
+
+    def start_link(parent) do
+      ConsumerSupervisor.start_link(__MODULE__, parent)
     end
 
-    def init({parent, demand}) do
-      {:ok, {parent, demand}, 0}
-    end
+    def init(parent) do
+      children = [
+        worker(TestEventHandler, [parent], restart: :temporary)
+      ]
 
-    def handle_info(:timeout, {parent, demand}) do
-      handle_messages({parent, demand})
-
-      {:noreply, {parent, demand}}
-    end
-
-    def handle_messages({parent, demand}) do
-      Flow.from_stage(KaufmannEx.Stages.Producer, stages: 1)
-      |> Flow.each(&send(parent, &1))
-      |> Enum.take(demand)
+      # max_demand is highly resource dependent
+      {:ok, children,
+       strategy: :one_for_one, subscribe_to: [{KaufmannEx.Stages.Producer, max_demand: 50}]}
     end
   end
 
   describe "when in flow from_stage" do
     test "will process just a few events" do
       parent = self()
-      {:ok, pid} = TestSubscriber.start_link(parent)
+      _ = TestConsumer.start_link(parent)
 
-      events = Enum.to_list(1..100)
+      events = Enum.to_list(1..10)
 
       :ok = KaufmannEx.Stages.Producer.notify(events)
 
       assert_receive 1
       assert_receive 2
-      assert_receive 100
+      assert_receive 10
     end
 
     test "will consume as as many events as there is demand " do
       parent = self()
-      {:ok, pid} = TestSubscriber.start_link(parent, 10_000)
+      _ = TestConsumer.start_link(parent)
 
       events = Enum.to_list(1..10_000)
 
@@ -111,7 +113,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
     test "When more demand than events" do
       parent = self()
-      {:ok, pid} = TestSubscriber.start_link(parent, 10_000)
+      _ = TestConsumer.start_link(parent)
 
       events = Enum.to_list(1..100)
 
@@ -124,7 +126,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
     test "when less events than demand" do
       parent = self()
-      {:ok, pid} = TestSubscriber.start_link(parent, 10)
+      _ = TestConsumer.start_link(parent)
 
       events = Enum.to_list(1..100)
 

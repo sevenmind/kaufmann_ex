@@ -37,16 +37,16 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:flow, "~> 0.11"},
+      {:gen_stage, "~> 0.12"},
       # kafka Client
       {:kafka_ex, "~> 0.8.1"},
       # JSON lib
       {:poison, "~> 3.1"},
       # HTTP lib, overrride b/c some other libs specify older versions
-      {:httpoison, "~> 1.0", override: true},
+      {:httpoison, "~> 1.0"},
       {:nanoid, "~> 1.0"},
       {:avro_ex, "~> 0.1.0-beta.0"},
-      {:schemex, "~> 0.1.0"},
+      {:schemex, "~> 0.1.1"},
       {:credo, "~> 0.9.0-rc2", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:benchwarmer, ">= 0.0.0", only: [:dev]},

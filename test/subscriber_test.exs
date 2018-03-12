@@ -1,6 +1,7 @@
-defmodule KaufmannEx.SubscriberTest do
+defmodule KaufmannEx.Stages.EventHandlerTest do
   use ExUnit.Case
   alias KaufmannEx.TestSupport.MockBus
+  alias KafkaEx.Protocol.Fetch.Message
 
   defmodule TestEventHandler do
     def given_event(
@@ -24,6 +25,9 @@ defmodule KaufmannEx.SubscriberTest do
     end
   end
 
+  @topic "topic"
+  @partition 0
+
   setup do
     bypass = Bypass.open()
     Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
@@ -34,31 +38,40 @@ defmodule KaufmannEx.SubscriberTest do
     Process.register(self(), :subscriber)
 
     {:ok, pid} = KaufmannEx.Stages.Producer.start_link([])
-    {:ok, s_pid} = KaufmannEx.Subscriber.start_link([])
+    {:ok, s_pid} = KaufmannEx.Stages.Consumer.start_link()
+    {:ok, state} = KaufmannEx.Stages.GenConsumer.init(@topic, @partition)
 
-    {:ok, bypass: bypass}
+    {:ok, bypass: bypass, state: state}
   end
 
   describe "when started" do
-    test "Consumes Events to EventHandler", %{bypass: bypass} do
+    test "Consumes Events to EventHandler", %{bypass: bypass, state: state} do
       mock_get_metadata_schema(bypass)
       mock_get_event_schema(bypass, "test.event.publish")
 
       event = encode_event(:"test.event.publish", "Hello")
 
-      KaufmannEx.Stages.Producer.notify([event])
+      KaufmannEx.Stages.GenConsumer.handle_message_set([event], state)
 
       assert_receive :event_recieved
     end
 
-    test "handles errors gracefully", %{bypass: bypass} do
+    test "handles errors gracefully", %{bypass: bypass, state: state} do
       mock_get_metadata_schema(bypass)
       mock_get_event_schema(bypass, "test.event.publish")
 
       first_event = encode_event(:"test.event.publish", "raise_error")
       second_event = encode_event(:"test.event.publish", "Hello")
 
-      KaufmannEx.Stages.Producer.notify([first_event, second_event, second_event, second_event])
+      KaufmannEx.Stages.GenConsumer.handle_message_set(
+        [
+          first_event,
+          second_event,
+          second_event,
+          second_event
+        ],
+        state
+      )
 
       assert_receive :event_recieved
       assert_receive :handled_error
@@ -93,6 +106,6 @@ defmodule KaufmannEx.SubscriberTest do
 
   def encode_event(name, payload) do
     {:ok, encoded_event} = MockBus.encoded_event(name, payload)
-    %{key: name |> to_string, value: encoded_event}
+    %Message{key: name |> to_string, value: encoded_event}
   end
 end
