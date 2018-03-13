@@ -50,7 +50,8 @@ defmodule KaufmannEx.MixProject do
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:bypass, "~> 0.8", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
-      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false}
+      {:mix_test_watch, "~> 0.5", only: :dev, runtime: false},
+      {:inch_ex, only: :docs}
     ]
   end
 

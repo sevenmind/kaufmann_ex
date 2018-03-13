@@ -1,6 +1,7 @@
 # KaufmannEx
 
 [![Build Status](https://travis-ci.org/sevenmind/kaufmann_ex.svg?branch=master)](https://travis-ci.org/sevenmind/kaufmann_ex)
+[![Deps Status](https://beta.hexfaktor.org/badge/all/github/sevenmind/kaufmann_ex.svg)](https://beta.hexfaktor.org/github/sevenmind/kaufmann_ex) [![Inline docs](http://inch-ci.org/github/sevenmind/kaufmann_ex.svg)](http://inch-ci.org/github/sevenmind/kaufmann_ex)
 
 The goal of KaufmannEx is to provide a simple to use library for building kafka based microservices.
 
