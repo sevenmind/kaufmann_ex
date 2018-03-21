@@ -8,7 +8,9 @@ defmodule KaufmannEx.Publisher do
   alias KafkaEx.Protocol.Produce.Message
   alias KafkaEx.Protocol.Produce.Request
 
-  @topic KaufmannEx.Config.default_topic() || "default_topic"
+  def default_topic do
+    KaufmannEx.Config.default_topic() || "default_topic"
+  end
 
   @spec produce(atom(), term()) :: :ok | {:error, any}
   def produce(message_name, payload) when is_atom(message_name) do
@@ -20,7 +22,7 @@ defmodule KaufmannEx.Publisher do
   """
   @spec produce(String.t(), term()) :: :ok | {:error, any}
   def produce(message_name, payload) when is_binary(message_name) do
-    produce(@topic, message_name, payload)
+    produce(default_topic(), message_name, payload)
   end
 
   @doc """
