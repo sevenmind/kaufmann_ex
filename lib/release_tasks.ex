@@ -1,20 +1,27 @@
 defmodule KaufmannEx.ReleaseTasks do
-  use OkPipe
   alias KaufmannEx.Schemas
 
-  @schema_path 'priv/schemas'
+  # @schema_path 'priv/schemas'
 
   defp ensure_startup do
+    :ok = Application.ensure_started(:logger)
     {:ok, _} = Application.ensure_all_started(:httpoison)
+    {:ok, _} = Application.ensure_all_started(:kaufmann_ex)
   end
 
-  def migrate_schemas do
+  defp priv_dir(app) do
+    "#{:code.priv_dir(app)}"
+  end
+
+  def migrate_schemas(app \\ :kaufman_ex) do
     ensure_startup()
     IO.puts("Migrating Schemas")
 
-    meta_data_schema = load_metadata()
+    meta_data_schema = load_metadata(app)
 
-    @schema_path
+    app
+    |> priv_dir()
+    |> Path.join("schemas")
     |> scan_dir()
     |> Enum.map(&load_and_parse_schema/1)
     |> Enum.map(&inject_metadata(&1, meta_data_schema))
@@ -22,12 +29,14 @@ defmodule KaufmannEx.ReleaseTasks do
     |> Enum.map(&pretty_print_tuple/1)
   end
 
-  def reset_schemas do
+  def reset_schemas(app \\ :kaufman_ex) do
     ensure_startup()
     IO.puts("Resetting Schemas")
-    meta_data_schema = load_metadata()
+    meta_data_schema = load_metadata(app)
 
-    @schema_path
+    app
+    |> priv_dir()
+    |> Path.join("schemas")
     |> scan_dir()
     |> Enum.map(&load_and_parse_schema/1)
     |> Enum.map(&inject_metadata(&1, meta_data_schema))
@@ -39,9 +48,11 @@ defmodule KaufmannEx.ReleaseTasks do
     IO.puts(inspect(tup))
   end
 
-  def load_metadata do
+  def load_metadata(app) do
     meta_data_schema =
-      @schema_path
+      app
+      |> priv_dir()
+      |> Path.join("schemas")
       |> Path.join("event_metadata.avsc")
       |> load_and_parse_schema()
 
@@ -97,7 +108,8 @@ defmodule KaufmannEx.ReleaseTasks do
     {:ok, schema} =
       schema_path
       |> File.read()
-      ~> Poison.decode()
+      |> ok_and()
+      |> Poison.decode()
 
     schema_name = schema_path |> Path.basename() |> String.trim(".avsc")
 
@@ -127,5 +139,9 @@ defmodule KaufmannEx.ReleaseTasks do
     |> Enum.map(&Path.join(dir, &1))
     |> Enum.concat(child_schemas)
     |> List.flatten()
+  end
+
+  defp ok_and({:ok, right}) do
+    right
   end
 end
