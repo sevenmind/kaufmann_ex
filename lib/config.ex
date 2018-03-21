@@ -57,7 +57,7 @@ defmodule KaufmannEx.Config do
   `System.get_env("HOST_NAME")`
   """
   @spec service_id() :: String.t()
-  def service_id, do: System.get_env("HOST_NAME")
+  def service_id, do: System.get_env("HOSTNAME")
 
   @doc """
   Application.get_env(:kaufmann_ex, :event_handler_demand)
