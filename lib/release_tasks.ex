@@ -1,6 +1,5 @@
 defmodule KaufmannEx.ReleaseTasks do
   use OkPipe
-  require Logger
   alias KaufmannEx.Schemas
 
   @schema_path 'priv/schemas'
@@ -11,7 +10,7 @@ defmodule KaufmannEx.ReleaseTasks do
 
   def migrate_schemas do
     ensure_startup()
-    Logger.info("Migrating Schemas")
+    IO.puts("Migrating Schemas")
 
     meta_data_schema = load_metadata()
 
@@ -25,7 +24,7 @@ defmodule KaufmannEx.ReleaseTasks do
 
   def reset_schemas do
     ensure_startup()
-    Logger.info("Resetting Schemas")
+    IO.puts("Resetting Schemas")
     meta_data_schema = load_metadata()
 
     @schema_path
@@ -37,7 +36,7 @@ defmodule KaufmannEx.ReleaseTasks do
   end
 
   def pretty_print_tuple(tup) do
-    Logger.info(inspect(tup))
+    IO.puts(inspect(tup))
   end
 
   def load_metadata do
