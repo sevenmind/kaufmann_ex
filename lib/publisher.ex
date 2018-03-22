@@ -14,7 +14,7 @@ defmodule KaufmannEx.Publisher do
 
   @spec produce(atom(), term()) :: :ok | {:error, any}
   def produce(message_name, payload) when is_atom(message_name) do
-    produce(Atom.to_string(message_name), payload)
+    produce(default_topic(), Atom.to_string(message_name), payload)
   end
 
   @doc """
@@ -48,7 +48,10 @@ defmodule KaufmannEx.Publisher do
 
       KafkaEx.produce(produce_request)
     else
-      error -> error
+      error ->
+        Logger.warn(fn -> "Error publishing #{message_name} to #{topic}" end)
+        Logger.warn(fn -> inspect(error) end)
+        error
     end
   end
 
