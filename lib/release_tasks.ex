@@ -44,6 +44,11 @@ defmodule KaufmannEx.ReleaseTasks do
     |> Enum.map(&pretty_print_tuple/1)
   end
 
+  def log_and(x) do
+    IO.inspect(x)
+    x
+  end
+
   def pretty_print_tuple(tup) do
     IO.puts(inspect(tup))
   end

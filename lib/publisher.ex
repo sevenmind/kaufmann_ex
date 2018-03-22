@@ -125,6 +125,8 @@ defmodule KaufmannEx.Publisher do
   """
   @spec event_metadata(atom, map) :: map
   def event_metadata(event_name, context) do
+    log_time_took(context[:timestamp], event_name)
+
     %{
       message_id: Nanoid.generate(),
       emitter_service: KaufmannEx.Config.service_name(),
@@ -133,5 +135,14 @@ defmodule KaufmannEx.Publisher do
       message_name: event_name |> to_string,
       timestamp: DateTime.to_string(DateTime.utc_now())
     }
+  end
+
+  defp log_time_took(nil, _), do: nil
+
+  defp log_time_took(timestamp, event_name) do
+    {:ok, published_at, _} = DateTime.from_iso8601(timestamp)
+    took = DateTime.diff(DateTime.utc_now(), published_at, :millisecond)
+
+    Logger.info(fn -> "Responded with #{event_name} in #{took}ms" end)
   end
 end
