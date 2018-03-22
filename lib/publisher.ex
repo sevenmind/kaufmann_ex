@@ -48,10 +48,11 @@ defmodule KaufmannEx.Publisher do
 
       KafkaEx.produce(produce_request)
     else
-      error ->
-        Logger.warn(fn -> "Error publishing #{message_name} to #{topic}" end)
-        Logger.warn(fn -> inspect(error) end)
-        error
+      {:error, error} ->
+        publish_error(message_name, error, data.payload, data.meta)
+
+      {:error, error, _} ->
+        publish_error(message_name, error, data.payload, data.meta)
     end
   end
 

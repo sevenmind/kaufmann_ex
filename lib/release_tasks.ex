@@ -77,8 +77,7 @@ defmodule KaufmannEx.ReleaseTasks do
 
   @spec register_schema({String.t(), map}) :: {atom, String.t(), any}
   def register_schema({event_name, _} = schema) do
-    with {:ok, compatibility} <- schema_registered(schema),
-         {:ok, status} <- update_schema(compatibility, schema) do
+    with {:ok, status} <- update_schema(schema) do
       {:ok, event_name, status}
     else
       {:error, error} ->
@@ -86,11 +85,7 @@ defmodule KaufmannEx.ReleaseTasks do
     end
   end
 
-  defp update_schema(%{"is_compatible" => true}, _) do
-    {:ok, "Schema OK"}
-  end
-
-  defp update_schema(%{"is_compatible" => false}, schema) do
+  defp update_schema(schema) do
     case Schemas.register(schema) do
       {:ok, _} ->
         {:ok, "Schema updated"}
