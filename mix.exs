@@ -4,7 +4,7 @@ defmodule KaufmannEx.MixProject do
   def project do
     [
       app: :kaufmann_ex,
-      version: "0.1.3",
+      version: "0.1.4",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -44,6 +44,7 @@ defmodule KaufmannEx.MixProject do
       {:avro_ex, "~> 0.1.0-beta.0"},
       {:schemex, "~> 0.1.1"},
       {:nanoid, "~> 1.0"},
+      {:memoize, "~> 1.2"},
       {:distillery, "~> 1.5", runtime: false},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
       {:credo, "~> 0.9.0-rc2", only: [:dev, :test], runtime: false},
