@@ -12,9 +12,10 @@ defmodule KaufmannEx.Supervisor do
   def init(_) do
     consumer_group_name = KaufmannEx.Config.consumer_group()
     topics = KaufmannEx.Config.default_topics()
+    gen_consumer_mod = KaufmannEx.Config.gen_consumer_mod()
 
     consumer_group_opts = [
-      KaufmannEx.Stages.GenConsumer,
+      gen_consumer_mod,
       consumer_group_name,
       topics,
       [
