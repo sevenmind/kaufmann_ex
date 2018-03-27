@@ -25,6 +25,7 @@
   "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], [], "hexpm"},
   "kafka_ex": {:hex, :kafka_ex, "0.8.1", "eea476ad1bca26604babe5cacfd67c843ca18a008d7116c8c21fce6974d662cd", [:mix], [], "hexpm"},
   "meck": {:hex, :meck, "0.8.9", "64c5c0bd8bcca3a180b44196265c8ed7594e16bcc845d0698ec6b4e577f48188", [:rebar3], [], "hexpm"},
+  "memoize": {:hex, :memoize, "1.2.5", "aa319c1a08d0564b5f69e4b190412ecab6e3a90b641663d46630e8d9778bb55c", [:mix], [], "hexpm"},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], [], "hexpm"},
   "mime": {:hex, :mime, "1.2.0", "78adaa84832b3680de06f88f0997e3ead3b451a440d183d688085be2d709b534", [:mix], [], "hexpm"},
   "mimerl": {:hex, :mimerl, "1.0.2", "993f9b0e084083405ed8252b99460c4f0563e41729ab42d9074fd5e52439be88", [:rebar3], [], "hexpm"},

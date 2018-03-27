@@ -1,6 +1,19 @@
 defmodule KaufmannEx.Config do
   @moduledoc """
   Convenience Getters for pulling config.exs values
+
+  A config.exs may look like
+  ```
+  config :kaufmann_ex,
+    consumer_group: System.get_env("CONSUMER_GROUP"),
+    default_topic: System.get_env("KAFKA_TOPIC"),
+    event_handler_mod: nil,
+    producer_mod: KaufmannEx.Publisher,
+    schema_path: "priv/schemas",
+    schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
+    service_name: "SampleService"
+    service_id: System.get_env("HOSTNAME")
+  ```
   """
 
   @doc """
@@ -33,13 +46,13 @@ defmodule KaufmannEx.Config do
   `Application.get_env(:kaufmann_ex, :producer_mod)`
   """
   @spec producer_mod() :: String.t()
-  def producer_mod, do: Application.get_env(:kaufmann_ex, :producer_mod)
+  def producer_mod, do: Application.get_env(:kaufmann_ex, :producer_mod, KaufmannEx.Publisher)
 
   @doc """
   `Application.get_env(:kaufmann_ex, :schema_path)`
   """
   @spec schema_path() :: String.t()
-  def schema_path, do: Application.get_env(:kaufmann_ex, :schema_path)
+  def schema_path, do: Application.get_env(:kaufmann_ex, :schema_path, "priv/schemas")
 
   @doc """
   `Application.get_env(:kaufmann_ex, :schema_registry_uri)`
@@ -48,16 +61,16 @@ defmodule KaufmannEx.Config do
   def schema_registry_uri, do: Application.get_env(:kaufmann_ex, :schema_registry_uri)
 
   @doc """
-  `System.get_env("SERVICE_NAME")`
+  `Application.get_env(:kaufmann_ex, :service_name)`
   """
   @spec service_name() :: String.t()
-  def service_name, do: System.get_env("SERVICE_NAME")
+  def service_name, do: Application.get_env(:kaufmann_ex, :service_name)
 
   @doc """
-  `System.get_env("HOST_NAME")`
+  `Application.get_env(:kaufmann_ex, :service_id)`
   """
   @spec service_id() :: String.t()
-  def service_id, do: System.get_env("HOSTNAME")
+  def service_id, do:  Application.get_env(:kaufmann_ex, :service_id)
 
   @doc """
   Application.get_env(:kaufmann_ex, :event_handler_demand)

@@ -28,10 +28,23 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
   @topic "topic"
   @partition 0
 
-  setup do
+  setup_all do
+    {:ok, memo_pid} = Application.ensure_all_started(:memoize)
+    # Clear cached schemas on exit
+    on_exit(&Memoize.invalidate/0)
+
     bypass = Bypass.open()
     Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
 
+    # Mock calls to schema registry, only expected once
+    mock_get_metadata_schema(bypass)
+    mock_get_event_schema(bypass, "test.event.publish")
+
+
+    [bypass: bypass]
+  end
+
+  setup %{bypass: bypass} = context do
     Application.put_env(:kaufmann_ex, :event_handler_mod, TestEventHandler)
     Application.put_env(:kaufmann_ex, :schema_path, "test/support")
 
@@ -45,10 +58,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
   end
 
   describe "when started" do
-    test "Consumes Events to EventHandler", %{bypass: bypass, state: state} do
-      mock_get_metadata_schema(bypass)
-      mock_get_event_schema(bypass, "test.event.publish")
-
+    test "Consumes Events to EventHandler", %{state: state} do
       event = encode_event(:"test.event.publish", "Hello")
 
       KaufmannEx.Stages.GenConsumer.handle_message_set([event], state)
@@ -56,10 +66,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
       assert_receive :event_recieved
     end
 
-    test "handles errors gracefully", %{bypass: bypass, state: state} do
-      mock_get_metadata_schema(bypass)
-      mock_get_event_schema(bypass, "test.event.publish")
-
+    test "handles errors gracefully", %{state: state} do
       first_event = encode_event(:"test.event.publish", "raise_error")
       second_event = encode_event(:"test.event.publish", "Hello")
 
@@ -82,7 +89,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
     {:ok, schema} = File.read("test/support/#{event_name}.avsc")
     schema = schema |> Poison.decode!() |> Poison.encode!()
 
-    Bypass.expect(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
+    Bypass.expect_once(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
@@ -95,7 +102,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
     {:ok, schema} = File.read('test/support/event_metadata.avsc')
     schema = schema |> Poison.decode!() |> Poison.encode!()
 
-    Bypass.expect(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
+    Bypass.expect_once(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
@@ -103,6 +110,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
       )
     end)
   end
+
 
   def encode_event(name, payload) do
     {:ok, encoded_event} = MockBus.encoded_event(name, payload)
