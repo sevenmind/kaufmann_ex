@@ -1,6 +1,6 @@
 defmodule KaufmannEx.Stages.EventHandler do
   @moduledoc """
-  Behavior module for consuming messages from Kafka bus. 
+  Behavior module for consuming messages from Kafka bus.
 
   Spawns tasks to process each event. Should still be within the KaufmannEx supervision tree.
   """

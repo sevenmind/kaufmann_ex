@@ -1,4 +1,7 @@
-defmodule KaufmannEx.ReleaseTasks.Schemas do
+defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
+  @moduledoc """
+  Task for registering all schemas in `priv/schemas` with the schema registry.
+  """
   alias KaufmannEx.Schemas
 
   # @schema_path 'priv/schemas'

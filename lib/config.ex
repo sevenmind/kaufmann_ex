@@ -78,7 +78,7 @@ defmodule KaufmannEx.Config do
   @doc """
   Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
   """
-  @spec service_id() :: integer()
+  @spec event_handler_demand() :: integer()
   def event_handler_demand, do: Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
 
  @doc """

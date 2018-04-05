@@ -18,10 +18,7 @@ defmodule KaufmannEx.Supervisor do
       gen_consumer_mod,
       consumer_group_name,
       topics,
-      [
-        commit_interval: 200,
-        heartbeat_interval: 200
-      ]
+      [ ]
     ]
 
     children = [

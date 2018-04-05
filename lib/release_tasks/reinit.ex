@@ -1,6 +1,4 @@
 defmodule KaufmannEx.ReleaseTasks.ReInit do
-  alias KaufmannEx.ReleaseTasks.ReInit
-
   @moduledoc """
   A Release Task that can be used by implementing services to reinit their internal state
 
@@ -8,12 +6,13 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
 
   Caveat: This task has not been tested in a true production environment. It likely still has some bugs.
   """
+  alias KaufmannEx.ReleaseTasks.ReInit
 
   defmodule PublishNothing do
     @moduledoc """
     dummy publisher. Does nothing.
     """
-    def produce(_, _), do: nil
+    def produce(name, _pl), do: IO.puts(name)
   end
 
   defmodule StateStore do
@@ -47,14 +46,24 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
 
     def handle_message_set(message_set, state) do
       # If all messages at offset >= target, shut it all down
-      case Enum.all?(message_set, fn m -> m.offset >= state[:target_offset] end) do
+      case Enum.any?(message_set, fn m -> m.offset >= state[:target_offset] - 1 end) do
         true ->
-          :init.stop()
+          message_set
+          |> Enum.filter(fn m -> m.offset < state[:target_offset] - 1 end)
+          |> KaufmannEx.Stages.Producer.notify()
 
+          # System.stop()
+          send(:reinit, :shutdown)
+          {:sync_commit, state}
         false ->
           KaufmannEx.Stages.Producer.notify(message_set)
-          {:sync_commit, state}
+          {:async_commit, state}
       end
+    end
+
+    def handle_cast(:shutdown, state)  do
+      IO.puts "Shutdown"
+      {:stop, :shutdown, state}
     end
   end
 
@@ -84,15 +93,29 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
 
   def consume_queued_messages(%Config{} = reinit, application) do
     ensure_loaded(application)
-    {:ok, _} = Application.ensure_all_started(application)
+    :ok = Application.start(:kafka_ex)
+    :ok = Application.start(application, :transient)
+    Process.register(self(), :reinit)
+    await_shutdown(application)
+    # Application will run using ReInit.GenConsumer, which will terminate when target_offset is reached
+  end
 
-    # Application will run using ReInit.GenConsumer, who will terminate when target_offset is reached
+  def await_shutdown(application) do
+    receive do
+      :shutdown ->
+        Process.sleep(500)
+        Application.stop(application)
+      after 5000 ->
+        await_shutdown(application)
+      end
   end
 
   def start_services do
     ensure_loaded(:kaufmann_ex)
     :ok = Application.ensure_started(:kafka_ex)
     :ok = StateStore.init()
+
+    override_default_gen_consumer()
   end
 
   defp build_args(starting_offset, target_offset, publish) do
@@ -155,21 +178,21 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
     %Config{args | worker: worker}
   end
 
-  defp get_metadata(%Config{default_topic: default_topic} = args) do
+  def get_metadata(%Config{default_topic: default_topic} = args) do
     metadata = KafkaEx.metadata(topic: default_topic, worker_name: :pr)
     earliest_offsets = Enum.flat_map(metadata.topic_metadatas, &get_earliest_offsets/1)
     latest_offsets = Enum.flat_map(metadata.topic_metadatas, &get_latest_offsets/1)
 
     target_offset =
       case args.target_offset do
-        :latest -> Enum.min(latest_offsets)
-        x -> Enum.min([x | latest_offsets])
+        :latest -> Enum.max(latest_offsets)
+        x -> Enum.max([x | latest_offsets])
       end
 
     starting_offset =
       case args.starting_offset do
-        :earliest -> Enum.max(earliest_offsets)
-        x -> Enum.max([x | earliest_offsets])
+        :earliest -> Enum.min(earliest_offsets)
+        x -> Enum.min([x | earliest_offsets])
       end
 
     %Config{
@@ -185,6 +208,10 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
     |> Enum.flat_map(&KafkaEx.earliest_offset(topic_data.topic, &1.partition_id))
     |> Enum.flat_map(&extract_partition_offsets/1)
   end
+
+  defp get_latest_offsets(%KafkaEx.Protocol.Metadata.TopicMetadata{partition_metadatas: md})
+       when is_list(md) and length(md) == 0,
+       do: [0]
 
   defp get_latest_offsets(%KafkaEx.Protocol.Metadata.TopicMetadata{} = topic_data) do
     topic_data.partition_metadatas
@@ -204,7 +231,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
     |> Enum.each(fn partition_id ->
       KafkaEx.offset_commit(reinit.worker, %KafkaEx.Protocol.OffsetCommit.Request{
         consumer_group: reinit.consumer_group,
-        topic: "rapids",
+        topic: reinit.default_topic,
         offset: reinit.starting_offset,
         partition: partition_id
       })
@@ -233,17 +260,17 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
     end
   end
 
-  def fetch_offset(partition) do
-    [
-      %KafkaEx.Protocol.OffsetFetch.Response{
-        partitions: [%{error_code: :no_error, offset: offset}],
-        topic: "rapids"
-      }
-    ] =
-      KafkaEx.offset_fetch(:kafka_ex, %KafkaEx.Protocol.OffsetFetch.Request{
-        consumer_group: Config.consumer_group(),
-        topic: "rapids",
-        partition: 0
-      })
-  end
+  # def fetch_offset(partition) do
+  #   [
+  #     %KafkaEx.Protocol.OffsetFetch.Response{
+  #       partitions: [%{error_code: :no_error, offset: offset}],
+  #       topic: "rapids"
+  #     }
+  #   ] =
+  #     KafkaEx.offset_fetch(:kafka_ex, %KafkaEx.Protocol.OffsetFetch.Request{
+  #       consumer_group: Config.consumer_group(),
+  #       topic: "rapids",
+  #       partition: 0
+  #     })
+  # end
 end

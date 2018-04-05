@@ -37,25 +37,19 @@ defmodule KaufmannEx.ReleaseTasks.ReInitTest do
       {:ok, state} = ReInit.GenConsumer.init("topic", 0)
 
       message_set = [
-        %Message{offset: 15, value: "whatevs"},
-        %Message{offset: 16, value: "whatevs"}
+        %Message{offset: 14, value: "whatevs"},
+        %Message{offset: 15, value: "whatevs"}
       ]
 
+      Process.register(self(), :reinit)
       :ok = ReInit.GenConsumer.handle_message_set(message_set, state)
-      # Process should die here. Is there a way to test this?
-    end
-  end
 
-  # How to test? Need Fake App startable with`Application.ensure_all_started`
-  describe "&run" do
-    test "when queued messages consumes until the end of the queue"
-    test "does not publish any events"
-    test "terminates when target_offset reached"
+      assert_received :shutdown, ":reinit process should recieve shutdown once max offset is reached"
+    end
   end
 
   def set_partition_0_offset(offset) do
     :ok = Application.ensure_started(:kafka_ex)
-    # Set offset higher than 0
     res =
       KafkaEx.offset_commit(:kafka_ex, %KafkaEx.Protocol.OffsetCommit.Request{
         consumer_group: Config.consumer_group(),

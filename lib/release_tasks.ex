@@ -4,11 +4,11 @@ defmodule KaufmannEx.ReleaseTasks do
 
     """
     def migrate_schemas(app) do
-      KaufmannEx.ReleaseTasks.Schemas.migrate_schemas(app)
+      KaufmannEx.ReleaseTasks.MigrateSchemas.migrate_schemas(app)
     end
 
     def reset_schemas(app) do
-      KaufmannEx.ReleaseTasks.Schemas.reset_schemas(app)
+      KaufmannEx.ReleaseTasks.MigrateSchemas.reset_schemas(app)
     end
 
     @doc """
