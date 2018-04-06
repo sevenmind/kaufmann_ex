@@ -2,7 +2,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   use ExUnit.CaseTemplate
 
   @moduledoc """
-    Helper module for testing event flows. 
+    Helper module for testing event flows.
 
     Cannot be run Async, relies on sending messages to `self()`
 
@@ -13,7 +13,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
     `then_event/2` asserts that the given event is emitted and verifies or returned the payload
 
     ### Example Usage
-    
+
     ```
     defmodule EvenHandlerTests
       use KaufmannEx.TestSupport.MockBus
@@ -22,7 +22,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
         given_event(:"TestCommand", %{new_key: "test"})
 
         then_event(:"Testevent", %{new_key: "test"})
-        
+
         then_no_event
       end
     end
@@ -113,7 +113,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   @doc """
   Asserts an event has been emitted, returns the payload
 
-  Returned payload will include `meta` metadata 
+  Returned payload will include `meta` metadata
   """
   @spec then_event(atom) :: %{meta: map, payload: any}
   def then_event(event_name) do
@@ -208,10 +208,5 @@ defmodule KaufmannEx.TestSupport.MockBus do
   defp encode_payload(payload, event_name) do
     schema_name = schema_name_if_query(event_name)
     MockSchemaRegistry.encode_event(schema_name, payload)
-  end
-
-  defp inspect_r(thing) do
-    IO.inspect(thing)
-    thing
   end
 end

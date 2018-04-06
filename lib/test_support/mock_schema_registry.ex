@@ -1,6 +1,4 @@
 defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
-  use OkPipe
-
   @moduledoc """
   A simple immitation schema registry that verifies Test Events against the schemas we have saved to file
 
@@ -28,11 +26,12 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   end
 
   def encode_event(schema_name, payload) do
-    schema_name
+    {:ok, schema} = schema_name
     |> load_schema
     |> inject_metadata
     |> parse_schema
-    ~> AvroEx.encode(payload)
+
+    AvroEx.encode(schema, payload)
   end
 
   defp inject_metadata(schema) do

@@ -4,15 +4,18 @@ defmodule KaufmannEx.Config do
 
   A config.exs may look like
   ```
+  # test env
   config :kaufmann_ex,
     consumer_group: System.get_env("CONSUMER_GROUP"),
     default_topic: System.get_env("KAFKA_TOPIC"),
-    event_handler_mod: nil,
+    event_handler_demand: 50,
+    event_handler_mod: nil, # Be sure to specify your event handler
+    gen_consumer_mod: KaufmannEx.Stages.GenConsumer,
     producer_mod: KaufmannEx.Publisher,
     schema_path: "priv/schemas",
     schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
+    service_id: System.get_env("HOSTNAME"),
     service_name: "SampleService"
-    service_id: System.get_env("HOSTNAME")
   ```
   """
 
@@ -39,13 +42,13 @@ defmodule KaufmannEx.Config do
   @doc """
   `Application.get_env(:kaufmann_ex, :event_handler_mod)`
   """
-  @spec event_handler() :: String.t()
+  @spec event_handler() :: atom
   def event_handler, do: Application.get_env(:kaufmann_ex, :event_handler_mod)
 
   @doc """
   `Application.get_env(:kaufmann_ex, :producer_mod)`
   """
-  @spec producer_mod() :: String.t()
+  @spec producer_mod() :: atom
   def producer_mod, do: Application.get_env(:kaufmann_ex, :producer_mod, KaufmannEx.Publisher)
 
   @doc """
@@ -73,8 +76,14 @@ defmodule KaufmannEx.Config do
   def service_id, do:  Application.get_env(:kaufmann_ex, :service_id)
 
   @doc """
-  Application.get_env(:kaufmann_ex, :event_handler_demand)
+  Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
   """
-  @spec service_id() :: integer()
+  @spec event_handler_demand() :: integer()
   def event_handler_demand, do: Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
+
+ @doc """
+  Application.get_env(:kaufmann_ex, :gen_consumer_mod)
+  """
+  def gen_consumer_mod , do:  Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Stages.GenConsumer)
+
 end

@@ -1,8 +1,8 @@
 defmodule KaufmannEx.Publisher do
   @moduledoc """
     Publishes Avro encoded messages to the default topic (`KaufmannEx.Config.default_topic/0`).
-    
-    
+
+
   """
   require Logger
   alias KafkaEx.Protocol.Produce.Message
@@ -38,7 +38,7 @@ defmodule KaufmannEx.Publisher do
       Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}" end)
       message = %Message{value: payload, key: message_name}
 
-      # TODO: Pull Partition Info from somewhere 
+      # TODO: Pull Partition Info from somewhere
       # maybe choose random partition or use md5 hash of message?
       produce_request = %Request{
         partition: 0,
@@ -98,7 +98,7 @@ defmodule KaufmannEx.Publisher do
   @doc """
   Injects metadata then calls `produce/2`
 
-  Inserted metadata conforms to the `event_metadata/2` 
+  Inserted metadata conforms to the `event_metadata/2`
 
   Events with Metadata are produced to the Producer set in config `:kaufmann_ex, :producer_mod`. This defaults to `KaufmannEx.Publisher`
   """
@@ -110,11 +110,12 @@ defmodule KaufmannEx.Publisher do
     }
 
     producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
+
     producer.produce(event_name, message_body)
   end
 
   @doc """
-  generate metadata for an event 
+  generate metadata for an event
 
   ```
   %{

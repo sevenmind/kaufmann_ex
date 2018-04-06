@@ -111,7 +111,6 @@ All events are expected to include a `meta` metadata key.
 If an Event causes an exception it will emit an error event with `"event.error.#{event.name}"` as the `event_name`. Events that raise exceptions are not retried or persisted beyond emitting this error event. If specific handling of failing events is important to you, implement a dead-letter queue service or similar.
 
 ## Internals
-
 KaufmannEx uses `KafkaEx.ConsumerGroup` to subscribe to kafka topic/s. Events are consumed by a `GenStage` producer stage to a `GenStage.ConsumerSupervisor` which has a limited demand (default 50) and spawns a task to process each event.
 
 ```
@@ -135,3 +134,63 @@ KaufmannEx.Stages.EventHandler
   V   V   V
 Application.EventHandler.given_event/1
 ```
+
+## Release Tasks
+
+There are a few release tasks intended for use as [Distillery custom commands](https://hexdocs.pm/distillery/custom-commands.html). Distillery's custom commands don't provide the environment we're used to with mix tasks, so extra configuration and care is needed. 
+
+#### `migrate_schemas`
+
+Migrate Schemas will attempt to register all schemas in the implementing project's `priv/schemas` directory.
+
+#### `reinit_service`
+
+This task is intended to be used to recover idempotent services from a catastrophic failure or substantial architectural change. 
+
+ReInit Service will reset the configured consumer group to the earliest available Kafka Offset. It will then consume all events from the Kafka broker until the specified offset is reached (Or all events are consumed).
+
+By default message publication is disabled during reinitialization. This can be overridden in `KaufmannEx.ReleaseTasks.reinit_service/4`.
+
+### Configuration & Use
+
+These tasks are intended for use with Distillery in a release environment.  In these examples the application is named `Sample`. 
+
+#### `release_tasks.ex` 
+
+```elixir
+defmodule Sample.ReleaseTasks do
+  def migrate_schemas do
+    Application.load(:kaufmann_ex)
+
+    KaufmannEx.ReleaseTasks.migrate_schemas(:sample)
+  end
+
+  def reinit_service do
+    Application.load(:kaufmann_ex)
+    KaufmannEx.ReleaseTasks.reinit_service(:sample)  
+  end
+end
+```
+#### `rel/config.exs
+
+```elixir
+...
+
+release :sample do
+  set(
+      commands: [
+        migrate_schemas: "rel/commands/migrate_schemas.sh",
+        reinit_service: "rel/commands/reinit_service.sh"
+      ]
+    )
+end
+```
+
+#### `rel/commands/migrate_schemas.sh`
+
+```
+#!/bin/sh
+
+$RELEASE_ROOT_DIR/bin/sample command Elixir.Sample.ReleaseTasks migrate_schemas
+```
+

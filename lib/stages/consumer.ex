@@ -4,9 +4,11 @@ defmodule KaufmannEx.Stages.Consumer do
   Subscriber tasks for each event.
   """
 
+  require Logger
   use ConsumerSupervisor
 
   def start_link() do
+    :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
     ConsumerSupervisor.start_link(__MODULE__, :ok)
   end
 
