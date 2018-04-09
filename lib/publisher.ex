@@ -49,10 +49,13 @@ defmodule KaufmannEx.Publisher do
       KafkaEx.produce(produce_request)
     else
       {:error, error} ->
-        publish_error(message_name, error, data.payload, data.meta)
+        {:error, error}
 
       {:error, error, _} ->
-        publish_error(message_name, error, data.payload, data.meta)
+        {:error, error}
+
+      {:error, error, _payload, _schema} ->
+        {:error, error}
     end
   end
 
