@@ -5,25 +5,11 @@ defmodule KaufmannEx.Publisher do
 
   """
   require Logger
+  alias KaufmannEx.Publisher.PartitionSelector
+  alias KaufmannEx.Publisher.TopicSelector
+
   alias KafkaEx.Protocol.Produce.Message
   alias KafkaEx.Protocol.Produce.Request
-
-  def default_topic do
-    KaufmannEx.Config.default_topic() || "default_topic"
-  end
-
-  @spec produce(atom(), term()) :: :ok | {:error, any}
-  def produce(message_name, payload) when is_atom(message_name) do
-    produce(default_topic(), Atom.to_string(message_name), payload)
-  end
-
-  @doc """
-  calls `produce/3` with with the default topic
-  """
-  @spec produce(String.t(), term()) :: :ok | {:error, any}
-  def produce(message_name, payload) when is_binary(message_name) do
-    produce(default_topic(), message_name, payload)
-  end
 
   @doc """
   Publishes encoded message
@@ -32,16 +18,16 @@ defmodule KaufmannEx.Publisher do
 
   Defaults to partition 0 for publication. This is less than ideal.
   """
-  @spec produce(String.t(), String.t(), term()) :: :ok | {:error, any}
-  def produce(topic, message_name, data) do
-    with {:ok, payload} <- KaufmannEx.Schemas.encode_message(message_name, data) do
-      Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}" end)
+  @spec produce(String.t(), String.t(), term(), term()) :: :ok | {:error, any}
+  def produce(topic, message_name, data, context \\ %{}) do
+    with {:ok, payload} <- KaufmannEx.Schemas.encode_message(message_name, data),
+         {:ok, partition} <- choose_partition(topic, context) do
+      Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}@#{partition}" end)
+
       message = %Message{value: payload, key: message_name}
 
-      # TODO: Pull Partition Info from somewhere
-      # maybe choose random partition or use md5 hash of message?
       produce_request = %Request{
-        partition: 0,
+        partition: partition,
         topic: topic,
         messages: [message]
       }
@@ -112,9 +98,10 @@ defmodule KaufmannEx.Publisher do
       meta: event_metadata(event_name, context)
     }
 
-    producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
+    {:ok, topic} = choose_topic(event_name, context)
 
-    producer.produce(event_name, message_body)
+    producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
+    producer.produce(topic, event_name, message_body, context)
   end
 
   @doc """
@@ -141,16 +128,47 @@ defmodule KaufmannEx.Publisher do
       emitter_service_id: KaufmannEx.Config.service_id(),
       callback_id: context[:callback_id],
       message_name: event_name |> to_string,
-      timestamp: DateTime.to_string(DateTime.utc_now())
+      timestamp: DateTime.to_string(DateTime.utc_now()),
+      callback_topic: Map.get(context, :next_callback_topic, nil)
     }
+  end
+
+  defp choose_partition(topic, metadata) do
+    partitions_count = get_partitions_count(topic)
+    strategy = KaufmannEx.Config.partition_strategy()
+
+    PartitionSelector.choose_partition(
+      partitions_count,
+      metadata,
+      strategy
+    )
+  end
+
+  @spec choose_topic(atom, map) :: {atom, String.t()}
+  def choose_topic(event_name, context) do
+    strategy = KaufmannEx.Config.topic_strategy
+    TopicSelector.choose_topic(event_name, context, strategy)
+  end
+
+  defp get_partitions_count(topic) do
+    %KafkaEx.Protocol.Metadata.Response{
+      topic_metadatas: [
+        %KafkaEx.Protocol.Metadata.TopicMetadata{
+          partition_metadatas: partition_metadatas
+        }
+      ]
+    } = KafkaEx.metadata(topic: topic)
+
+    length(partition_metadatas)
   end
 
   defp log_time_took(nil, _), do: nil
 
   defp log_time_took(timestamp, event_name) do
-    {:ok, published_at, _} = DateTime.from_iso8601(timestamp)
-    took = DateTime.diff(DateTime.utc_now(), published_at, :millisecond)
-
-    Logger.info(fn -> "Responded with #{event_name} in #{took}ms" end)
+    Logger.info(fn ->
+      {:ok, published_at, _} = DateTime.from_iso8601(timestamp)
+      took = DateTime.diff(DateTime.utc_now(), published_at, :millisecond)
+      "Responded with #{event_name} in #{took}ms"
+    end)
   end
 end

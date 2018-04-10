@@ -165,9 +165,12 @@ defmodule KaufmannEx.TestSupport.MockBus do
       emitter_service_id: Nanoid.generate(),
       callback_id: callback_id,
       message_name: event_name |> to_string,
-      timestamp: DateTime.to_string(DateTime.utc_now())
+      timestamp: DateTime.to_string(DateTime.utc_now()),
+      callback_topic: nil
     }
   end
+
+  def produce(_topic, event_name, payload, _context), do: produce(event_name, payload)
 
   # Internal Produce call, sends to self for assertion
   @doc false

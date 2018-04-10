@@ -39,6 +39,10 @@ defmodule KaufmannEx.Config do
   @spec default_topics() :: [String.t()]
   def default_topics, do: [default_topic()]
 
+  @spec default_topic() :: String.t()
+  def default_publish_topic,
+    do: Application.get_env(:kaufmann_ex, :default_publish_topic, default_topic())
+
   @doc """
   `Application.get_env(:kaufmann_ex, :event_handler_mod)`
   """
@@ -73,7 +77,7 @@ defmodule KaufmannEx.Config do
   `Application.get_env(:kaufmann_ex, :service_id)`
   """
   @spec service_id() :: String.t()
-  def service_id, do:  Application.get_env(:kaufmann_ex, :service_id)
+  def service_id, do: Application.get_env(:kaufmann_ex, :service_id)
 
   @doc """
   Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
@@ -81,9 +85,16 @@ defmodule KaufmannEx.Config do
   @spec event_handler_demand() :: integer()
   def event_handler_demand, do: Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
 
- @doc """
+  @doc """
   Application.get_env(:kaufmann_ex, :gen_consumer_mod)
   """
-  def gen_consumer_mod , do:  Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Stages.GenConsumer)
+  def gen_consumer_mod,
+    do: Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Stages.GenConsumer)
 
+  @doc """
+   Application.get_env(:kaufmann_ex, :partition_strategy, :random)
+  """
+  def partition_strategy, do: Application.get_env(:kaufmann_ex, :partition_strategy, :random)
+
+  def topic_strategy, do: Application.get_env(:kaufmann_ex, :topic_strategy, :default)
 end

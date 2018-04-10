@@ -33,6 +33,23 @@
       "name": "timestamp",
       "type": "string",
       "doc": "UTC time stamp of event publication"
+    },
+    {
+     "name": "callback_topic",
+     "type": ["null", {
+       "name": "callback",
+       "type": "record",
+       "fields": [
+         {
+           "name": "topic",
+           "type": ["null", "string"]
+         },
+         {
+           "name": "partition",
+           "type": ["null", "integer"]
+         }
+       ]
+     }]
     }
   ]
 }
