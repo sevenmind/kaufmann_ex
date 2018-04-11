@@ -35,21 +35,26 @@
       "doc": "UTC time stamp of event publication"
     },
     {
-     "name": "callback_topic",
-     "type": ["null", {
-       "name": "callback",
-       "type": "record",
-       "fields": [
-         {
-           "name": "topic",
-           "type": ["null", "string"]
-         },
-         {
-           "name": "partition",
-           "type": ["null", "integer"]
-         }
-       ]
-     }]
+      "name": "callback_topic",
+      "doc": "assert callback message topic & partition",
+      "default": "null",
+      "type": [
+        "null",
+        {
+          "name": "callback_topic",
+          "type": "record",
+          "fields": [
+            {
+              "name": "topic",
+              "type": ["null", "string"]
+            },
+            {
+              "name": "partition",
+              "type": ["null", "int"]
+            }
+          ]
+        }
+      ]
     }
   ]
 }

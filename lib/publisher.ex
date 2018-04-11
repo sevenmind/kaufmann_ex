@@ -19,7 +19,12 @@ defmodule KaufmannEx.Publisher do
   Defaults to partition 0 for publication. This is less than ideal.
   """
   @spec produce(String.t(), String.t(), term(), term()) :: :ok | {:error, any}
-  def produce(topic, message_name, data, context \\ %{}) do
+  def produce(topic, message_name, data, context \\ %{})
+
+  def produce(topic, message_name, data, context) when is_atom(message_name),
+    do: produce(topic, message_name  |> Atom.to_string(), data, context)
+
+  def produce(topic, message_name, data, context) do
     with {:ok, payload} <- KaufmannEx.Schemas.encode_message(message_name, data),
          {:ok, partition} <- choose_partition(topic, context) do
       Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}@#{partition}" end)
@@ -146,7 +151,7 @@ defmodule KaufmannEx.Publisher do
 
   @spec choose_topic(atom, map) :: {atom, String.t()}
   def choose_topic(event_name, context) do
-    strategy = KaufmannEx.Config.topic_strategy
+    strategy = KaufmannEx.Config.topic_strategy()
     TopicSelector.choose_topic(event_name, context, strategy)
   end
 
