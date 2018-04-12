@@ -55,19 +55,21 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
           # System.stop()
           send(:reinit, :shutdown)
           {:sync_commit, state}
+
         false ->
           KaufmannEx.Stages.Producer.notify(message_set)
           {:async_commit, state}
       end
     end
 
-    def handle_cast(:shutdown, state)  do
-      IO.puts "Shutdown"
+    def handle_cast(:shutdown, state) do
+      IO.puts("Shutdown")
       {:stop, :shutdown, state}
     end
   end
 
   defmodule Config do
+    @moduledoc false
     defstruct starting_offset: 0,
               target_offset: :latest,
               publish: false,
@@ -78,25 +80,28 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
   end
 
   def run(app, starting_offset \\ 0, target_offset \\ :latest, publish \\ false) do
-    reset_offsets(starting_offset, target_offset, publish)
+    starting_offset
+    |> reset_offsets(target_offset, publish)
     |> consume_queued_messages(app)
   end
 
   def reset_offsets(starting_offset \\ 0, target_offset \\ :latest, publish \\ false) do
     start_services()
 
-    build_args(starting_offset, target_offset, publish)
+    starting_offset
+    |> build_args(target_offset, publish)
     |> override_default_producer()
     |> configure_kafka_consumer_group()
     |> stop_services
   end
 
-  def consume_queued_messages(%Config{} = reinit, application) do
+  def consume_queued_messages(%Config{} = _reinit, application) do
     ensure_loaded(application)
     :ok = Application.start(:kafka_ex)
     :ok = Application.start(application, :transient)
     Process.register(self(), :reinit)
     await_shutdown(application)
+
     # Application will run using ReInit.GenConsumer, which will terminate when target_offset is reached
   end
 
@@ -105,9 +110,10 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
       :shutdown ->
         Process.sleep(500)
         Application.stop(application)
-      after 5000 ->
+    after
+      5000 ->
         await_shutdown(application)
-      end
+    end
   end
 
   def start_services do
@@ -143,9 +149,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
     args
   end
 
-  @doc """
-  Overwrites the configured GenConsumer with our custom GenServer that aborts when target_offset is reached
-  """
+  # Overwrites the configured GenConsumer with our custom GenServer that aborts when target_offset is reached
   defp override_default_gen_consumer do
     Application.put_env(
       :kaufmann_ex,
@@ -210,7 +214,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
   end
 
   defp get_latest_offsets(%KafkaEx.Protocol.Metadata.TopicMetadata{partition_metadatas: md})
-       when is_list(md) and length(md) == 0,
+       when is_list(md) and md == [],
        do: [0]
 
   defp get_latest_offsets(%KafkaEx.Protocol.Metadata.TopicMetadata{} = topic_data) do

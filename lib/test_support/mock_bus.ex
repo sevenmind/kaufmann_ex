@@ -12,6 +12,8 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
     `then_event/2` asserts that the given event is emitted and verifies or returned the payload
 
+    If you have a custom metadata schema or specific metadata handling, set a module exporting `event_metadata/2` in app_env `:kaufmann_ex, :metadata_mod`
+
     ### Example Usage
 
     ```
@@ -39,6 +41,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   using do
     quote do
+      # Using doesn't just import itself
       import KaufmannEx.TestSupport.MockBus
     end
   end
@@ -77,7 +80,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
     # Inject fake MetaData into event
     event = %Event{
       name: event_name,
-      meta: fake_meta(event_name, callback_id),
+      meta: event_metadata(event_name, %{callback_id: callback_id}),
       payload: payload
     }
 
@@ -157,6 +160,16 @@ defmodule KaufmannEx.TestSupport.MockBus do
            "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
   end
 
+  defp event_metadata(event_name, context) do
+    metadata_mod = Application.get_env(:kaufmann_ex, :metadata_mod)
+
+    if metadata_mod && :erlang.function_exported(metadata_mod, :event_metadata, 2) do
+      metadata_mod.event_metadata(event_name, context)
+    else
+      fake_meta(event_name, context[:callback_id])
+    end
+  end
+
   @doc false
   def fake_meta(event_name \\ "TestEvent", callback_id \\ nil) do
     %{
@@ -168,6 +181,8 @@ defmodule KaufmannEx.TestSupport.MockBus do
       timestamp: DateTime.to_string(DateTime.utc_now())
     }
   end
+
+  def produce(_topic, event_name, payload, _context), do: produce(event_name, payload)
 
   # Internal Produce call, sends to self for assertion
   @doc false

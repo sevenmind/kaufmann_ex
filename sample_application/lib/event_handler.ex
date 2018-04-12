@@ -7,4 +7,16 @@ defmodule Sample.EventHandler do
   end
 
   def given_event(event), do: IO.inspect(event.name)
+
+
+  @doc """
+  Replace "command." with "event." in event names
+  """
+  @spec cmd_to_event(atom) :: atom
+  def cmd_to_event(command_name) do
+    command_name
+    |> to_string
+    |> String.replace_prefix("command.", "event.")
+    |> String.to_atom()
+  end
 end
