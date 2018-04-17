@@ -47,9 +47,8 @@ defmodule KaufmannEx.Schemas do
   """
   defmemo parsed_schema(message_name), expires_in: Config.schema_cache_expires_in_ms() do
     with {:ok, schema_name} <- if_partial_schema(message_name),
-         {:ok, %{"schema" => raw_schema}} <- get(schema_name),
-         {:ok, %{"schema" => metadata_schema}} <- get("event_metadata") do
-      AvroEx.parse_schema("[#{metadata_schema}, #{raw_schema}]")
+         {:ok, %{"schema" => raw_schema}} <- get(schema_name) do
+      AvroEx.parse_schema(raw_schema)
     end
   end
 

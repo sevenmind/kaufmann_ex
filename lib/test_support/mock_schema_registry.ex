@@ -26,10 +26,11 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   end
 
   def encode_event(schema_name, payload) do
-    {:ok, schema} = schema_name
-    |> load_schema
-    |> inject_metadata
-    |> parse_schema
+    {:ok, schema} =
+      schema_name
+      |> load_schema
+      |> inject_metadata
+      |> parse_schema
 
     AvroEx.encode(schema, payload)
   end

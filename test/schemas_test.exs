@@ -19,7 +19,7 @@ defmodule KaufmannEx.SchemasTest do
   end
 
   setup %{bypass: bypass} do
-    encoded = <<2, 22, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100>>
+    encoded = <<22, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100>>
 
     {:ok, bypass: bypass, encoded: encoded, event_name: "test_event"}
   end
@@ -28,7 +28,7 @@ defmodule KaufmannEx.SchemasTest do
     fake_schema = Poison.encode!(%{type: "string", name: "field"})
 
     # bypass any http calls called time
-    mock_get_metadata_schema(bypass)
+    # mock_get_metadata_schema(bypass)
     mock_get_fake_event(bypass, event_name, fake_schema)
     mock_get_unkown_event(bypass)
   end
@@ -47,9 +47,9 @@ defmodule KaufmannEx.SchemasTest do
         Schemas.encode_message(event_name, %{"hello" => "world"})
     end
 
-    test "when schema exists and is encodable", %{event_name: event_name} do
-      {:ok, encoded} = Schemas.encode_message(event_name, "hello world")
-      assert encoded == <<2, 22, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100>>
+    test "when schema exists and is encodable", %{event_name: event_name, encoded: encoded} do
+      {:ok, encoded_message} = Schemas.encode_message(event_name, "hello world")
+      assert encoded_message == encoded
     end
   end
 

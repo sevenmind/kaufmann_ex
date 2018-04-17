@@ -218,7 +218,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   def encoded_event(event_name, payload, callback_id \\ nil) do
     %Event{
-      meta: fake_meta(event_name, callback_id),
+      meta: event_metadata(event_name, callback_id: callback_id),
       payload: payload
     }
     |> Map.from_struct()

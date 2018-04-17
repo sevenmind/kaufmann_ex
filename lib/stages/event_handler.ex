@@ -49,7 +49,7 @@ defmodule KaufmannEx.Stages.EventHandler do
         }
 
       {:error, error} ->
-        Logger.warn(fn -> "Error Encoding #{key} #{inspect(error)}" end)
+        Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
 
         %KaufmannEx.Schemas.ErrorEvent{
           name: key,

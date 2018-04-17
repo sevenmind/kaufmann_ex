@@ -37,9 +37,8 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
     Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
 
     # Mock calls to schema registry, only expected once
-    mock_get_metadata_schema(bypass)
+    # mock_get_metadata_schema(bypass)
     mock_get_event_schema(bypass, "test.event.publish")
-
 
     [bypass: bypass]
   end
@@ -87,13 +86,19 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
   def mock_get_event_schema(bypass, event_name) do
     {:ok, schema} = File.read("test/support/#{event_name}.avsc")
-    schema = schema |> Poison.decode!() |> Poison.encode!()
+    {:ok, meta_schema} = File.read('test/support/event_metadata.avsc')
+
+
+    schema = schema |> Poison.decode!() 
+    meta_schema = meta_schema |> Poison.decode!() 
+
+    schemas = [meta_schema, schema] |> Poison.encode!()
 
     Bypass.expect_once(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
-        Poison.encode!(%{subject: event_name, version: 1, id: 1, schema: schema})
+        Poison.encode!(%{subject: event_name, version: 1, id: 1, schema: schemas})
       )
     end)
   end
@@ -110,7 +115,6 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
       )
     end)
   end
-
 
   def encode_event(name, payload) do
     {:ok, encoded_event} = MockBus.encoded_event(name, payload)
