@@ -13,12 +13,12 @@ config :kafka_ex,
   commit_threshold: 1,
   heartbeat_interval: 20
 
-
 config :kaufmann_ex,
   event_handler_mod: Sample.EventHandler,
   consumer_group: System.get_env("CONSUMER_GROUP"),
   default_topic: System.get_env("KAFKA_TOPIC"),
   producer_mod: KaufmannEx.Publisher,
+  metadata_mod: Sample.EventHandler,
   schema_path: "priv/schemas",
   schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
   service_name: "SampleService",

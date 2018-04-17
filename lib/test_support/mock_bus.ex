@@ -163,11 +163,18 @@ defmodule KaufmannEx.TestSupport.MockBus do
   defp event_metadata(event_name, context) do
     metadata_mod = Application.get_env(:kaufmann_ex, :metadata_mod)
 
-    if metadata_mod && :erlang.function_exported(metadata_mod, :event_metadata, 2) do
+    if module_defined?(metadata_mod, :event_metadata, 2) do
       metadata_mod.event_metadata(event_name, context)
     else
       fake_meta(event_name, context[:callback_id])
     end
+  end
+
+  defp module_defined?(module, method, arity) do
+    # runtime and compiled evaluation need different methods
+    module &&
+      (:erlang.function_exported(module, method, arity) ||
+         Keyword.has_key?(module.__info__(:functions), method))
   end
 
   @doc false

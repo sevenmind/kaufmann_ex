@@ -97,4 +97,7 @@ defmodule KaufmannEx.Config do
   def partition_strategy, do: Application.get_env(:kaufmann_ex, :partition_strategy, :random)
 
   def topic_strategy, do: Application.get_env(:kaufmann_ex, :topic_strategy, :default)
+
+  def schema_cache_expires_in_ms,
+    do: Application.get_env(:kaufmann_ex, :schema_cache_expires_in_ms, 60_000)
 end

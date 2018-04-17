@@ -47,7 +47,7 @@ defmodule KaufmannEx.MixProject do
       {:memoize, "~> 1.2"},
       {:distillery, "~> 1.5", runtime: false},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:credo, "~> 0.9.0-rc2", only: [:dev, :test], runtime: false},
+      {:credo, "~> 0.9.1", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:bypass, "~> 0.8", only: :test},
       {:excoveralls, "~> 0.8", only: :test},

@@ -13,6 +13,7 @@ defmodule KaufmannEx.Schemas do
   use Memoize
   require Logger
   require Map.Helpers
+  alias KaufmannEx.Config
 
   @spec encode_message(String.t(), Map) :: {atom, any}
   def encode_message(message_name, payload) do
@@ -44,7 +45,7 @@ defmodule KaufmannEx.Schemas do
 
   Memoized with permament caching.
   """
-  defmemo parsed_schema(message_name), permanent: true  do
+  defmemo parsed_schema(message_name), expires_in: Config.schema_cache_expires_in_ms() do
     with {:ok, schema_name} <- if_partial_schema(message_name),
          {:ok, %{"schema" => raw_schema}} <- get(schema_name),
          {:ok, %{"schema" => metadata_schema}} <- get("event_metadata") do
@@ -97,7 +98,7 @@ defmodule KaufmannEx.Schemas do
 
   memoized permanetly
   """
-  defmemo get(subject), permanent: true  do
+  defmemo get(subject), expires_in: Config.schema_cache_expires_in_ms() do
     schema_registry_uri()
     |> Schemex.latest(subject)
   end
