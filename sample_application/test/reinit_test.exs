@@ -2,6 +2,7 @@ defmodule Sample.ReInitTest do
   use ExUnit.Case
   alias KaufmannEx.ReleaseTasks.ReInit
   alias KaufmannEx.ReleaseTasks.ReInit.Config
+  @moduletag :integration
 
   # Testing Reini here instead of in base tests
   #   Reinit_service assumes it will be run in a service using kaufmann

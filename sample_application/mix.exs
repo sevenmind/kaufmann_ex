@@ -29,7 +29,7 @@ defmodule Sample.Mixfile do
 
   defp aliases do
     [
-      test: "test --no-start"
+      test: "test --no-start --exclude integration"
     ]
   end
 end
