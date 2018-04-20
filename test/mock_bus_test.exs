@@ -1,16 +1,38 @@
 defmodule KaufmannEx.TestSupport.MockBusTest do
   use KaufmannEx.TestSupport.MockBus
 
-  defmodule ExampleEventHandler do
-    def given_event(%KaufmannEx.Schemas.Event{} = event) do
-      case event.payload do
-        "no_event" -> :ok
-        _ -> KaufmannEx.Publisher.publish(event.name, event.payload)
-      end
+  defmodule ExamplePublisher do
+    def publish(event_name, payload, context \\ %{}) do
+      message_body = %{
+        payload: payload,
+        meta: event_metadata(event_name, context)
+      }
+
+      KaufmannEx.Publisher.publish(event_name, message_body, context)
     end
 
-    def given_event(error_event), do: :ok
+    def event_metadata(event_name, context) do
+      %{
+        message_id: Nanoid.generate(),
+        emitter_service: KaufmannEx.Config.service_name(),
+        emitter_service_id: KaufmannEx.Config.service_id(),
+        callback_id: context[:callback_id],
+        message_name: event_name |> to_string,
+        timestamp: DateTime.to_string(DateTime.utc_now())
+      }
+    end
   end
+
+    defmodule ExampleEventHandler do
+      def given_event(%KaufmannEx.Schemas.Event{} = event) do
+        case event.payload do
+          "no_event" -> :ok
+          _ -> ExamplePublisher.publish(event.name, event.payload)
+        end
+      end
+
+      def given_event(error_event), do: :ok
+    end
 
   setup do
     # SERVICE_NAME and HOST_NAME must be set
@@ -19,6 +41,7 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
 
     # event_handler_mod must be set
     Application.put_env(:kaufmann_ex, :event_handler_mod, ExampleEventHandler)
+    Application.put_env(:kaufmann_ex, :metadata_mod, ExamplePublisher)
     Application.put_env(:kaufmann_ex, :schema_path, "test/support")
 
     :ok

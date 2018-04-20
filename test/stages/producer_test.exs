@@ -2,7 +2,11 @@ defmodule KaufmannEx.Stages.ProducerTest do
   use ExUnit.Case
 
   setup do
-    {:ok, _} = KaufmannEx.Stages.Producer.start_link([])
+    case KaufmannEx.Stages.Producer.start_link([]) do
+      {:ok, _} -> :ok
+      {:error, {:already_started, _}} -> :ok
+      _ -> raise RuntimeError
+    end
 
     :ok
   end

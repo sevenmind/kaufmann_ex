@@ -1,26 +1,28 @@
 defmodule KaufmannEx.Supervisor do
-  @moduledoc false
+  @moduledoc """
+  Supervisor that coordinates Kafka Subscription and event consumption
+
+  Accepts `KafkaEx.ConsumerGroup` options
+  """
 
   require Logger
   use Supervisor
 
-  def start_link(_) do
+  def start_link(opts \\ []) do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
-    Supervisor.start_link(__MODULE__, [], name: __MODULE__)
+    Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(_) do
+  def init(opts \\ []) do
     consumer_group_name = KaufmannEx.Config.consumer_group()
     topics = KaufmannEx.Config.default_topics()
+    gen_consumer_mod = KaufmannEx.Config.gen_consumer_mod()
 
     consumer_group_opts = [
-      KaufmannEx.Stages.GenConsumer,
+      gen_consumer_mod,
       consumer_group_name,
       topics,
-      [
-        commit_interval: 200,
-        heartbeat_interval: 200
-      ]
+      opts
     ]
 
     children = [

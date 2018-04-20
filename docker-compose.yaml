@@ -1,0 +1,38 @@
+version: "2"
+
+services:
+  kaufmann:
+    build:
+      context: .
+    environment: 
+      KAFKA_HOST: kafka
+      KAFKA_TOPIC: rapids
+      CONSUMER_GROUP: test-consumer-group
+      SCHEMA_REGISTRY_PATH: http://schema-registry:8081
+      SERVICE_NAME: TEST
+      HOST_NAME: docker-compose-test
+    depends_on: 
+      - kafka
+      - schema-registry
+    volumes:
+      - .:/app/kaufmann
+    command: ["/bin/bash"]
+
+  kafka:
+    image: spotify/kafka
+    environment:
+      TOPICS: "rapids"
+      NUM_PARTITIONS: 1
+      AUTO_CREATE_TOPICS: 'true'
+
+  schema-registry:
+    image: confluentinc/cp-schema-registry
+    depends_on:
+      - kafka
+    ports:
+      - "8081:8081"
+    environment:
+      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+      SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: kafka:2181
+      SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
+

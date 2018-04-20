@@ -1,0 +1,23 @@
+{
+  "type": "record",
+  "name": "event.test",
+  "doc": "A Test Publish Event",
+  "fields": [
+    {
+      "name": "meta",
+      "doc": "standard event metadata",
+      "type": "seven.cloud.services.event_metadata"
+    },
+    {
+      "name": "payload",
+      "doc": "payload record",
+      "type": {
+        "name": "Payload",
+        "type": "record",
+        "fields": [
+          { "name": "message", "type": "string" }
+        ]
+      }
+    }
+  ]
+}

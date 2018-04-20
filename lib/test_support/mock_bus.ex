@@ -2,7 +2,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   use ExUnit.CaseTemplate
 
   @moduledoc """
-    Helper module for testing event flows. 
+    Helper module for testing event flows.
 
     Cannot be run Async, relies on sending messages to `self()`
 
@@ -12,8 +12,10 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
     `then_event/2` asserts that the given event is emitted and verifies or returned the payload
 
+    If you have a custom metadata schema or specific metadata handling, set a module exporting `event_metadata/2` in app_env `:kaufmann_ex, :metadata_mod`
+
     ### Example Usage
-    
+
     ```
     defmodule EvenHandlerTests
       use KaufmannEx.TestSupport.MockBus
@@ -22,7 +24,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
         given_event(:"TestCommand", %{new_key: "test"})
 
         then_event(:"Testevent", %{new_key: "test"})
-        
+
         then_no_event
       end
     end
@@ -39,6 +41,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   using do
     quote do
+      # Using doesn't just import itself
       import KaufmannEx.TestSupport.MockBus
     end
   end
@@ -77,7 +80,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
     # Inject fake MetaData into event
     event = %Event{
       name: event_name,
-      meta: fake_meta(event_name, callback_id),
+      meta: event_metadata(event_name, %{callback_id: callback_id}),
       payload: payload
     }
 
@@ -113,7 +116,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   @doc """
   Asserts an event has been emitted, returns the payload
 
-  Returned payload will include `meta` metadata 
+  Returned payload will include `meta` metadata
   """
   @spec then_event(atom) :: %{meta: map, payload: any}
   def then_event(event_name) do
@@ -157,6 +160,23 @@ defmodule KaufmannEx.TestSupport.MockBus do
            "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
   end
 
+  defp event_metadata(event_name, context) do
+    metadata_mod = Application.get_env(:kaufmann_ex, :metadata_mod)
+
+    if module_defined?(metadata_mod, :event_metadata, 2) do
+      metadata_mod.event_metadata(event_name, context)
+    else
+      fake_meta(event_name, context[:callback_id])
+    end
+  end
+
+  defp module_defined?(module, method, arity) do
+    # runtime and compiled evaluation need different methods
+    module &&
+      (:erlang.function_exported(module, method, arity) ||
+         Keyword.has_key?(module.__info__(:functions), method))
+  end
+
   @doc false
   def fake_meta(event_name \\ "TestEvent", callback_id \\ nil) do
     %{
@@ -168,6 +188,8 @@ defmodule KaufmannEx.TestSupport.MockBus do
       timestamp: DateTime.to_string(DateTime.utc_now())
     }
   end
+
+  def produce(_topic, event_name, payload, _context), do: produce(event_name, payload)
 
   # Internal Produce call, sends to self for assertion
   @doc false
@@ -196,7 +218,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   def encoded_event(event_name, payload, callback_id \\ nil) do
     %Event{
-      meta: fake_meta(event_name, callback_id),
+      meta: event_metadata(event_name, callback_id: callback_id),
       payload: payload
     }
     |> Map.from_struct()
@@ -208,10 +230,5 @@ defmodule KaufmannEx.TestSupport.MockBus do
   defp encode_payload(payload, event_name) do
     schema_name = schema_name_if_query(event_name)
     MockSchemaRegistry.encode_event(schema_name, payload)
-  end
-
-  defp inspect_r(thing) do
-    IO.inspect(thing)
-    thing
   end
 end

@@ -1,17 +1,19 @@
 defmodule KaufmannEx.Schemas do
   @moduledoc """
-    Handles registration, retrieval, validation and parsing of Avro Schemas
+    Handles registration, retrieval, validation and parsing of Avro Schemas.
 
+    Schemas are cached to ETS table using `Memoize`. Does not handle schema changes while running. Best practice is to redeploy all services using a message schema if the schema changes.
 
-    Depends on 
+    Depends on
      - `Schemex` - calls to Confluent Schema Registry
      - `AvroEx` - serializing and deserializing avro encoded messages
+     - `Memoize` - Cache loading schemas to an ETS table, prevent performance bottleneck at schema registry.
   """
 
-  # Todo: Convert this module into a service that can cache loaded schemas
-
+  use Memoize
   require Logger
   require Map.Helpers
+  alias KaufmannEx.Config
 
   @spec encode_message(String.t(), Map) :: {atom, any}
   def encode_message(message_name, payload) do
@@ -38,13 +40,64 @@ defmodule KaufmannEx.Schemas do
     end
   end
 
+  @doc """
+  Load schema from registry, inject metadata schema, parse into AvroEx schema
+
+  Memoized with permament caching.
+  """
+  defmemo parsed_schema(message_name), expires_in: Config.schema_cache_expires_in_ms() do
+    with {:ok, schema_name} <- if_partial_schema(message_name),
+         {:ok, %{"schema" => raw_schema}} <- get(schema_name) do
+      AvroEx.parse_schema(raw_schema)
+    end
+  end
+
+  defp if_partial_schema(message_name) do
+    event_string = message_name |> to_string
+
+    schema_name =
+      cond do
+        Regex.match?(~r/^query\./, event_string) ->
+          String.slice(event_string, 0..8)
+
+        Regex.match?(~r/^event\.error\./, event_string) ->
+          String.slice(event_string, 0..10)
+
+        true ->
+          event_string
+      end
+
+    {:ok, schema_name}
+  end
+
+  defp encode_message_with_schema(schema, message) do
+    AvroEx.encode(schema, message)
+  rescue
+    # avro_ex can become confused when trying to encode some schemas.
+    _ ->
+      {:error, :unmatching_schema}
+  end
+
+  defp decode_message_with_schema(schema, encoded) do
+    AvroEx.decode(schema, encoded)
+  rescue
+    # avro_ex can become confused when trying to decode some schemas.
+    _ ->
+      {:error, :unmatching_schema}
+  end
+
   defp atomize_keys({:ok, args}) do
     {:ok, Map.Helpers.atomize_keys(args)}
   end
 
   defp atomize_keys(args), do: args
 
-  def get(subject) do
+  @doc """
+  Get schema from registry
+
+  memoized permanetly
+  """
+  defmemo get(subject), expires_in: Config.schema_cache_expires_in_ms() do
     schema_registry_uri()
     |> Schemex.latest(subject)
   end
@@ -89,47 +142,5 @@ defmodule KaufmannEx.Schemas do
 
   defp schema_registry_uri do
     KaufmannEx.Config.schema_registry_uri()
-  end
-
-  defp encode_message_with_schema(schema, message) do
-    AvroEx.encode(schema, message)
-  rescue
-    # avro_ex can become confused when trying to encode some schemas. 
-    _ ->
-      {:error, :unmatching_schema}
-  end
-
-  defp decode_message_with_schema(schema, encoded) do
-    AvroEx.decode(schema, encoded)
-  rescue
-    # avro_ex can become confused when trying to decode some schemas. 
-    _ ->
-      {:error, :unmatching_schema}
-  end
-
-  defp parsed_schema(message_name) do
-    with {:ok, schema_name} <- if_partial_schema(message_name),
-         {:ok, %{"schema" => raw_schema}} <- get(schema_name),
-         {:ok, %{"schema" => metadata_schema}} <- get('event_metadata') do
-      AvroEx.parse_schema("[#{metadata_schema}, #{raw_schema}]")
-    end
-  end
-
-  defp if_partial_schema(message_name) do
-    event_string = message_name |> to_string
-
-    schema_name =
-      cond do
-        Regex.match?(~r/^query\./, event_string) ->
-          String.slice(event_string, 0..8)
-
-        Regex.match?(~r/^event\.error\./, event_string) ->
-          String.slice(event_string, 0..10)
-
-        true ->
-          event_string
-      end
-
-    {:ok, schema_name}
   end
 end

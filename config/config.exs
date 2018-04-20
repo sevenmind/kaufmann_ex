@@ -45,4 +45,7 @@ config :kaufmann_ex,
   event_handler_mod: nil,
   producer_mod: KaufmannEx.Publisher,
   schema_path: "priv/schemas",
-  schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH")
+  schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
+  service_name: "SampleService",
+  service_id: "SampleHost",
+  event_handler_demand: 50

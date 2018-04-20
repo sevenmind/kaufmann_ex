@@ -1,6 +1,6 @@
 defmodule KaufmannEx.Stages.EventHandler do
   @moduledoc """
-  Behavior module for consuming messages from Kafka bus. 
+  Behavior module for consuming messages from Kafka bus.
 
   Spawns tasks to process each event. Should still be within the KaufmannEx supervision tree.
   """
@@ -49,7 +49,7 @@ defmodule KaufmannEx.Stages.EventHandler do
         }
 
       {:error, error} ->
-        Logger.warn(fn -> "Error Encoding #{key} #{inspect(error)}" end)
+        Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
 
         %KaufmannEx.Schemas.ErrorEvent{
           name: key,
