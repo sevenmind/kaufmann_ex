@@ -30,7 +30,8 @@ defmodule KaufmannEx.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger],
+      included_applications: [:kafka_ex]
     ]
   end
 
@@ -38,7 +39,7 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:gen_stage, "~> 0.12"},
-      {:kafka_ex, "~> 0.8.1", runtime: false},
+      {:kafka_ex, "~> 0.8.1"},
       {:poison, "~> 3.1"},
       {:httpoison, "~> 1.0"},
       {:avro_ex, "~> 0.1.0-beta.0"},
