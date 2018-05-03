@@ -58,7 +58,7 @@ defmodule KaufmannEx.MixProject do
 
   defp aliases do
     [
-      # test: "test --no-start --exclude integration"
+      test: "test --exclude integration"
     ]
   end
 end
