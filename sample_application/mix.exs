@@ -15,7 +15,7 @@ defmodule Sample.Mixfile do
 
   def application do
     [
-      extra_applications: [:logger, :kafka_ex],
+      extra_applications: [:logger],
       mod: {Sample.Application, []}
     ]
   end
@@ -29,7 +29,7 @@ defmodule Sample.Mixfile do
 
   defp aliases do
     [
-      test: "test --no-start --exclude integration"
+      test: "test --exclude integration"
     ]
   end
 end

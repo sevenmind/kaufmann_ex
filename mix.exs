@@ -38,7 +38,7 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:gen_stage, "~> 0.12"},
-      {:kafka_ex, "~> 0.8.1"},
+      {:kafka_ex, "~> 0.8.1", runtime: false},
       {:poison, "~> 3.1"},
       {:httpoison, "~> 1.0"},
       {:avro_ex, "~> 0.1.0-beta.0"},
@@ -58,7 +58,7 @@ defmodule KaufmannEx.MixProject do
 
   defp aliases do
     [
-      test: "test --exclude integration"
+      # test: "test --no-start --exclude integration"
     ]
   end
 end
