@@ -23,14 +23,14 @@ defmodule KaufmannEx.MixProject do
       links: %{
         GitHub: "https://github.com/sevenmind/kaufmann_ex"
       },
-      licesnses: ["MIT"]
+      licenses: ["MIT"]
     ]
   end
 
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :kafka_ex]
+      extra_applications: [:logger]
     ]
   end
 
@@ -38,7 +38,7 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:gen_stage, "~> 0.12"},
-      {:kafka_ex, "~> 0.8.1"},
+      {:kafka_ex, "~> 0.8.1", runtime: false},
       {:poison, "~> 3.1"},
       {:httpoison, "~> 1.0"},
       {:avro_ex, "~> 0.1.0-beta.0"},
@@ -58,7 +58,7 @@ defmodule KaufmannEx.MixProject do
 
   defp aliases do
     [
-      test: "test --no-start --exclude integration"
+      test: "test --exclude integration"
     ]
   end
 end

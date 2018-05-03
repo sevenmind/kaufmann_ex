@@ -27,6 +27,10 @@ defmodule KaufmannEx.Supervisor do
 
     children = [
       %{
+        id: KafkaEx,
+        start: {KafkaEx, :start, [[], []]}
+      },
+      %{
         id: KaufmannEx.Stages.Producer,
         start: {KaufmannEx.Stages.Producer, :start_link, []}
       },
@@ -41,7 +45,6 @@ defmodule KaufmannEx.Supervisor do
       }
     ]
 
-    opts = [strategy: :one_for_one]
-    Supervisor.init(children, opts)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end
