@@ -39,7 +39,8 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:gen_stage, "~> 0.12"},
-      {:kafka_ex, "~> 0.8.1"},
+      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git"},
+      # {:kafka_ex, "~> 0.8.1"},
       {:poison, "~> 3.1"},
       {:httpoison, "~> 1.0"},
       {:avro_ex, "~> 0.1.0-beta.0"},
