@@ -13,7 +13,7 @@ defmodule KaufmannEx.Supervisor do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(opts \\ []) do
+  def init(opts \\ [strategy: :one_for_all]) do
     consumer_group_name = KaufmannEx.Config.consumer_group()
     topics = KaufmannEx.Config.default_topics()
     gen_consumer_mod = KaufmannEx.Config.gen_consumer_mod()
