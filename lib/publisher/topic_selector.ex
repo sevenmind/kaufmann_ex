@@ -12,16 +12,18 @@ defmodule KaufmannEx.Publisher.TopicSelector do
   def choose_topic(event_name, context, strategy) when is_function(strategy),
     do: strategy.(event_name, context)
 
-  def choose_topic(_event_name, %{callback_topic: %{topic: topic}}, _strategy)
-      when is_binary(topic),
-      do: {:ok, topic}
+  def choose_topic(event_name, %{callback_topic: %{topic: callback_topic}}, strategy)
+      when is_binary(callback_topic) do
+    {:ok, default_topic} = choose_topic(event_name, %{}, strategy)
+    {:ok, [callback_topic, default_topic]}
+  end
 
   def choose_topic(event_name, _context, :event_namespace) do
     {:ok, event_name_to_namespace(event_name)}
   end
 
-  def choose_topic(_, _, :default) do
-   {:ok, KaufmannEx.Config.default_publish_topic()}
+  def choose_topic(_, _, _) do
+    {:ok, KaufmannEx.Config.default_publish_topic()}
   end
 
   defp event_name_to_namespace(event_name) do
