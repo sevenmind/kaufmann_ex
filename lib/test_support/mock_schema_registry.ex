@@ -14,8 +14,8 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   @spec defined_event?(String.t()) :: boolean
   def defined_event?(schema_name) do
     schema_path()
-    |> Path.join([schema_name |> to_string, ".avsc"])
-    |> File.exists?()
+    |> build_paths(schema_name)
+    |> Enum.any?(&File.exists?/1)
   end
 
   @spec encodable?(String.t(), any) :: boolean
@@ -47,7 +47,9 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   defp load_schema(schema_name) do
     {:ok, schema} =
       schema_path()
-      |> Path.join([schema_name |> to_string, ".avsc"])
+      |> build_paths(schema_name)
+      |> Enum.filter(&File.exists?/1)
+      |> Enum.at(0)
       |> File.read()
 
     schema
@@ -63,6 +65,13 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   end
 
   defp schema_path do
-    KaufmannEx.Config.schema_path()
+    [
+      KaufmannEx.Config.schema_path()
+    ]
+    |> List.flatten()
+  end
+
+  defp build_paths(schema_path, schema_name) when is_list(schema_path) do
+    Enum.map(schema_path, &Path.join(&1, [schema_name |> to_string, ".avsc"]))
   end
 end

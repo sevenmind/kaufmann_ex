@@ -12,7 +12,8 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
     `then_event/2` asserts that the given event is emitted and verifies or returned the payload
 
-    If you have a custom metadata schema or specific metadata handling, set a module exporting `event_metadata/2` in app_env `:kaufmann_ex, :metadata_mod`
+    If you have a custom metadata schema or specific metadata handling, set a module exporting 
+    `event_metadata/2` in app_env `:kaufmann_ex, :metadata_mod`
 
     ### Example Usage
 

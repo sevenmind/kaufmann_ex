@@ -135,4 +135,14 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
       end
     end
   end
+
+  describe "mock_schema_registry" do
+    test "loads schemas from multiple directories" do
+      Application.put_env(:kaufmann_ex, :schema_path, ["priv/schemas", "test/support"] )
+
+      assert KaufmannEx.TestSupport.MockSchemaRegistry.defined_event?("test.event.publish")
+
+      assert %{} = KaufmannEx.TestSupport.MockSchemaRegistry.fetch_event_schema("test.event.publish")
+    end
+  end
 end
