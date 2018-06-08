@@ -58,9 +58,12 @@ defmodule KaufmannEx.Publisher do
   Events with are produced to the Producer set in config `:kaufmann_ex, :producer_mod`. This defaults to `KaufmannEx.Publisher`
   """
   @spec publish(atom, map, map) :: :ok
-  def publish(event_name, message_body, context \\ %{}) do
+  def publish(event_name, message_body, context \\ %{}, topic \\ :default) do
     log_time_took(context[:timestamp], event_name)
-    {:ok, topic} = choose_topic(event_name, context)
+
+    if topic == :default do
+      {:ok, topic} = choose_topic(event_name, context)
+    end
 
     produce_to_topic(topic, event_name, message_body, context)
   end
