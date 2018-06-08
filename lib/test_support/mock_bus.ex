@@ -102,10 +102,11 @@ defmodule KaufmannEx.TestSupport.MockBus do
   Will test emitted payload from event matches payload
   Asserts payload matches argument
   """
+
   @spec then_event(atom, any) :: boolean
   def then_event(event_name, expected_payload) do
     assert_received(
-      {:produce, {^event_name, %{payload: message_payload, meta: meta}}},
+      {:produce, {^event_name, %{payload: message_payload, meta: meta}, _topic}},
       "#{event_name} was not triggered"
     )
 
@@ -122,13 +123,13 @@ defmodule KaufmannEx.TestSupport.MockBus do
   @spec then_event(atom) :: %{meta: map, payload: any}
   def then_event(event_name) do
     assert_received(
-      {:produce, {^event_name, %{payload: message_payload, meta: meta}}},
+      {:produce, {^event_name, %{payload: message_payload, meta: meta}, topic}},
       "#{event_name} was not triggered"
     )
 
     assert_matches_schema(event_name, message_payload, meta)
 
-    %{payload: message_payload, meta: meta} |> Map.Helpers.atomize_keys()
+    %{payload: message_payload, meta: meta, topic: topic} |> Map.Helpers.atomize_keys()
   end
 
   @doc """
@@ -136,7 +137,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   """
   @spec then_no_event :: boolean
   def then_no_event do
-    refute_received({:produce, _}, "No events expected")
+    refute_received({:produce, _, _}, "No events expected")
   end
 
   @doc """
@@ -144,7 +145,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   """
   @spec then_no_event(atom) :: boolean
   def then_no_event(message_name) do
-    refute_received({:produce, {^message_name, _}}, "Unexpected #{message_name} recieved")
+    refute_received({:produce, {^message_name, _, _}}, "Unexpected #{message_name} recieved")
   end
 
   @doc """
@@ -190,12 +191,12 @@ defmodule KaufmannEx.TestSupport.MockBus do
     }
   end
 
-  def produce(_topic, event_name, payload, _context), do: produce(event_name, payload)
+  def produce(topic, event_name, payload, _context), do: produce(event_name, payload, topic)
 
   # Internal Produce call, sends to self for assertion
   @doc false
-  def produce(event_name, payload) do
-    send(:producer, {:produce, {event_name, payload}})
+  def produce(event_name, payload, topic) do
+    send(:producer, {:produce, {event_name, payload, topic}})
 
     :ok
   end
