@@ -23,16 +23,16 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     end
   end
 
-    defmodule ExampleEventHandler do
-      def given_event(%KaufmannEx.Schemas.Event{} = event) do
-        case event.payload do
-          "no_event" -> :ok
-          _ -> ExamplePublisher.publish(event.name, event.payload)
-        end
+  defmodule ExampleEventHandler do
+    def given_event(%KaufmannEx.Schemas.Event{} = event) do
+      case event.payload do
+        "no_event" -> :ok
+        _ -> ExamplePublisher.publish(event.name, event.payload)
       end
-
-      def given_event(error_event), do: :ok
     end
+
+    def given_event(error_event), do: :ok
+  end
 
   setup do
     # SERVICE_NAME and HOST_NAME must be set
@@ -43,6 +43,7 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     Application.put_env(:kaufmann_ex, :event_handler_mod, ExampleEventHandler)
     Application.put_env(:kaufmann_ex, :metadata_mod, ExamplePublisher)
     Application.put_env(:kaufmann_ex, :schema_path, "test/support")
+    # Application.put_env(:kaufmann_ex, :default_topic, nil)
 
     :ok
   end
@@ -76,14 +77,19 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
           # Slicing b/c error includes random payload + metadata
       end
     end
+
+    test "sends with :default topic of no topic passed" do
+      given_event(:"test.event.publish", "Hello")
+      then_event(:"test.event.publish", "Hello")
+    end
   end
 
   describe "then_event" do
     test "/1 returns payload & metadata" do
       given_event(:"test.event.publish", "Hello")
 
-      %{meta: meta, payload: payload} = then_event(:"test.event.publish")
-      assert payload == "Hello"
+      assert %{meta: meta, payload: "Hello"} = then_event(:"test.event.publish")
+      # assert payload == "Hello"
     end
 
     test "/2 can assert a payload" do
@@ -103,6 +109,12 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
           "Hello" = error.left
           "Bye" = error.right
       end
+    end
+
+    test "/1 returns topic if set" do
+      Application.put_env(:kaufmann_ex, :default_topic, "rapids")
+      given_event(:"test.event.publish", "Test")
+      assert %{topic: "rapids"} = then_event(:"test.event.publish")
     end
   end
 
@@ -133,6 +145,17 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
         error in [ExUnit.AssertionError] ->
           "No events expected" = error.message
       end
+    end
+  end
+
+  describe "mock_schema_registry" do
+    test "loads schemas from multiple directories" do
+      Application.put_env(:kaufmann_ex, :schema_path, ["priv/schemas", "test/support"])
+
+      assert KaufmannEx.TestSupport.MockSchemaRegistry.defined_event?("test.event.publish")
+
+      assert %{} =
+               KaufmannEx.TestSupport.MockSchemaRegistry.fetch_event_schema("test.event.publish")
     end
   end
 end

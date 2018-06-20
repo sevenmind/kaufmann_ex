@@ -22,7 +22,7 @@ defmodule KaufmannEx.Publisher do
   def produce(topic, message_name, data, context \\ %{})
 
   def produce(topic, message_name, data, context) when is_atom(message_name),
-    do: produce(topic, message_name  |> Atom.to_string(), data, context)
+    do: produce(topic, message_name |> Atom.to_string(), data, context)
 
   def produce(topic, message_name, data, context) do
     with {:ok, payload} <- KaufmannEx.Schemas.encode_message(message_name, data),
@@ -57,13 +57,15 @@ defmodule KaufmannEx.Publisher do
 
   Events with are produced to the Producer set in config `:kaufmann_ex, :producer_mod`. This defaults to `KaufmannEx.Publisher`
   """
-  @spec publish(atom, map, map) :: :ok
-  def publish(event_name, message_body, context \\ %{}) do
+  @spec publish(atom, map, map, any) :: :ok
+  def publish(event_name, message_body, context \\ %{}, topic \\ :default) do
     log_time_took(context[:timestamp], event_name)
-    {:ok, topic} = choose_topic(event_name, context)
 
-    producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
-    producer.produce(topic, event_name, message_body, context)
+    if topic == :default do
+      {:ok, topic} = choose_topic(event_name, context)
+    end
+
+    produce_to_topic(topic, event_name, message_body, context)
   end
 
   defp choose_partition(topic, metadata) do
@@ -75,6 +77,14 @@ defmodule KaufmannEx.Publisher do
       metadata,
       strategy
     )
+  end
+
+  defp produce_to_topic(topics, event_name, message_body, context) when is_list(topics),
+    do: Enum.map(topics, &produce_to_topic(&1, event_name, message_body, context))
+
+  defp produce_to_topic(topic, event_name, message_body, context) do
+    producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
+    producer.produce(topic, event_name, message_body, context)
   end
 
   @spec choose_topic(atom, map) :: {atom, String.t()}
