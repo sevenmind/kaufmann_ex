@@ -4,7 +4,7 @@ defmodule KaufmannEx.MixProject do
   def project do
     [
       app: :kaufmann_ex,
-      version: "0.2.1",
+      version: "0.2.1-alpha",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -13,13 +13,15 @@ defmodule KaufmannEx.MixProject do
       docs: [
         main: "readme",
         extras: ["README.md"]
-      ]
+      ],
+      description: "build microservices with Kafka + Avro schemas",
+      package: package()
     ]
   end
 
   def package do
     [
-      maintaners: ["sevenmind", "Grant McLendon"],
+      maintainers: ["sevenmind", "Grant McLendon"],
       links: %{
         GitHub: "https://github.com/sevenmind/kaufmann_ex"
       },
@@ -39,8 +41,7 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:gen_stage, "~> 0.12"},
-      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex.git"},
-      # {:kafka_ex, "~> 0.8.1"},
+      {:kafka_ex, "~> 0.8.3"},
       {:poison, "~> 3.1"},
       {:httpoison, "~> 1.0"},
       {:avro_ex, "~> 0.1.0-beta.0"},

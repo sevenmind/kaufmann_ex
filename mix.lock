@@ -24,7 +24,7 @@
   "idna": {:hex, :idna, "5.1.1", "cbc3b2fa1645113267cc59c760bafa64b2ea0334635ef06dbac8801e42f7279c", [:rebar3], [{:unicode_util_compat, "0.3.1", [hex: :unicode_util_compat, repo: "hexpm", optional: false]}], "hexpm"},
   "inch_ex": {:hex, :inch_ex, "0.5.6", "418357418a553baa6d04eccd1b44171936817db61f4c0840112b420b8e378e67", [:mix], [{:poison, "~> 1.5 or ~> 2.0 or ~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "jsx": {:hex, :jsx, "2.8.3", "a05252d381885240744d955fbe3cf810504eb2567164824e19303ea59eef62cf", [:mix, :rebar3], [], "hexpm"},
-  "kafka_ex": {:git, "https://github.com/kafkaex/kafka_ex.git", "cdbeb273f6c21dfadab2b1a09f8304cf4ff75308", []},
+  "kafka_ex": {:hex, :kafka_ex, "0.8.3", "16946ec8c50adf8ff5b858b28cff85ed93b16785004b2be1c9959cd2d704a462", [:mix], [], "hexpm"},
   "meck": {:hex, :meck, "0.8.9", "64c5c0bd8bcca3a180b44196265c8ed7594e16bcc845d0698ec6b4e577f48188", [:rebar3], [], "hexpm"},
   "memoize": {:hex, :memoize, "1.2.7", "fd435d76496717561dc14af9135def1a9d5cab400939bf2b784764fabafe1655", [:mix], [], "hexpm"},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], [], "hexpm"},

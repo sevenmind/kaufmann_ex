@@ -16,7 +16,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     "#{:code.priv_dir(app)}"
   end
 
-  def migrate_schemas(app \\ :kaufman_ex) do
+  def migrate_schemas(app \\ :kaufmann_ex) do
     ensure_startup()
     IO.puts("Migrating Schemas")
 
@@ -32,7 +32,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&pretty_print_tuple/1)
   end
 
-  def reset_schemas(app \\ :kaufman_ex) do
+  def reset_schemas(app \\ :kaufmann_ex) do
     ensure_startup()
     IO.puts("Resetting Schemas")
     meta_data_schema = load_metadata(app)
