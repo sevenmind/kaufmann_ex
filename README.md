@@ -1,8 +1,6 @@
 # KaufmannEx
 
-[![Build Status](https://travis-ci.org/sevenmind/kaufmann_ex.svg?branch=master)](https://travis-ci.org/sevenmind/kaufmann_ex)  
-[![Hex.pm](https://img.shields.io/hexpm/v/kaufmann_ex.svg)](https://hex.pm/packages/kaufmann_ex)  
-[![Inline docs](http://inch-ci.org/github/sevenmind/kaufmann_ex.svg)](http://inch-ci.org/github/sevenmind/kaufmann_ex)
+[![Build Status](https://travis-ci.org/sevenmind/kaufmann_ex.svg?branch=master)](https://travis-ci.org/sevenmind/kaufmann_ex) [![Hex.pm](https://img.shields.io/hexpm/v/kaufmann_ex.svg)](https://hex.pm/packages/kaufmann_ex) [![Inline docs](http://inch-ci.org/github/sevenmind/kaufmann_ex.svg)](http://inch-ci.org/github/sevenmind/kaufmann_ex)
 
 Checkout [our blog post about Kaufmannx](https://medium.com/@7mind_dev/kaufmann-ex-317415c27978)
 
