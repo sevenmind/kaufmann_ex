@@ -1,8 +1,10 @@
 # KaufmannEx
 
-[![Build Status](https://travis-ci.org/sevenmind/kaufmann_ex.svg?branch=master)](https://travis-ci.org/sevenmind/kaufmann_ex)
-[![Hex pm](http://img.shields.io/hexpm/v/kaufmann_ex.svg?style=flat)](https://hex.pm/packages/kaufmann_ex)
+[![Build Status](https://travis-ci.org/sevenmind/kaufmann_ex.svg?branch=master)](https://travis-ci.org/sevenmind/kaufmann_ex)  
+[![Hex.pm](https://img.shields.io/hexpm/v/kaufmann_ex.svg)](https://hex.pm/packages/kaufmann_ex)  
 [![Inline docs](http://inch-ci.org/github/sevenmind/kaufmann_ex.svg)](http://inch-ci.org/github/sevenmind/kaufmann_ex)
+
+Checkout [our blog post about Kaufmannx](https://medium.com/@7mind_dev/kaufmann-ex-317415c27978)
 
 The goal of KaufmannEx is to provide a simple to use library for building kafka based microservices.
 
@@ -10,7 +12,7 @@ It should be simple and fast to write new microservices with [Avro](https://avro
 
 Tieing `KafkaEx`, `AvroEx`, and `Schemex`.
 
-KaufmannEx exists to make it easy to decode Avro encoded messages off of a kafka broker.
+KaufmannEx exists to make it easy to consume Avro encoded messages off of a kafka broker in a parallel, controlled, manner. 
 
 ## Installation
 
