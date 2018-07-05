@@ -9,9 +9,8 @@ config :kafka_ex,
   ],
   use_ssl: false,
   consumer_group: System.get_env("CONSUMER_GROUP"),
-  commit_interval: 10,
-  commit_threshold: 1,
-  heartbeat_interval: 20
+  commit_interval: 100_000,
+  commit_threshold: 100
 
 config :kaufmann_ex,
   event_handler_mod: Sample.EventHandler,
