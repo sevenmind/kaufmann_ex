@@ -172,7 +172,8 @@ defmodule Sample.ReleaseTasks do
   end
 end
 ```
-#### `rel/config.exs
+
+#### `rel/config.exs`
 
 ```elixir
 ...
@@ -195,3 +196,20 @@ end
 $RELEASE_ROOT_DIR/bin/sample command Elixir.Sample.ReleaseTasks migrate_schemas
 ```
 
+
+## Common questions
+
+### When are offsets commited? In case of a node going down, will it lose messages?
+
+It is possible to lose events when a node goes down. But we try to prevent that from happening.
+
+1. The backpressure in Kaufmann prevents pulling more events than there is capacity to immediately process. This is configurable with the kaufmann_ex, :max_demand configuration variable.
+2. KuafmannEx uses the default [KafkaEx GenConsumer asynchronous offset commit behavior](https://hexdocs.pm/kafka_ex/KafkaEx.GenConsumer.html#module-asynchronous-offset-commits). Offsets are committed asynchronously on a timer or event count.
+
+Ideally the `kafka_ex :commit_threshold` should be set somewhat larger than `kaufmann_ex :max_demand` (the default is 100 and 50, respectively). This should make it less likely that the node will be processing already-committed messages when it goes down.
+
+### Can order of delivery be guaranteed?
+
+Kafka can only guarantee event ordering within a single partition. KaufmannEx will consume events in the order published, but event processing is not guaranteed to be sequential within the window of `max_demand`. 
+
+To guarantee sequential event processing set `max_demand: 1` in the configuration.
