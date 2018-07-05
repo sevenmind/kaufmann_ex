@@ -1,6 +1,22 @@
 defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   @moduledoc """
   Task for registering all schemas in `priv/schemas` with the schema registry.
+
+  Expects 
+   - schemas to be defined in `priv/schemas`.
+   - an `event_metadata.avsc` schema should be defined and required by all events
+
+  Can be called in a production attached console, or via a release task. Should not have any requirements beyont itself.
+
+  This script will load all required dependencies and should not need further configuration.
+
+  ```
+  # Attempt to create or update all schemas in `priv/schemas`
+  KaufmannEx.ReleaseTasks.MigrateSchemas.migrate_schemas(:app_name)
+
+  # delete and recreate all schemas
+  KaufmannEx.ReleaseTasks.MigrateSchemas.reset_schemas(:app_name)
+  ```
   """
   alias KaufmannEx.Schemas
 
@@ -16,6 +32,11 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     "#{:code.priv_dir(app)}"
   end
 
+  @doc """
+  Attempts to update all schemas defined in `app/priv/schemas`.
+
+  Expects a `event_metadata.avsc` metadata scheme to be defined for all other schemas. 
+  """
   def migrate_schemas(app \\ :kaufmann_ex) do
     ensure_startup()
     IO.puts("Migrating Schemas")
@@ -32,6 +53,11 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&pretty_print_tuple/1)
   end
 
+  @doc """
+  Attempts to delete and recreate all schemas defined in `app/priv/schemas` 
+
+  Expects a `event_metadata.avsc` metadata scheme to be defined for all other schemas. 
+  """
   def reset_schemas(app \\ :kaufmann_ex) do
     ensure_startup()
     IO.puts("Resetting Schemas")

@@ -7,5 +7,6 @@ defmodule Sample.EventHandler do
     Publisher.publish(Publisher.coerce_event_name(event.name), payload, event.meta)
   end
 
+  # Handle unexpected Event
   def given_event(event), do: IO.inspect(event.name)
 end
