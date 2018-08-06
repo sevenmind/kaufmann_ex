@@ -7,7 +7,7 @@ defmodule KaufmannEx.Stages.Consumer do
   require Logger
   use ConsumerSupervisor
 
-  def start_link() do
+  def start_link(opts \\ []) do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
     ConsumerSupervisor.start_link(__MODULE__, :ok)
   end
