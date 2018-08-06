@@ -3,7 +3,7 @@ defmodule KaufmannEx.Publisher.TopicSelectorTest do
   alias KaufmannEx.Publisher.TopicSelector
 
   setup do
-     Application.put_env(:kaufmann_ex, :default_topic, "default_topic")
+    Application.put_env(:kaufmann_ex, :default_topic, "default_topic")
     :ok
   end
 
@@ -21,19 +21,23 @@ defmodule KaufmannEx.Publisher.TopicSelectorTest do
   describe "topic from message namespace" do
     test "from query event" do
       event_name = :"query.req.library.catalog.bibliographies.search"
-      assert {:ok,  "library.catalog"} = TopicSelector.choose_topic(event_name, %{}, :event_namespace)
+
+      assert {:ok, "library.catalog"} =
+               TopicSelector.choose_topic(event_name, %{}, :event_namespace)
     end
 
     test "from error event" do
       event_name = :"event.error.library.catalog"
 
-      assert {:ok, "error.library"} = TopicSelector.choose_topic(event_name, %{}, :event_namespace)
+      assert {:ok, "error.library"} =
+               TopicSelector.choose_topic(event_name, %{}, :event_namespace)
     end
 
     test "from event" do
       event_name = :"command.library.catalog.bibliographies.update"
 
-      assert {:ok, "library.catalog"} = TopicSelector.choose_topic(event_name, %{}, :event_namespace)
+      assert {:ok, "library.catalog"} =
+               TopicSelector.choose_topic(event_name, %{}, :event_namespace)
     end
   end
 

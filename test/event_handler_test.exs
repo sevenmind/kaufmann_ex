@@ -88,9 +88,8 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
     {:ok, schema} = File.read("test/support/#{event_name}.avsc")
     {:ok, meta_schema} = File.read('test/support/event_metadata.avsc')
 
-
-    schema = schema |> Poison.decode!() 
-    meta_schema = meta_schema |> Poison.decode!() 
+    schema = schema |> Poison.decode!()
+    meta_schema = meta_schema |> Poison.decode!()
 
     schemas = [meta_schema, schema] |> Poison.encode!()
 

@@ -37,7 +37,21 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
 
   Expects a `event_metadata.avsc` metadata scheme to be defined for all other schemas. 
   """
-  def migrate_schemas(app \\ :kaufmann_ex) do
+  def migrate_schemas(app \\ :kaufmann_ex)
+
+  def migrate_schemas(path) when is_binary(path) do
+    true = File.exists?(path)
+    meta_data_schema = load_metadata(path)
+
+    path
+    |> scan_dir()
+    |> Enum.map(&load_and_parse_schema/1)
+    |> Enum.map(&inject_metadata(&1, meta_data_schema))
+    |> Enum.map(&register_schema/1)
+    |> Enum.map(&IO.inspect/1)
+  end
+
+  def migrate_schemas(app) do
     ensure_startup()
     IO.puts("Migrating Schemas")
 
@@ -50,7 +64,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&load_and_parse_schema/1)
     |> Enum.map(&inject_metadata(&1, meta_data_schema))
     |> Enum.map(&register_schema/1)
-    |> Enum.map(&pretty_print_tuple/1)
+    |> Enum.map(&IO.inspect/1)
   end
 
   @doc """
@@ -70,24 +84,25 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&load_and_parse_schema/1)
     |> Enum.map(&inject_metadata(&1, meta_data_schema))
     |> Enum.map(&reset_schema/1)
-    |> Enum.map(&pretty_print_tuple/1)
+    |> Enum.map(&IO.inspect/1)
   end
 
-  def pretty_print_tuple(tup) do
-    IO.puts(inspect(tup))
-  end
-
-  def load_metadata(app) do
+  def load_metadata(path) when is_binary(path) do
     meta_data_schema =
-      app
-      |> priv_dir()
-      |> Path.join("schemas")
+      path
       |> Path.join("event_metadata.avsc")
       |> load_and_parse_schema()
 
     {:ok, _, _} = register_schema(meta_data_schema)
 
     meta_data_schema
+  end
+
+  def load_metadata(app) do
+    app
+    |> priv_dir()
+    |> Path.join("schemas")
+    |> load_metadata()
   end
 
   def schema_registered({schema_name, schema}) do
@@ -131,8 +146,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   defp load_and_parse_schema(schema_path) do
     {:ok, schema} =
       schema_path
-      |> File.read()
-      |> ok_and()
+      |> File.read!()
       |> Poison.decode()
 
     schema_name = schema_path |> Path.basename() |> String.trim(".avsc")

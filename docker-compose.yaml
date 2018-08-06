@@ -22,7 +22,7 @@ services:
     image: spotify/kafka
     environment:
       TOPICS: "rapids"
-      NUM_PARTITIONS: 1
+      NUM_PARTITIONS: 10
       AUTO_CREATE_TOPICS: 'true'
 
   schema-registry:
