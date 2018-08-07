@@ -1,5 +1,5 @@
 %{
-  "avro_ex": {:git, "https://github.com/gerbal/avro_ex.git", "de32a5fbc6322777ab4eb6d372a73bfecd335a01", []},
+  "avro_ex": {:git, "https://github.com/gerbal/avro_ex.git", "dd4fda107057251d2e9a72d4e627f602609d8112", []},
   "benchwarmer": {:hex, :benchwarmer, "0.0.2", "902e5c020608647b07c38b82103e4af6d2667dfd5d5d13c67382238de6943136", [:mix], [], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "bypass": {:hex, :bypass, "0.8.1", "16d409e05530ece4a72fabcf021a3e5c7e15dcc77f911423196a0c551f2a15ca", [:mix], [{:cowboy, "~> 1.0", [hex: :cowboy, repo: "hexpm", optional: false]}, {:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
