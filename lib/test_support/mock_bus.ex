@@ -102,7 +102,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
       event |> Map.from_struct() |> Map.drop([:name]) |> Map.Helpers.stringify_keys()
 
     # If message isn't encodable, big problems
-    assert MockSchemaRegistry.encodable?(schema_name, encodable_payload),
+    assert {:ok, _} = MockSchemaRegistry.encode_event(schema_name, encodable_payload),
            "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
 
     event_consumer = Application.fetch_env!(:kaufmann_ex, :event_handler_mod)

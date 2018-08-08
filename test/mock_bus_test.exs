@@ -70,11 +70,8 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
       try do
         given_event(:"test.event.publish", %{invalid_key: "unexpected value"})
       rescue
-        error in [ExUnit.AssertionError] ->
-          "Payload does not match schema for test.event.publish," =
-            String.slice(error.message, 0..52)
-
-          # Slicing b/c error includes random payload + metadata
+        error in [MatchError] ->
+          assert {:error, :data_does_not_match_schema, _, _} = error.term
       end
     end
 
