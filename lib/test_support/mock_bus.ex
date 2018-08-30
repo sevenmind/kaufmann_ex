@@ -57,7 +57,14 @@ defmodule KaufmannEx.TestSupport.MockBus do
   def bus_setup do
     default_producer_mod = Application.get_env(:kaufmann_ex, :producer_mod)
     Application.put_env(:kaufmann_ex, :producer_mod, KaufmannEx.TestSupport.MockBus)
-    Process.register(self(), :producer)
+
+    try do
+      Process.register(self(), :producer)
+    rescue
+      ArgumentError ->
+        Process.unregister(:producer)
+        Process.register(self(), :producer)
+    end
 
     default_producer_mod
   end
@@ -65,6 +72,12 @@ defmodule KaufmannEx.TestSupport.MockBus do
   # Setup Helper
   @doc false
   def teardown(producer_mod) do
+    try do
+      Process.unregister(:producer)
+    rescue
+      _ -> # Nothing else to be done
+    end
+
     Application.put_env(:kaufmann_ex, :producer_mod, producer_mod)
   end
 
