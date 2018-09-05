@@ -62,7 +62,7 @@ defmodule KaufmannEx.Publisher do
   def publish(event_name, message_body, context \\ %{}, topic \\ :default)
   def publish(event_name, message_body, context, :default) do
     {:ok, topic} = choose_topic(event_name, context)
-    publish(topic, event_name, message_body, context)
+    publish(event_name, message_body, context, topic)
   end
 
   def publish(event_name, message_body, context, topic) do
