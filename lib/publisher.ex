@@ -1,3 +1,4 @@
+
 defmodule KaufmannEx.Publisher do
   @moduledoc """
     Publishes Avro encoded messages to the default topic (`KaufmannEx.Config.default_topic/0`).
@@ -58,12 +59,14 @@ defmodule KaufmannEx.Publisher do
   Events with are produced to the Producer set in config `:kaufmann_ex, :producer_mod`. This defaults to `KaufmannEx.Publisher`
   """
   @spec publish(atom, map, map, any) :: :ok
-  def publish(event_name, message_body, context \\ %{}, topic \\ :default) do
-    log_time_took(context[:timestamp], event_name)
+  def publish(event_name, message_body, context \\ %{}, topic \\ :default)
+  def publish(event_name, message_body, context, :default) do
+    {:ok, topic} = choose_topic(event_name, context)
+    publish(topic, event_name, message_body, context)
+  end
 
-    if topic == :default do
-      {:ok, topic} = choose_topic(event_name, context)
-    end
+  def publish(event_name, message_body, context, topic) do
+    log_time_took(context[:timestamp], event_name)
 
     produce_to_topic(topic, event_name, message_body, context)
   end
