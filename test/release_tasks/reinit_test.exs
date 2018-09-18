@@ -44,12 +44,14 @@ defmodule KaufmannEx.ReleaseTasks.ReInitTest do
       Process.register(self(), :reinit)
       :ok = ReInit.GenConsumer.handle_message_set(message_set, state)
 
-      assert_received :shutdown, ":reinit process should recieve shutdown once max offset is reached"
+      assert_received :shutdown,
+                      ":reinit process should recieve shutdown once max offset is reached"
     end
   end
 
   def set_partition_0_offset(offset) do
     :ok = Application.ensure_started(:kafka_ex)
+
     res =
       KafkaEx.offset_commit(:kafka_ex, %KafkaEx.Protocol.OffsetCommit.Request{
         consumer_group: Config.consumer_group(),

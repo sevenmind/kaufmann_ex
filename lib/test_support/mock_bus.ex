@@ -75,7 +75,9 @@ defmodule KaufmannEx.TestSupport.MockBus do
     try do
       Process.unregister(:producer)
     rescue
-      _ -> # Nothing else to be done
+      # Nothing else to be done
+      _ ->
+        nil
     end
 
     Application.put_env(:kaufmann_ex, :producer_mod, producer_mod)
