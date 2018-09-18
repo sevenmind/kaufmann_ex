@@ -39,7 +39,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
     end
 
     test "When demand changes over multiple calls" do
-      from = {self(), :test}
+      from = MapSet.new([{self(), :test}])
 
       {reply, next_message_set, state} =
         KaufmannEx.Stages.Producer.handle_demand(5, %{
