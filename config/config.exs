@@ -49,3 +49,6 @@ config :kaufmann_ex,
   service_name: "SampleService",
   service_id: "SampleHost",
   event_handler_demand: 50
+
+config :logger,
+  level: :info

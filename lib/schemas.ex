@@ -74,7 +74,8 @@ defmodule KaufmannEx.Schemas do
     AvroEx.encode(schema, message)
   rescue
     # avro_ex can become confused when trying to encode some schemas.
-    _ ->
+    error ->
+      Logger.debug(["Could not encode schema \n\t", inspect(error)])
       {:error, :unmatching_schema}
   end
 
