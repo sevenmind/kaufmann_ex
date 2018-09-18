@@ -12,7 +12,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
     `then_event/2` asserts that the given event is emitted and verifies or returned the payload
 
-    If you have a custom metadata schema or specific metadata handling, set a module exporting 
+    If you have a custom metadata schema or specific metadata handling, set a module exporting
     `event_metadata/2` in app_env `:kaufmann_ex, :metadata_mod`
 
     ### Example Usage
@@ -102,7 +102,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
       event |> Map.from_struct() |> Map.drop([:name]) |> Map.Helpers.stringify_keys()
 
     # If message isn't encodable, big problems
-    assert MockSchemaRegistry.encodable?(schema_name, encodable_payload),
+    assert {:ok, _} = MockSchemaRegistry.encode_event(schema_name, encodable_payload),
            "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
 
     event_consumer = Application.fetch_env!(:kaufmann_ex, :event_handler_mod)

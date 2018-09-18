@@ -22,3 +22,5 @@ erl_crash.dump
 # Editor stuff
 .vscode/
 .elixir_ls/
+log/
+

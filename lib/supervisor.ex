@@ -42,6 +42,10 @@ defmodule KaufmannEx.Supervisor do
         id: KafkaEx.ConsumerGroup,
         start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor
+      },
+      %{
+        id: KaufmannEx.Publisher.PartitionSelector,
+        start: {KaufmannEx.Publisher.PartitionSelector, :start_link, []}
       }
     ]
 

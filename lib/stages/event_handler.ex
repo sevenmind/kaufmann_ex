@@ -18,7 +18,7 @@ defmodule KaufmannEx.Stages.EventHandler do
     handle_event(event)
   rescue
     error ->
-      Logger.warn("Error Publishing #{event.name} #{inspect(error)}")
+      Logger.warn("Error Consuming #{event.name} #{inspect(error)}")
       handler = KaufmannEx.Config.event_handler()
 
       event

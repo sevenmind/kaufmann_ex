@@ -27,7 +27,7 @@ defmodule KaufmannEx.Publisher do
 
   def produce(topic, message_name, data, context) do
     with {:ok, payload} <- KaufmannEx.Schemas.encode_message(message_name, data),
-         {:ok, partition} <- choose_partition(topic, context) do
+         {:ok, partition} <- PartitionSelector.choose_partition(topic, context) do
       Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}@#{partition}" end)
 
       message = %Message{value: payload, key: message_name}
@@ -71,21 +71,14 @@ defmodule KaufmannEx.Publisher do
     produce_to_topic(topic, event_name, message_body, context)
   end
 
-  defp choose_partition(topic, metadata) do
-    partitions_count = get_partitions_count(topic)
-    strategy = KaufmannEx.Config.partition_strategy()
-
-    PartitionSelector.choose_partition(
-      partitions_count,
-      metadata,
-      strategy
-    )
-  end
+  def pproduce_to_topic(topic, event_name, message_body, context),
+    do: produce_to_topic(topic, event_name, message_body, context)
 
   defp produce_to_topic(topics, event_name, message_body, context) when is_list(topics),
     do: Enum.map(topics, &produce_to_topic(&1, event_name, message_body, context))
 
   defp produce_to_topic(topic, event_name, message_body, context) do
+    # Load producer mod from env, Used for injecting alternate produces, mostly for testing.
     producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
     producer.produce(topic, event_name, message_body, context)
   end
@@ -94,18 +87,6 @@ defmodule KaufmannEx.Publisher do
   def choose_topic(event_name, context) do
     strategy = KaufmannEx.Config.topic_strategy()
     TopicSelector.choose_topic(event_name, context, strategy)
-  end
-
-  defp get_partitions_count(topic) do
-    %KafkaEx.Protocol.Metadata.Response{
-      topic_metadatas: [
-        %KafkaEx.Protocol.Metadata.TopicMetadata{
-          partition_metadatas: partition_metadatas
-        }
-      ]
-    } = KafkaEx.metadata(topic: topic)
-
-    length(partition_metadatas)
   end
 
   defp log_time_took(nil, _), do: nil

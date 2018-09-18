@@ -10,11 +10,43 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
   * function
   """
 
+  use GenServer
+
+  def start_link(opts \\ []) do
+    GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
+  end
+
+  def init(opts \\ []) do
+    {:ok,
+     %{
+       strategy: KaufmannEx.Config.topic_strategy(),
+       topic_meta: fetch_partitions_counts()
+     }}
+  end
+
+  def choose_partition(topic, metadata) do
+    GenServer.call(__MODULE__, {:choose_partition, [topic, metadata]})
+  end
+
+  def handle_call(
+        {:choose_partition, [topic, metadata]},
+        _from,
+        %{
+          strategy: strategy,
+          topic_meta: topic_meta
+        } = state
+      ) do
+    partitions_count = Map.get(topic_meta, topic)
+    partition = pick_partition(partitions_count, metadata, strategy)
+
+    {:reply, partition, state}
+  end
+
   @doc """
     Choose partition from specified strategy
   """
-  @spec choose_partition(integer, term, atom | function) :: {atom, integer | atom}
-  def choose_partition(partitions_count, %{callback_topic: %{partition: partition}}, _)
+  @spec pick_partition(integer, term, atom | function) :: {atom, integer | atom}
+  def pick_partition(partitions_count, %{callback_topic: %{partition: partition}}, _)
       when is_number(partition) do
     case partition do
       x when x < partitions_count -> {:ok, partition}
@@ -22,7 +54,7 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
     end
   end
 
-  def choose_partition(partitions_count, metadata, :md5) do
+  def pick_partition(partitions_count, metadata, :md5) do
     partition =
       metadata
       |> Map.get(:message_name)
@@ -32,12 +64,12 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
     {:ok, partition}
   end
 
-  def choose_partition(partitions_count, _metadata, :random) do
-    {:ok, random(partitions_count)}
+  def pick_partition(partitions_count, metadata, strategy) when is_function(strategy) do
+    strategy.(partitions_count, metadata)
   end
 
-  def choose_partition(partitions_count, metadata, strategy) when is_function(strategy) do
-    strategy.(partitions_count, metadata)
+  def pick_partition(partitions_count, _metadata, _strategy) do
+    {:ok, random(partitions_count)}
   end
 
   defp md5(key, partitions_count) do
@@ -49,5 +81,31 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
 
   defp random(partitions_count) do
     :rand.uniform(partitions_count) - 1
+  end
+
+  def get_partitions_count(topic) do
+    %KafkaEx.Protocol.Metadata.Response{
+      topic_metadatas: [
+        %KafkaEx.Protocol.Metadata.TopicMetadata{
+          partition_metadatas: partition_metadatas
+        }
+      ]
+    } = KafkaEx.metadata(topic: topic)
+
+    length(partition_metadatas)
+  end
+
+  def fetch_partitions_counts do
+    %KafkaEx.Protocol.Metadata.Response{topic_metadatas: topics} = KafkaEx.metadata()
+
+    topics
+    |> Enum.map(&extract_partition_count/1)
+    |> Enum.into(%{})
+  end
+
+  defp extract_partition_count(topic) do
+    %{topic: topic_name, partition_metadatas: partitions} = topic
+
+    {topic_name, length(partitions)}
   end
 end
