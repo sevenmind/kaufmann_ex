@@ -28,7 +28,7 @@ defmodule KaufmannEx.Stages.EventHandler do
       |> error_from_event(error)
       |> handler.given_event()
 
-      reraise error, error.stacktrace()
+      reraise error, __STACKTRACE__
   end
 
   @doc """

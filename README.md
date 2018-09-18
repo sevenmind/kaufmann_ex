@@ -20,7 +20,8 @@ by adding `kaufmann_ex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:kaufmann_ex, "~> 0.1.2"}
+    {:kafka_ex, , "~> 0.8.3"},
+    {:kaufmann_ex, "~> 0.3.0"}
   ]
 end
 ```
@@ -85,7 +86,10 @@ config :kafka_ex,
       9092
     }
   ],
-  consumer_group: "Consumer-Group"
+  consumer_group: "Consumer-Group",
+  commit_threshold: 10,
+  commit_interval: 100,
+  sync_timeout: 10_000
 ```
 
 ### `event_handler_mod`

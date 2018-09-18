@@ -1,8 +1,8 @@
 language: elixir
 elixir:
-  - 1.6.1
+  - 1.7.3
 otp_release:
-  - 20.2
+  - 21.0
 
 env:
  global:
@@ -15,7 +15,7 @@ before_script:
 
 script:
   - if [ $PULL_REQUEST_ID != false ]; then pronto run -f github_pr; fi
-  - mix test
+  - mix test --no-start
 
 after_script:
   - mix deps.get --only docs
