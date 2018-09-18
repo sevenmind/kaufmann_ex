@@ -24,3 +24,5 @@ erl_crash.dump
 .elixir_ls/
 log/
 
+
+\.bash_history

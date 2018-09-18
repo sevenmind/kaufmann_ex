@@ -8,44 +8,52 @@ defmodule KaufmannEx.Stages.EventHandler do
 
   def start_link(event) do
     Task.start_link(fn ->
-      event
-      |> decode_event()
-      |> handle_with_rescue()
+      handle_event(event)
     end)
-  end
-
-  def handle_with_rescue(event) do
-    handle_event(event)
-  rescue
-    error ->
-      Logger.warn("Error Consuming #{event.name} #{inspect(error)}")
-      handler = KaufmannEx.Config.event_handler()
-
-      event
-      |> error_from_event(error)
-      |> handler.given_event()
   end
 
   def handle_event(event) do
     handler = KaufmannEx.Config.event_handler()
-    handler.given_event(event)
+
+    event
+    |> decode_event()
+    |> handler.given_event()
+  rescue
+    error ->
+      Logger.warn("Error Consuming #{event.key} #{inspect(error)}")
+      handler = KaufmannEx.Config.event_handler()
+
+      event
+      |> decode_event()
+      |> error_from_event(error)
+      |> handler.given_event()
+
+      reraise error, __STACKTRACE__
   end
 
   @doc """
-  Decodes Avro encoded message value, transforms event into tuple of `{:message_name, %Payload{}}`
+  Decodes Avro encoded message value
 
-  Returns `{key, value}`
+  Returns Event or Error
   """
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
-  def decode_event(%{key: key, value: value}) do
+  def decode_event(%{key: key, value: value} = event) do
     event_name = key |> String.to_atom()
 
     case KaufmannEx.Schemas.decode_message(key, value) do
-      {:ok, parsed} ->
+      {:ok, %{meta: meta, payload: payload}} ->
+        Logger.debug([
+          meta[:message_name],
+          " ",
+          meta[:message_id],
+          " from ",
+          meta[:emitter_service_id]
+        ])
+
         %KaufmannEx.Schemas.Event{
           name: event_name,
-          meta: parsed[:meta],
-          payload: parsed[:payload]
+          meta: meta,
+          payload: payload
         }
 
       {:error, error} ->

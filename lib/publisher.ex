@@ -1,4 +1,3 @@
-
 defmodule KaufmannEx.Publisher do
   @moduledoc """
     Publishes Avro encoded messages to the default topic (`KaufmannEx.Config.default_topic/0`).
@@ -28,7 +27,7 @@ defmodule KaufmannEx.Publisher do
   def produce(topic, message_name, data, context) do
     with {:ok, payload} <- KaufmannEx.Schemas.encode_message(message_name, data),
          {:ok, partition} <- PartitionSelector.choose_partition(topic, context) do
-      Logger.debug(fn -> "Publishing Event #{message_name} on #{topic}@#{partition}" end)
+      Logger.debug(["Publishing Event ", message_name, " on ", topic, "@", partition])
 
       message = %Message{value: payload, key: message_name}
 
@@ -43,10 +42,12 @@ defmodule KaufmannEx.Publisher do
       {:error, error} ->
         {:error, error}
 
-      {:error, error, _} ->
+      {:error, error, _} = err ->
+        Logger.debug([inspect(err)])
         {:error, error}
 
-      {:error, error, _payload, _schema} ->
+      {:error, error, _payload, _schema} = err ->
+        Logger.debug([inspect(err)])
         {:error, error}
     end
   end
@@ -60,6 +61,7 @@ defmodule KaufmannEx.Publisher do
   """
   @spec publish(atom, map, map, any) :: :ok
   def publish(event_name, message_body, context \\ %{}, topic \\ :default)
+
   def publish(event_name, message_body, context, :default) do
     {:ok, topic} = choose_topic(event_name, context)
     publish(event_name, message_body, context, topic)
@@ -80,7 +82,15 @@ defmodule KaufmannEx.Publisher do
   defp produce_to_topic(topic, event_name, message_body, context) do
     # Load producer mod from env, Used for injecting alternate produces, mostly for testing.
     producer = Application.fetch_env!(:kaufmann_ex, :producer_mod)
-    producer.produce(topic, event_name, message_body, context)
+
+    case producer.produce(topic, event_name, message_body, context) do
+      :ok ->
+        :ok
+
+      other ->
+        Logger.debug(["Error Publishing: ", inspect(other)])
+        other
+    end
   end
 
   @spec choose_topic(atom, map) :: {atom, String.t()}

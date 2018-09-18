@@ -84,9 +84,9 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
   end
 
   def get_partitions_count(topic) do
-    %KafkaEx.Protocol.Metadata.Response{
+    %{
       topic_metadatas: [
-        %KafkaEx.Protocol.Metadata.TopicMetadata{
+        %{
           partition_metadatas: partition_metadatas
         }
       ]
@@ -96,7 +96,7 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
   end
 
   def fetch_partitions_counts do
-    %KafkaEx.Protocol.Metadata.Response{topic_metadatas: topics} = KafkaEx.metadata()
+    %{topic_metadatas: topics} = KafkaEx.metadata()
 
     topics
     |> Enum.map(&extract_partition_count/1)

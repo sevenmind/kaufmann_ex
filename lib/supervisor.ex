@@ -13,7 +13,7 @@ defmodule KaufmannEx.Supervisor do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(opts \\ [strategy: :one_for_all]) do
+  def init(opts \\ []) do
     consumer_group_name = KaufmannEx.Config.consumer_group()
     topics = KaufmannEx.Config.default_topics()
     gen_consumer_mod = KaufmannEx.Config.gen_consumer_mod()
@@ -26,10 +26,6 @@ defmodule KaufmannEx.Supervisor do
     ]
 
     children = [
-      %{
-        id: KafkaEx,
-        start: {KafkaEx, :start, [[], []]}
-      },
       %{
         id: KaufmannEx.Stages.Producer,
         start: {KaufmannEx.Stages.Producer, :start_link, []}
@@ -49,6 +45,6 @@ defmodule KaufmannEx.Supervisor do
       }
     ]
 
-    Supervisor.init(children, strategy: :one_for_all)
+    Supervisor.init(children, strategy: :one_for_one)
   end
 end
