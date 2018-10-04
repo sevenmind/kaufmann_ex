@@ -1,5 +1,5 @@
 %{
-  "avro_ex": {:git, "https://github.com/CJPoll/avro_ex.git", "36375d431439a2eb1c23fc4029f4ca44b49cb97e", []},
+  "avro_ex": {:hex, :avro_ex, "0.1.0-beta.6", "9d811b32702c419641d77bef95fba8153257b5807d3f73ecd485a2edcd623986", [:mix], [{:ecto, "~> 2.1.0 or ~> 2.2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:poison, "~> 3.1.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "benchee": {:hex, :benchee, "0.13.2", "30cd4ff5f593fdd218a9b26f3c24d580274f297d88ad43383afe525b1543b165", [:mix], [{:deep_merge, "~> 0.1", [hex: :deep_merge, repo: "hexpm", optional: false]}], "hexpm"},
   "benchwarmer": {:hex, :benchwarmer, "0.0.2", "902e5c020608647b07c38b82103e4af6d2667dfd5d5d13c67382238de6943136", [:mix], [], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},

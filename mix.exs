@@ -43,7 +43,7 @@ defmodule KaufmannEx.MixProject do
       {:kafka_ex, "~> 0.8.3"},
       {:poison, "~> 3.1"},
       {:httpoison, "~> 1.0"},
-      {:avro_ex, git: "https://github.com/CJPoll/avro_ex.git"},
+      {:avro_ex, "~> 0.1.0-beta.6"},
       {:schemex, "~> 0.1.1"},
       {:nanoid, "~> 1.0"},
       {:memoize, "~> 1.2"},

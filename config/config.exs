@@ -50,3 +50,5 @@ config :kaufmann_ex,
 
 config :logger,
   level: :info
+
+config :bypass, adapter: Plug.Adapters.Cowboy2
