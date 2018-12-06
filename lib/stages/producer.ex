@@ -35,7 +35,6 @@ defmodule KaufmannEx.Stages.Producer do
   def handle_demand(demand, %{message_set: message_set} = state) when demand > 0 do
     new_state = %{state | message_set: [], demand: demand - length(message_set)}
 
-    Enum.map(state.from, &GenStage.reply(&1, :ok))
     {:noreply, message_set, new_state}
   end
 
@@ -46,7 +45,7 @@ defmodule KaufmannEx.Stages.Producer do
 
   # When no demand, save messages to state, wait.
   def handle_call({:notify, message_set}, from, %{demand: 0} = state) do
-    {:noreply, [], %{state | message_set: message_set, from: MapSet.put(state.from, from)}}
+    {:noreply, [], %{state | message_set: message_set}}
   end
 
   # When more messages than demand, dispatch to meet demand, wait for more demand
@@ -57,8 +56,7 @@ defmodule KaufmannEx.Stages.Producer do
     new_state = %{
       state
       | message_set: remaining,
-        demand: demand - length(to_dispatch),
-        from: MapSet.put(state.from, from)
+        demand: demand - length(to_dispatch)
     }
 
     {:noreply, to_dispatch, new_state}

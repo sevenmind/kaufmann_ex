@@ -4,7 +4,7 @@ defmodule KaufmannEx.MixProject do
   def project do
     [
       app: :kaufmann_ex,
-      version: "0.3.0-beta",
+      version: "0.3.1-beta",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
