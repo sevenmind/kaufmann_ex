@@ -48,16 +48,12 @@ defmodule KaufmannEx.Stages.ProducerTest do
           from: from
         })
 
-      {reply, next_message_set, state} = KaufmannEx.Stages.Producer.handle_demand(0, state)
-      assert next_message_set == []
-      assert state == %{demand: 0, message_set: [6], from: from}
+      assert {:noreply, [], %{demand: 0, message_set: [6], from: ^from}} = KaufmannEx.Stages.Producer.handle_demand(0, state)
+
+      assert {:noreply, [6], %{demand: 0, message_set: [], from: %MapSet{}}} = KaufmannEx.Stages.Producer.handle_demand(1, state)
 
       # Should happen
-      # assert_receive({:ok, :test}, 100, "reply if all events consumed")
-
-      {reply, next_message_set, state} = KaufmannEx.Stages.Producer.handle_demand(1, state)
-      assert next_message_set == [6]
-      assert state == %{demand: 0, message_set: [], from: from}
+      assert_receive({:test, :ok})
     end
   end
 
