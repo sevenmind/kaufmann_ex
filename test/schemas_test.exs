@@ -6,11 +6,11 @@ defmodule KaufmannEx.SchemasTest do
     {:ok, memo_pid} = Application.ensure_all_started(:memoize)
 
     # Clear cached schemas
-    on_exit(&Memoize.invalidate/0)
+    on_exit( fn -> Memoize.invalidate() end)
 
-    Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:1188")
+    bypass = Bypass.open()
+    Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
 
-    bypass = Bypass.open(port: 1188)
 
     # Mock calls to schema registry, only expected once
     init_schema_cache(bypass, "test_event")

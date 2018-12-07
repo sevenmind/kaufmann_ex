@@ -14,16 +14,12 @@ defmodule KaufmannEx.Stages.ProducerTest do
   describe "handle_demand" do
     test "when no messages and demand > 0" do
       # Is this actually a useful thing to test
-      res = KaufmannEx.Stages.Producer.handle_demand(10, %{message_set: [], demand: 10})
-      assert res == {:noreply, [], %{demand: 10, message_set: []}}
+      assert {:noreply, [], %{demand: 10, message_set: []}} = KaufmannEx.Stages.Producer.handle_demand(10, %{message_set: [], demand: 10})
     end
 
     test "when messages > demand && demand > 0" do
-      res =
+      assert {:noreply, [1, 2, 3, 4, 5], %{demand: 0, message_set: [6]}} =
         KaufmannEx.Stages.Producer.handle_demand(5, %{message_set: [1, 2, 3, 4, 5, 6], demand: 5})
-
-      assert res == {:noreply, [1, 2, 3, 4, 5], %{demand: 0, message_set: [6]}}
-      # State is the remaining message less than demand
     end
 
     test "when messages and 0 demand" do
@@ -38,7 +34,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
       assert res == {:noreply, [], %{demand: 0, message_set: []}}
     end
 
-    test "When demand changes over multiple calls" do
+    test "Sends reply when more demand than event supply" do
       from = MapSet.new([{self(), :test}])
 
       {reply, next_message_set, state} =
@@ -60,7 +56,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
   defmodule TestEventHandler do
     def start_link(parent, n) do
       Task.start_link(fn ->
-        send(parent, n)
+        Process.send_after(parent, n, 50)
       end)
     end
   end
@@ -79,7 +75,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
       # max_demand is highly resource dependent
       {:ok, children,
-       strategy: :one_for_one, subscribe_to: [{KaufmannEx.Stages.Producer, max_demand: 50}]}
+       strategy: :one_for_one, subscribe_to: [{KaufmannEx.Stages.Producer, max_demand: 10}]}
     end
   end
 
@@ -108,7 +104,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
       assert_receive 1
       assert_receive 2
       assert_receive 3
-      assert_receive 10_000, 100, "consumes all available events"
+      assert_receive 10_000
     end
 
     test "When more demand than events" do
@@ -121,7 +117,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
       assert_receive 1
       assert_receive 2
-      assert_receive 100, 100, "consumes all available events"
+      assert_receive 100
     end
 
     test "when less events than demand" do
@@ -134,7 +130,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
       assert_receive 1
       assert_receive 10
-      assert_receive 100, 100, "consumes all available events"
+      assert_receive 100
     end
   end
 end

@@ -23,15 +23,13 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
       :ok
     end
+
   end
 
-  @topic "topic"
-  @partition 0
 
-  setup_all do
+  setup do
     {:ok, memo_pid} = Application.ensure_all_started(:memoize)
-    # Clear cached schemas on exit
-    on_exit(&Memoize.invalidate/0)
+    on_exit( fn -> Memoize.invalidate() end)
 
     bypass = Bypass.open()
     Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
@@ -40,10 +38,6 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
     # mock_get_metadata_schema(bypass)
     mock_get_event_schema(bypass, "test.event.publish")
 
-    [bypass: bypass]
-  end
-
-  setup %{bypass: bypass} = context do
     Application.put_env(:kaufmann_ex, :event_handler_mod, TestEventHandler)
     Application.put_env(:kaufmann_ex, :schema_path, "test/support")
 
@@ -51,9 +45,8 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
     {:ok, pid} = KaufmannEx.Stages.Producer.start_link([])
     {:ok, s_pid} = KaufmannEx.Stages.Consumer.start_link()
-    {:ok, state} = KaufmannEx.Stages.GenConsumer.init(@topic, @partition)
 
-    {:ok, bypass: bypass, state: state}
+    {:ok, bypass: bypass, state: []}
   end
 
   describe "when started" do
@@ -62,7 +55,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
       KaufmannEx.Stages.GenConsumer.handle_message_set([event], state)
 
-      assert_receive :event_recieved
+      assert_receive :event_recieved, 1000
     end
 
     test "handles errors gracefully", %{state: state} do
@@ -79,8 +72,8 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
         state
       )
 
-      assert_receive :event_recieved
-      assert_receive :handled_error
+      assert_receive :event_recieved, 1000
+      assert_receive :handled_error, 1000
     end
   end
 
@@ -93,7 +86,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
     schemas = [meta_schema, schema] |> Poison.encode!()
 
-    Bypass.expect_once(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
+    Bypass.expect(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
