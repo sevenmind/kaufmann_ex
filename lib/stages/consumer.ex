@@ -15,15 +15,18 @@ defmodule KaufmannEx.Stages.Consumer do
   # Callbacks
 
   def init(:ok) do
-    children = [
-      worker(KaufmannEx.Stages.EventHandler, [], restart: :temporary)
-    ]
+    children = [%{
+      id: KaufmannEx.Stages.EventHandler,
+      start: {KaufmannEx.Stages.EventHandler, :start_link, []},
+      restart: :temporary
+    }]
 
     # max_demand is highly resource dependent
-    {:ok, children,
-     strategy: :one_for_one,
+      opts = [strategy: :one_for_one,
      subscribe_to: [
        {KaufmannEx.Stages.Producer, max_demand: KaufmannEx.Config.event_handler_demand()}
-     ]}
+     ]]
+
+      ConsumerSupervisor.init(children, opts)
   end
 end

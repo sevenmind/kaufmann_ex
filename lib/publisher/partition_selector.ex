@@ -12,6 +12,8 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
 
   use GenServer
 
+  require Logger
+
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end
@@ -36,8 +38,12 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
           topic_meta: topic_meta
         } = state
       ) do
+
+
     partitions_count = Map.get(topic_meta, topic)
-    partition = pick_partition(partitions_count, metadata, strategy)
+
+
+    partition = pick_partition(partitions_count, topic, metadata, strategy)
 
     {:reply, partition, state}
   end
@@ -45,16 +51,23 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
   @doc """
     Choose partition from specified strategy
   """
-  @spec pick_partition(integer, term, atom | function) :: {atom, integer | atom}
-  def pick_partition(partitions_count, %{callback_topic: %{partition: partition}}, _)
+  @spec pick_partition(integer, term, term, atom | function) :: {atom, integer | atom}
+  def pick_partition(partitions_count, topic, %{callback_topic: %{partition: partition, topic: callback_topic}} = meta, _)
       when is_number(partition) do
+
+    partition = if topic == callback_topic do
+      partition
+    else
+       random(partitions_count)
+    end
+
     case partition do
       x when x < partitions_count -> {:ok, partition}
       _ -> {:error, :invalid_callback_partition}
-    end
+    end 
   end
 
-  def pick_partition(partitions_count, metadata, :md5) do
+  def pick_partition(partitions_count, topic, metadata, :md5) do
     partition =
       metadata
       |> Map.get(:message_name)
@@ -64,11 +77,11 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
     {:ok, partition}
   end
 
-  def pick_partition(partitions_count, metadata, strategy) when is_function(strategy) do
+  def pick_partition(partitions_count, _topic, metadata, strategy) when is_function(strategy) do
     strategy.(partitions_count, metadata)
   end
 
-  def pick_partition(partitions_count, _metadata, _strategy) do
+  def pick_partition(partitions_count, _topic,  _metadata, _strategy) do
     {:ok, random(partitions_count)}
   end
 
@@ -105,7 +118,6 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
 
   defp extract_partition_count(topic) do
     %{topic: topic_name, partition_metadatas: partitions} = topic
-
     {topic_name, length(partitions)}
   end
 end
