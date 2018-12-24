@@ -7,26 +7,30 @@ defmodule KaufmannEx.Stages.Consumer do
   require Logger
   use ConsumerSupervisor
 
-  def start_link(opts \\ []) do
-    :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
-    ConsumerSupervisor.start_link(__MODULE__, :ok)
+  def start_link({topic, partition}) do
+    ConsumerSupervisor.start_link(__MODULE__, {topic, partition},
+      name: {:global, {__MODULE__, topic, partition}}
+    )
   end
 
   # Callbacks
 
-  def init(:ok) do
-    children = [%{
-      id: KaufmannEx.Stages.EventHandler,
-      start: {KaufmannEx.Stages.EventHandler, :start_link, []},
-      restart: :temporary
-    }]
+  def init({topic, partition}) do
+    children = [
+      %{
+        id: KaufmannEx.Stages.EventHandler,
+        start: {KaufmannEx.Stages.EventHandler, :start_link, []},
+        restart: :temporary
+      }
+    ]
 
-    # max_demand is highly resource dependent
-      opts = [strategy: :one_for_one,
-     subscribe_to: [
-       {KaufmannEx.Stages.Producer, max_demand: KaufmannEx.Config.event_handler_demand()}
-     ]]
+    opts = [
+      strategy: :one_for_one,
+      subscribe_to: [
+        {{:global, {KaufmannEx.Stages.Decoder, topic, partition}}, max_demand: 50}
+      ]
+    ]
 
-      ConsumerSupervisor.init(children, opts)
+    ConsumerSupervisor.init(children, opts)
   end
 end

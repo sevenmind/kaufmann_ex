@@ -51,4 +51,6 @@ config :kaufmann_ex,
 config :logger,
   level: :info
 
+# handle_sasl_reports: true
+
 config :bypass, adapter: Plug.Adapters.Cowboy2

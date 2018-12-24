@@ -7,16 +7,20 @@ defmodule KaufmannEx.Stages.GenConsumer do
   require Logger
   use KafkaEx.GenConsumer
 
-  def init(_topic, _partition) do
+  def init(topic, partition) do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
 
-    {:ok, {}}
+    # Start Stage Supervisor
+    {:ok, pid} = KaufmannEx.Stage.Supervisor.start_link({topic, partition})
+
+    {:ok, %{supervisor: pid, topic: topic, partition: partition}}
   end
 
   def handle_message_set(message_set, state) do
-    # What happens if this notify times out?
-    # /!\ GenConsumer will be started once per topic partition What happens Then?
-    KaufmannEx.Stages.Producer.notify(message_set)
+    GenStage.call(
+      {:global, {KaufmannEx.Stages.Producer, state.topic, state.partition}},
+      {:notify, message_set}
+    )
 
     {:async_commit, state}
   end

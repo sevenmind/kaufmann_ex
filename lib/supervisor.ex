@@ -27,14 +27,6 @@ defmodule KaufmannEx.Supervisor do
 
     children = [
       %{
-        id: KaufmannEx.Stages.Producer,
-        start: {KaufmannEx.Stages.Producer, :start_link, []}
-      },
-      %{
-        id: KaufmannEx.Stages.Consumer,
-        start: {KaufmannEx.Stages.Consumer, :start_link, []}
-      },
-      %{
         id: KafkaEx.ConsumerGroup,
         start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor

@@ -7,15 +7,13 @@
 # kaufmannex publish and wait        841.71        1.19 ms  ±1324.85%        0.64 ms        4.40 ms
 # simple publish and wait            797.63        1.25 ms  ±1283.08%        0.67 ms        4.31 ms
 
+# Name                                  ips        average  deviation         median         99th %
+# kaufmannex publish and wait        861.38        1.16 ms  ±1318.39%        0.62 ms        4.11 ms
+# simple publish and wait            785.88        1.27 ms  ±1275.77%        0.69 ms        4.43 ms
 
-Name                                  ips        average  deviation         median         99th %
-kaufmannex publish and wait        861.38        1.16 ms  ±1318.39%        0.62 ms        4.11 ms
-simple publish and wait            785.88        1.27 ms  ±1275.77%        0.69 ms        4.43 ms
-
-Comparison:
-kaufmannex publish and wait        861.38
-simple publish and wait            785.88 - 1.10x slower
-
+# Comparison:
+# kaufmannex publish and wait        861.38
+# simple publish and wait            785.88 - 1.10x slower
 
 defmodule IntegrationTest.SimpleGenConsumerSubscriber do
   use KafkaEx.GenConsumer
@@ -179,38 +177,40 @@ defmodule IntegrationTest.IngrationBenchmarkTest do
     # kaufmannex publish and wait        841.71        1.19 ms  ±1324.85%        0.64 ms        4.40 ms
     # simple publish and wait            797.63        1.25 ms  ±1283.08%        0.67 ms        4.31 ms
 
-              {:ok, sup} = Supervisor.start_link([], [strategy: :one_for_one, max_restarts: 1_000_000, max_seconds: 1])
+    {:ok, sup} =
+      Supervisor.start_link([], strategy: :one_for_one, max_restarts: 1_000_000, max_seconds: 1)
 
     Benchee.run(
       %{
         "simple publish and wait" =>
           {&IntegrationTest.SimpleGenConsumerSubscriber.publish_and_wait/1,
            input: {
-               IntegrationTest.SimpleGenConsumerSubscriber,
-               IntegrationTest.SimpleGenConsumerSubscriber
-             }},
+             IntegrationTest.SimpleGenConsumerSubscriber,
+             IntegrationTest.SimpleGenConsumerSubscriber
+           }},
         "kaufmannex publish and wait" => {
           &IntegrationTest.KaufmannExSubscriberListener.publish_and_wait/1,
           input: {
-              IntegrationTest.KaufmannExSubscriberListener,
-              KaufmannEx.Stages.GenConsumer
-            }
-          
+            IntegrationTest.KaufmannExSubscriberListener,
+            KaufmannEx.Stages.GenConsumer
+          }
         }
       },
       # parallel: 3,
-      before_scenario: fn ({event_mod, consumer_mod}) ->
+      before_scenario: fn {event_mod, consumer_mod} ->
         setup_kaufmann_supervisor(
-              event_mod,
-              consumer_mod
-            )
-        Supervisor.start_child(sup, Supervisor.child_spec(KaufmannEx.Supervisor, [])) 
+          event_mod,
+          consumer_mod
+        )
+
+        Supervisor.start_child(sup, Supervisor.child_spec(KaufmannEx.Supervisor, []))
       end,
       after_scenario: fn _ ->
         id = KaufmannEx.Supervisor
+
         with :ok <- Supervisor.terminate_child(sup, id),
              :ok <- Supervisor.delete_child(sup, id),
-            do: :ok
+             do: :ok
       end
     )
   end

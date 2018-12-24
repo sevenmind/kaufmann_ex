@@ -3,6 +3,9 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
   alias KaufmannEx.TestSupport.MockBus
   alias KafkaEx.Protocol.Fetch.Message
 
+  @topic :rapids
+  @partition 0
+
   defmodule TestEventHandler do
     def given_event(
           %KaufmannEx.Schemas.Event{name: :"test.event.publish", payload: "raise_error"} = event
@@ -23,13 +26,11 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
       :ok
     end
-
   end
-
 
   setup do
     {:ok, memo_pid} = Application.ensure_all_started(:memoize)
-    on_exit( fn -> Memoize.invalidate() end)
+    on_exit(fn -> Memoize.invalidate() end)
 
     bypass = Bypass.open()
     Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
@@ -43,10 +44,11 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
     Process.register(self(), :subscriber)
 
-    {:ok, pid} = KaufmannEx.Stages.Producer.start_link([])
-    {:ok, s_pid} = KaufmannEx.Stages.Consumer.start_link()
+    assert {:ok, pid} = start_supervised({KaufmannEx.Stages.Producer, {@topic, @partition}})
+    assert {:ok, _pid} = start_supervised({KaufmannEx.Stages.Decoder, {@topic, @partition}})
+    assert {:ok, s_pid} = start_supervised({KaufmannEx.Stages.Consumer, {@topic, @partition}})
 
-    {:ok, bypass: bypass, state: []}
+    {:ok, bypass: bypass, state: %{topic: @topic, partition: @partition}}
   end
 
   describe "when started" do

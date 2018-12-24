@@ -38,10 +38,7 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
           topic_meta: topic_meta
         } = state
       ) do
-
-
     partitions_count = Map.get(topic_meta, topic)
-
 
     partition = pick_partition(partitions_count, topic, metadata, strategy)
 
@@ -52,19 +49,24 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
     Choose partition from specified strategy
   """
   @spec pick_partition(integer, term, term, atom | function) :: {atom, integer | atom}
-  def pick_partition(partitions_count, topic, %{callback_topic: %{partition: partition, topic: callback_topic}} = meta, _)
+  def pick_partition(
+        partitions_count,
+        topic,
+        %{callback_topic: %{partition: partition, topic: callback_topic}} = meta,
+        _default
+      )
       when is_number(partition) do
-
-    partition = if topic == callback_topic do
-      partition
-    else
-       random(partitions_count)
-    end
+    partition =
+      if topic == callback_topic do
+        partition
+      else
+        random(partitions_count)
+      end
 
     case partition do
       x when x < partitions_count -> {:ok, partition}
       _ -> {:error, :invalid_callback_partition}
-    end 
+    end
   end
 
   def pick_partition(partitions_count, topic, metadata, :md5) do
@@ -81,7 +83,7 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
     strategy.(partitions_count, metadata)
   end
 
-  def pick_partition(partitions_count, _topic,  _metadata, _strategy) do
+  def pick_partition(partitions_count, _topic, _metadata, _strategy) do
     {:ok, random(partitions_count)}
   end
 

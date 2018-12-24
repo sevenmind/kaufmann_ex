@@ -6,18 +6,20 @@ defmodule KaufmannEx.Stages.Producer do
   require Logger
   use GenStage
 
-  def start_link(message_set \\ []) do
-    :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
-    GenStage.start_link(__MODULE__, message_set, name: __MODULE__)
+  def start_link({topic, partition}) do
+    :ok = Logger.info(fn -> "#{__MODULE__} #{topic}@#{partition} Starting" end)
+    name = {:global, {__MODULE__, topic, partition}}
+    GenStage.start_link(__MODULE__, {topic, partition}, name: name)
   end
 
-  def init(message_set) do
-    {:producer, %{message_set: message_set, demand: 0, from: MapSet.new()}}
+  def init({topic, partition}) do
+    {:producer,
+     %{message_set: [], demand: 0, from: MapSet.new(), topic: topic, partition: partition}}
   end
 
-  def notify(message_set, timeout \\ 50_000) do
-    GenStage.call(__MODULE__, {:notify, message_set}, timeout)
-  end
+  # def notify(message_set, timeout \\ 50_000) do
+  #   GenStage.call(__MODULE__, {:notify, message_set}, timeout)
+  # end
 
   # When no messages to meet demand, nothing to do
   def handle_demand(demand, %{message_set: []} = state) when demand > 0 do
@@ -85,5 +87,9 @@ defmodule KaufmannEx.Stages.Producer do
     }
 
     {:reply, :ok, message_set, new_state}
+  end
+
+  def handle_subscribe(producer_or_consumer, subscription_options, from, state) do
+    {:automatic, state}
   end
 end
