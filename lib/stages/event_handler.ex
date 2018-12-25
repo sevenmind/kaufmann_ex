@@ -7,8 +7,10 @@ defmodule KaufmannEx.Stages.EventHandler do
   require Logger
 
   def start_link(event) do
+    KaufmannEx.Monitor.event(:start_handle_event, event.meta.crc)
     Task.start_link(fn ->
       handle_event(event)
+      KaufmannEx.Monitor.event(:end_handle_event, event.meta.crc)
     end)
   end
 

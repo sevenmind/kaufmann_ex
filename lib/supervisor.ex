@@ -34,7 +34,8 @@ defmodule KaufmannEx.Supervisor do
       %{
         id: KaufmannEx.Publisher.PartitionSelector,
         start: {KaufmannEx.Publisher.PartitionSelector, :start_link, []}
-      }
+      },
+      KaufmannEx.Monitor
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

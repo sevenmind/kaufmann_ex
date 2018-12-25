@@ -14,6 +14,7 @@ defmodule KaufmannEx.Publisher.PartitionSelector do
 
   require Logger
 
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(opts \\ []) do
     GenServer.start_link(__MODULE__, :ok, name: __MODULE__)
   end

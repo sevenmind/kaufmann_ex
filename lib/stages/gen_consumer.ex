@@ -17,10 +17,13 @@ defmodule KaufmannEx.Stages.GenConsumer do
   end
 
   def handle_message_set(message_set, state) do
+    KaufmannEx.Monitor.messages_from_kafka(message_set)
+
     GenStage.call(
       {:global, {KaufmannEx.Stages.Producer, state.topic, state.partition}},
       {:notify, message_set}
     )
+
 
     {:async_commit, state}
   end

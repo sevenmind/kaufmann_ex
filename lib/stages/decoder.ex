@@ -25,6 +25,9 @@ defmodule KaufmannEx.Stages.Decoder do
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
   def decode_event(%{key: key, value: value} = event) do
     event_name = key |> String.to_atom()
+    crc = Map.get(event, :crc)
+
+    KaufmannEx.Monitor.event(:begin_decode, crc)
 
     case KaufmannEx.Schemas.decode_message(key, value) do
       {:ok, %{meta: meta, payload: payload}} ->
@@ -36,9 +39,11 @@ defmodule KaufmannEx.Stages.Decoder do
           meta[:emitter_service_id]
         ])
 
+        KaufmannEx.Monitor.event(:end_decode, crc)
+
         %KaufmannEx.Schemas.Event{
           name: event_name,
-          meta: meta,
+          meta: Map.put(meta, :crc, crc),
           payload: payload
         }
 
