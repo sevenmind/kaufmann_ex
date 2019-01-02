@@ -1,11 +1,12 @@
-defmodule KaufmannEx.Stages.ProducerTest do
+defmodule KaufmannEx.Consumer.Stage.ProducerTest do
   use ExUnit.Case
+  alias KaufmannEx.Consumer.Stage.Producer, as: ProducerStage
 
   @topic :rapids
   @partition 0
 
   setup do
-    {:ok, pid} = start_supervised({KaufmannEx.Stages.Producer, {@topic, @partition}})
+    {:ok, pid} = start_supervised({ProducerStage, {@topic, @partition}})
 
     {:ok, %{pid: pid}}
   end
@@ -14,26 +15,25 @@ defmodule KaufmannEx.Stages.ProducerTest do
     test "when no messages and demand > 0" do
       # Is this actually a useful thing to test
       assert {:noreply, [], %{demand: 10, message_set: []}} =
-               KaufmannEx.Stages.Producer.handle_demand(10, %{message_set: [], demand: 10})
+               ProducerStage.handle_demand(10, %{message_set: [], demand: 10})
     end
 
     test "when messages > demand && demand > 0" do
       assert {:noreply, [1, 2, 3, 4, 5], %{demand: 0, message_set: [6]}} =
-               KaufmannEx.Stages.Producer.handle_demand(5, %{
+               ProducerStage.handle_demand(5, %{
                  message_set: [1, 2, 3, 4, 5, 6],
                  demand: 5
                })
     end
 
     test "when messages and 0 demand" do
-      res =
-        KaufmannEx.Stages.Producer.handle_demand(0, %{message_set: [1, 2, 3, 4, 5], demand: 10})
+      res = ProducerStage.handle_demand(0, %{message_set: [1, 2, 3, 4, 5], demand: 10})
 
       assert res == {:noreply, [], %{demand: 0, message_set: [1, 2, 3, 4, 5]}}
     end
 
     test "when no messages, and  0 demand" do
-      res = KaufmannEx.Stages.Producer.handle_demand(0, %{message_set: [], demand: 10})
+      res = ProducerStage.handle_demand(0, %{message_set: [], demand: 10})
       assert res == {:noreply, [], %{demand: 0, message_set: []}}
     end
 
@@ -41,17 +41,17 @@ defmodule KaufmannEx.Stages.ProducerTest do
       from = MapSet.new([{self(), :test}])
 
       {reply, next_message_set, state} =
-        KaufmannEx.Stages.Producer.handle_demand(5, %{
+        ProducerStage.handle_demand(5, %{
           message_set: [1, 2, 3, 4, 5, 6],
           demand: 5,
           from: from
         })
 
       assert {:noreply, [], %{demand: 0, message_set: [6], from: ^from}} =
-               KaufmannEx.Stages.Producer.handle_demand(0, state)
+               ProducerStage.handle_demand(0, state)
 
       assert {:noreply, [6], %{demand: 0, message_set: [], from: %MapSet{}}} =
-               KaufmannEx.Stages.Producer.handle_demand(1, state)
+               ProducerStage.handle_demand(1, state)
 
       # Should happen
       assert_receive({:test, :ok})
@@ -86,7 +86,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
     def init(parent) do
       children = [{TestEventHandler, [parent]}]
 
-      producer = {:global, {KaufmannEx.Stages.Producer, @topic, @partition}}
+      producer = {:global, {ProducerStage, @topic, @partition}}
 
       # max_demand is highly resource dependent
       ConsumerSupervisor.init(children,
@@ -102,7 +102,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
       :ok =
         GenStage.call(
-          {:global, {KaufmannEx.Stages.Producer, @topic, @partition}},
+          {:global, {ProducerStage, @topic, @partition}},
           {:notify, Enum.to_list(1..10)}
         )
 
@@ -118,7 +118,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
       :ok =
         GenStage.call(
-          {:global, {KaufmannEx.Stages.Producer, @topic, @partition}},
+          {:global, {ProducerStage, @topic, @partition}},
           {:notify, events}
         )
 
@@ -136,7 +136,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
       :ok =
         GenStage.call(
-          {:global, {KaufmannEx.Stages.Producer, @topic, @partition}},
+          {:global, {ProducerStage, @topic, @partition}},
           {:notify, events}
         )
 
@@ -153,7 +153,7 @@ defmodule KaufmannEx.Stages.ProducerTest do
 
       :ok =
         GenStage.call(
-          {:global, {KaufmannEx.Stages.Producer, @topic, @partition}},
+          {:global, {ProducerStage, @topic, @partition}},
           {:notify, events}
         )
 

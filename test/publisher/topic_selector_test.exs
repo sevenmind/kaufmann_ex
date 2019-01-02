@@ -1,10 +1,50 @@
 defmodule KaufmannEx.Publisher.TopicSelectorTest do
   use ExUnit.Case
+  alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Publisher.TopicSelector
 
   setup do
     Application.put_env(:kaufmann_ex, :default_topic, "default_topic")
     :ok
+  end
+
+  describe "topic selection" do
+    test "selects default topic" do
+      event = %Request{
+        event_name: :whatever,
+        body: %{},
+        context: %{},
+        topic: "this-one-specific-topic"
+      }
+
+    end
+
+    test "respects passed topic" do
+      event = %Request{
+        event_name: :whatever,
+        body: %{},
+        context: %{},
+        topic: "this-one-specific-topic"
+      }
+
+    end
+    test "selects callback topic and default topic" do
+      event = %Request{
+        event_name: :whatever,
+        body: %{},
+        context: %{
+          callback_topic: %{
+            topic: "test_callback",
+            partition: 0
+          }
+        }
+      }
+    end
+  end
+
+  describe "partition selection" do
+    test "selects random partition by default"
+    test "uses md5 to compute partition"
   end
 
   describe "topic from metadata" do

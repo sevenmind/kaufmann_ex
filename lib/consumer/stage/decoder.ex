@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Stages.Decoder do
+defmodule KaufmannEx.Consumer.Stage.Decoder do
   use GenStage
   require Logger
 
@@ -10,7 +10,7 @@ defmodule KaufmannEx.Stages.Decoder do
 
   def init({topic, partition}) do
     {:producer_consumer, %{partition: partition, topic: topic},
-     subscribe_to: [{:global, {KaufmannEx.Stages.Producer, topic, partition}}]}
+     subscribe_to: [{:global, {KaufmannEx.Consumer.Stage.Producer, topic, partition}}]}
   end
 
   def handle_events(events, _from, state) do

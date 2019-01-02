@@ -30,7 +30,10 @@ defmodule KaufmannEx.Monitor do
   end
 
   def messages_from_kafka(messages) do
-    GenServer.cast(__MODULE__, {:messages_from_kafka, messages, System.monotonic_time(:microsecond)})
+    GenServer.cast(
+      __MODULE__,
+      {:messages_from_kafka, messages, System.monotonic_time(:microsecond)}
+    )
   end
 
   def event(name, crc) do
@@ -67,12 +70,13 @@ defmodule KaufmannEx.Monitor do
     event_times
     |> Enum.sort_by(fn {_, v} -> v end)
     |> Enum.chunk_every(2, 1)
-    |> Enum.map( fn [{k1, v1}, {k2, v2}] ->
-      [k1, "to", k2, v2 - v1, :microsecond]
-      _ -> []
-    end )
+    |> Enum.map(fn
+      [{k1, v1}, {k2, v2}] ->
+        [k1, "to", k2, v2 - v1, :microsecond]
 
-
+      _ ->
+        []
+    end)
 
     # [
     #   consumed_at: -576460724863455262,

@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Stages.GenConsumer do
+defmodule KaufmannEx.Consumer.GenConsumer do
   @moduledoc """
     `KafkaEx.GenConsumer` listening for Kafka messages.
 
@@ -6,25 +6,33 @@ defmodule KaufmannEx.Stages.GenConsumer do
   """
   require Logger
   use KafkaEx.GenConsumer
+  alias KaufmannEx.Config
 
+  @impl true
   def init(topic, partition) do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
 
     # Start Stage Supervisor
-    {:ok, pid} = KaufmannEx.Stage.Supervisor.start_link({topic, partition})
+    {:ok, pid} = KaufmannEx.Consumer.Stageupervisor.start_link({topic, partition})
 
-    {:ok, %{supervisor: pid, topic: topic, partition: partition}}
+    {:ok,
+     %{
+       supervisor: pid,
+       topic: topic,
+       partition: partition,
+       commit_strategy: Config.commit_strategy()
+     }}
   end
 
+  @impl true
   def handle_message_set(message_set, state) do
     KaufmannEx.Monitor.messages_from_kafka(message_set)
 
     GenStage.call(
-      {:global, {KaufmannEx.Stages.Producer, state.topic, state.partition}},
+      {:global, {KaufmannEx.Consumer.Stage.Producer, state.topic, state.partition}},
       {:notify, message_set}
     )
 
-
-    {:async_commit, state}
+    {Map.get(state, :commit_strategy, :async_commit), state}
   end
 end

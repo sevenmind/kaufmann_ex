@@ -25,7 +25,7 @@ defmodule IntegrationTest.SimpleGenConsumerSubscriber do
 
   def handle_message_set(message_set, state) do
     message_set
-    |> Enum.map(&KaufmannEx.Stages.EventHandler.handle_event/1)
+    |> Enum.map(&KaufmannEx.Consumer.Stage.EventHandler.handle_event/1)
 
     {:async_commit, state}
   end
@@ -151,7 +151,7 @@ defmodule IntegrationTest.IngrationBenchmarkTest do
   setup_all do
     KaufmannEx.ReleaseTasks.migrate_schemas("sample_application/priv/schemas/")
 
-    # Ensure topic is defined, raise error if not 
+    # Ensure topic is defined, raise error if not
     KafkaEx.metadata(topic: "rapids")
 
     Process.sleep(1000)
@@ -192,7 +192,7 @@ defmodule IntegrationTest.IngrationBenchmarkTest do
           &IntegrationTest.KaufmannExSubscriberListener.publish_and_wait/1,
           input: {
             IntegrationTest.KaufmannExSubscriberListener,
-            KaufmannEx.Stages.GenConsumer
+            KaufmannEx.Consumer.Stage.GenConsumer
           }
         }
       },

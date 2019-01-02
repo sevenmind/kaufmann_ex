@@ -125,16 +125,16 @@ Kafka
 KafkaEx.ConsumerGroup
    |   |   | (Per Partition)
    V   V   V
-KaufmannEx.Stages.GenConsumer
+KaufmannEx.Consumer.Stage.GenConsumer
    |
    V
-KaufmannEx.Stages.Producer
+KaufmannEx.Consumer.Stage.Producer
     |
     V
-KaufmannEx.Stages.Consumer
+KaufmannEx.Consumer.Stage.Consumer
   |   |   | (ConsumerSupervisor spawns workers for each event received)
   V   V   V
-KaufmannEx.Stages.EventHandler
+KaufmannEx.Consumer.Stage.EventHandler
   |   |   |
   V   V   V
 Application.EventHandler.given_event/1

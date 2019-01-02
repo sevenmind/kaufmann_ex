@@ -50,14 +50,14 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
         true ->
           message_set
           |> Enum.filter(fn m -> m.offset < state[:target_offset] - 1 end)
-          |> KaufmannEx.Stages.Producer.notify()
+          |> KaufmannEx.Consumer.Stage.Producer.notify()
 
           # System.stop()
           send(:reinit, :shutdown)
           {:sync_commit, state}
 
         false ->
-          KaufmannEx.Stages.Producer.notify(message_set)
+          KaufmannEx.Consumer.Stage.Producer.notify(message_set)
           {:async_commit, state}
       end
     end

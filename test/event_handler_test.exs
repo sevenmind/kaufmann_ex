@@ -1,7 +1,9 @@
-defmodule KaufmannEx.Stages.EventHandlerTest do
+defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
   use ExUnit.Case
-  alias KaufmannEx.TestSupport.MockBus
   alias KafkaEx.Protocol.Fetch.Message
+  alias KaufmannEx.Consumer.Stage.{Producer, Decoder, Consumer}
+  alias KaufmannEx.Consumer.GenConsumer
+  alias KaufmannEx.TestSupport.MockBus
 
   @topic :rapids
   @partition 0
@@ -44,9 +46,9 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
 
     Process.register(self(), :subscriber)
 
-    assert {:ok, pid} = start_supervised({KaufmannEx.Stages.Producer, {@topic, @partition}})
-    assert {:ok, _pid} = start_supervised({KaufmannEx.Stages.Decoder, {@topic, @partition}})
-    assert {:ok, s_pid} = start_supervised({KaufmannEx.Stages.Consumer, {@topic, @partition}})
+    assert {:ok, pid} = start_supervised({Producer, {@topic, @partition}})
+    assert {:ok, _pid} = start_supervised({Decoder, {@topic, @partition}})
+    assert {:ok, s_pid} = start_supervised({Consumer, {@topic, @partition}})
 
     {:ok, bypass: bypass, state: %{topic: @topic, partition: @partition}}
   end
@@ -55,7 +57,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
     test "Consumes Events to EventHandler", %{state: state} do
       event = encode_event(:"test.event.publish", "Hello")
 
-      KaufmannEx.Stages.GenConsumer.handle_message_set([event], state)
+      GenConsumer.handle_message_set([event], state)
 
       assert_receive :event_recieved, 1000
     end
@@ -64,7 +66,7 @@ defmodule KaufmannEx.Stages.EventHandlerTest do
       first_event = encode_event(:"test.event.publish", "raise_error")
       second_event = encode_event(:"test.event.publish", "Hello")
 
-      KaufmannEx.Stages.GenConsumer.handle_message_set(
+      GenConsumer.handle_message_set(
         [
           first_event,
           second_event,

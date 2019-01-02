@@ -29,7 +29,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInitTest do
   describe "reinit.genconsumer" do
     @tag skip: "terminates test process"
     test "will terminate when passed message set all >= target_offset in state" do
-      {:ok, _} = KaufmannEx.Stages.Producer.start_link([])
+      {:ok, _} = KaufmannEx.Consumer.Stage.Producer.start_link([])
 
       :ok = ReInit.StateStore.init()
       ReInit.StateStore.set_target_offset(15)

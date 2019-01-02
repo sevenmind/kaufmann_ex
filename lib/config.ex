@@ -10,7 +10,7 @@ defmodule KaufmannEx.Config do
     default_topic: System.get_env("KAFKA_TOPIC"),
     event_handler_demand: 50,
     event_handler_mod: nil, # Be sure to specify your event handler
-    gen_consumer_mod: KaufmannEx.Stages.GenConsumer,
+    gen_consumer_mod: KaufmannEx.Consumer.Stage.GenConsumer,
     producer_mod: KaufmannEx.Publisher,
     schema_path: "priv/schemas",
     schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
@@ -90,18 +90,25 @@ defmodule KaufmannEx.Config do
   """
   @spec gen_consumer_mod() :: atom
   def gen_consumer_mod,
-    do: Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Stages.GenConsumer)
+    do:
+      Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Consumer.Stage.GenConsumer)
 
   @doc """
+  Partition selection strategy, default is :random, options are `[:random]
    Application.get_env(:kaufmann_ex, :partition_strategy, :random)
   """
-  @spec partition_strategy() :: atom
+  @spec partition_strategy() :: :random | :md5
   def partition_strategy, do: Application.get_env(:kaufmann_ex, :partition_strategy, :random)
 
-  @spec topic_strategy() :: atom
+  @doc """
+  partitioning strategy, only option is default
+  """
+  @spec topic_strategy() :: :default
   def topic_strategy, do: Application.get_env(:kaufmann_ex, :topic_strategy, :default)
 
   @spec schema_cache_expires_in_ms() :: integer
   def schema_cache_expires_in_ms,
     do: Application.get_env(:kaufmann_ex, :schema_cache_expires_in_ms, 60_000)
+
+  def commit_strategy, do: Application.get_env(:kaufmann_ex, :commit_strategy, :async_commit)
 end

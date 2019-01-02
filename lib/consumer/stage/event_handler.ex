@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Stages.EventHandler do
+defmodule KaufmannEx.Consumer.Stage.EventHandler do
   @moduledoc """
   Behavior module for consuming messages from Kafka bus.
 
@@ -8,6 +8,7 @@ defmodule KaufmannEx.Stages.EventHandler do
 
   def start_link(event) do
     KaufmannEx.Monitor.event(:start_handle_event, event.meta.crc)
+
     Task.start_link(fn ->
       handle_event(event)
       KaufmannEx.Monitor.event(:end_handle_event, event.meta.crc)

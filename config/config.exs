@@ -46,7 +46,8 @@ config :kaufmann_ex,
   schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
   service_name: "SampleService",
   service_id: "SampleHost",
-  event_handler_demand: 50
+  event_handler_demand: 50,
+  commit_strategy: :async_commit
 
 config :logger,
   level: :info

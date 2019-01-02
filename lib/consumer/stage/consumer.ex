@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Stages.Consumer do
+defmodule KaufmannEx.Consumer.Stage.Consumer do
   @moduledoc """
   A consumer will be a consumer supervisor that will
   Subscriber tasks for each event.
@@ -18,8 +18,8 @@ defmodule KaufmannEx.Stages.Consumer do
   def init({topic, partition}) do
     children = [
       %{
-        id: KaufmannEx.Stages.EventHandler,
-        start: {KaufmannEx.Stages.EventHandler, :start_link, []},
+        id: KaufmannEx.Consumer.Stage.EventHandler,
+        start: {KaufmannEx.Consumer.Stage.EventHandler, :start_link, []},
         restart: :temporary
       }
     ]
@@ -27,7 +27,7 @@ defmodule KaufmannEx.Stages.Consumer do
     opts = [
       strategy: :one_for_one,
       subscribe_to: [
-        {{:global, {KaufmannEx.Stages.Decoder, topic, partition}}, max_demand: 50}
+        {{:global, {KaufmannEx.Consumer.Stage.Decoder, topic, partition}}, max_demand: 50}
       ]
     ]
 
