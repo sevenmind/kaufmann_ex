@@ -1,10 +1,12 @@
-defmodule KaufmannEx.Producer.TopicSelector do
+defmodule KaufmannEx.Publisher.TopicSelector do
   @moduledoc """
   Topic and partition selection stage.
 
   If event context includes a callback topic, the passed message will be duplicated
   and published to the default topic and the callback topic, maybe it should only be
   published on the callback topic?
+
+  TODO: Implement standard partition selection algo to match Java producer behavior
   """
 
   use GenStage
@@ -34,11 +36,12 @@ defmodule KaufmannEx.Producer.TopicSelector do
   @spec select_topic_and_partition(Request.t() | map(), map()) :: Request.t() | [Request.t()]
   def select_topic_and_partition(%{context: %{callback_topic: callback}} = event, state)
       when not is_nil(callback) do
+    # If context includes callback topic create duplicate publish request to callback topic
     [
-      Map.merge(event, callback),
-      event
-      |> Map.replace!(:context, Map.drop(event.context, :callback_topic))
-      |> select_topic_and_partition(state)
+      Map.merge(event, callback)
+      | event
+        |> Map.replace!(:context, Map.drop(event.context, [:callback_topic]))
+        |> select_topic_and_partition(state)
     ]
   end
 
@@ -57,7 +60,7 @@ defmodule KaufmannEx.Producer.TopicSelector do
         _ -> random(partitions_count)
       end
 
-    Map.merge(event, %{topic: topic, partition: partition})
+    [Map.merge(event, %{topic: topic, partition: partition})]
   end
 
   @spec fetch_partitions_counts() :: map()

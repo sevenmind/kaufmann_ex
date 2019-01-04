@@ -13,10 +13,18 @@ defmodule KaufmannEx.Publisher.TopicSelectorTest do
       event = %Request{
         event_name: :whatever,
         body: %{},
-        context: %{},
-        topic: "this-one-specific-topic"
+        context: %{}
       }
 
+      state = %{
+        partition_strategy: :default,
+        topic_partitions: %{"default_topic" => 1}
+      }
+
+      assert {:noreply, [publish_request], _} = TopicSelector.handle_events([event], nil, state)
+
+      assert publish_request.topic == "default_topic"
+      assert publish_request.partition == 0
     end
 
     test "respects passed topic" do
@@ -24,10 +32,20 @@ defmodule KaufmannEx.Publisher.TopicSelectorTest do
         event_name: :whatever,
         body: %{},
         context: %{},
-        topic: "this-one-specific-topic"
+        topic: "specified_topic"
       }
 
+      state = %{
+        partition_strategy: :default,
+        topic_partitions: %{"specified_topic" => 1}
+      }
+
+      assert {:noreply, [publish_request], _} = TopicSelector.handle_events([event], nil, state)
+
+      assert publish_request.topic == "specified_topic"
+      assert publish_request.partition == 0
     end
+
     test "selects callback topic and default topic" do
       event = %Request{
         event_name: :whatever,
@@ -39,52 +57,59 @@ defmodule KaufmannEx.Publisher.TopicSelectorTest do
           }
         }
       }
+
+      state = %{
+        partition_strategy: :default,
+        topic_partitions: %{"default_topic" => 1}
+      }
+
+      assert {:noreply, [callback, publish_request], _} =
+               TopicSelector.handle_events([event], nil, state)
+
+      assert callback.topic == "test_callback"
+      assert callback.partition == 0
+      assert publish_request.topic == "default_topic"
+      assert publish_request.partition == 0
     end
   end
 
   describe "partition selection" do
-    test "selects random partition by default"
-    test "uses md5 to compute partition"
-  end
-
-  describe "topic from metadata" do
-    test "publishes valid message" do
-      context = %{
-        callback_topic: %{topic: "test_callback"}
+    test "selects random partition by default" do
+      event = %Request{
+        event_name: :whatever,
+        body: %{},
+        context: %{}
       }
 
-      assert {:ok, ["test_callback", "default_topic"]} =
-               TopicSelector.choose_topic("event.test", context, :default)
-    end
-  end
+      state = %{
+        partition_strategy: :default,
+        topic_partitions: %{"default_topic" => 10}
+      }
 
-  describe "topic from message namespace" do
-    test "from query event" do
-      event_name = :"query.req.library.catalog.bibliographies.search"
+      assert {:noreply, [publish_request], _} = TopicSelector.handle_events([event], nil, state)
 
-      assert {:ok, "library.catalog"} =
-               TopicSelector.choose_topic(event_name, %{}, :event_namespace)
-    end
-
-    test "from error event" do
-      event_name = :"event.error.library.catalog"
-
-      assert {:ok, "error.library"} =
-               TopicSelector.choose_topic(event_name, %{}, :event_namespace)
+      assert publish_request.topic == "default_topic"
+      assert publish_request.partition >= 0
+      assert publish_request.partition <= 9
     end
 
-    test "from event" do
-      event_name = :"command.library.catalog.bibliographies.update"
+    test "uses md5 to compute partition" do
+      event = %Request{
+        event_name: :whatever,
+        body: %{},
+        context: %{},
+        encoded: "some binary bytes"
+      }
 
-      assert {:ok, "library.catalog"} =
-               TopicSelector.choose_topic(event_name, %{}, :event_namespace)
-    end
-  end
+      state = %{
+        partition_strategy: :md5,
+        topic_partitions: %{"default_topic" => 10}
+      }
 
-  describe "default" do
-    test "default" do
-      default = KaufmannEx.Config.default_topic()
-      assert {:ok, ^default} = TopicSelector.choose_topic("", %{}, :default)
+      assert {:noreply, [publish_request], _} = TopicSelector.handle_events([event], nil, state)
+
+      assert publish_request.topic == "default_topic"
+      assert publish_request.partition == 3
     end
   end
 end
