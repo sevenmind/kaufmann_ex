@@ -10,7 +10,7 @@ defmodule KaufmannEx.Config do
     default_topic: System.get_env("KAFKA_TOPIC"),
     event_handler_demand: 50,
     event_handler_mod: nil, # Be sure to specify your event handler
-    gen_consumer_mod: KaufmannEx.Consumer.Stage.GenConsumer,
+    gen_consumer_mod: KaufmannEx.Consumer.GenConsumer,
     producer_mod: KaufmannEx.Publisher,
     schema_path: "priv/schemas",
     schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
@@ -91,7 +91,7 @@ defmodule KaufmannEx.Config do
   @spec gen_consumer_mod() :: atom
   def gen_consumer_mod,
     do:
-      Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Consumer.Stage.GenConsumer)
+      Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Consumer.GenConsumer)
 
   @doc """
   Partition selection strategy, default is :random, options are `[:random]

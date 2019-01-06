@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Consumer.Stageupervisor do
+defmodule KaufmannEx.Consumer.StageSupervisor do
   @moduledoc """
   Supervisor that coordinates Kafka Subscription and event consumption
 

@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Producer.Encoder do
+defmodule KaufmannEx.Publisher.Encoder do
   use GenStage
   require Logger
   alias KaufmannEx.Schemas
@@ -8,7 +8,7 @@ defmodule KaufmannEx.Producer.Encoder do
   end
 
   def init(:ok) do
-    {:producer_consumer, [], subscribe_to: KaufmannEx.Publisher.Producer}
+    {:producer_consumer, [], subscribe_to: [KaufmannEx.Publisher.Producer]}
   end
 
   def handle_events(events, _from, state) do

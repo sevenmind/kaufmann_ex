@@ -31,11 +31,16 @@ defmodule KaufmannEx.Supervisor do
         start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor
       },
-      %{
-        id: KaufmannEx.Publisher.PartitionSelector,
-        start: {KaufmannEx.Publisher.PartitionSelector, :start_link, []}
-      },
-      KaufmannEx.Monitor
+      KaufmannEx.Publisher.Producer,
+      KaufmannEx.Publisher.Encoder,
+      KaufmannEx.Publisher.TopicSelector,
+      KaufmannEx.Publisher.ConsumerSupervisor
+
+      # %{
+      #   id: KaufmannEx.Publisher.PartitionSelector,
+      #   start: {KaufmannEx.Publisher.PartitionSelector, :start_link, []}
+      # },
+      # KaufmannEx.Monitor
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

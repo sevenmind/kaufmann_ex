@@ -10,10 +10,10 @@ defmodule KaufmannEx.Consumer.GenConsumer do
 
   @impl true
   def init(topic, partition) do
-    :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
+    :ok = Logger.info(fn -> "#{__MODULE__} Starting #{topic}@#{partition}" end)
 
     # Start Stage Supervisor
-    {:ok, pid} = KaufmannEx.Consumer.Stageupervisor.start_link({topic, partition})
+    {:ok, pid} = KaufmannEx.Consumer.StageSupervisor.start_link({topic, partition})
 
     {:ok,
      %{
@@ -26,8 +26,6 @@ defmodule KaufmannEx.Consumer.GenConsumer do
 
   @impl true
   def handle_message_set(message_set, state) do
-    KaufmannEx.Monitor.messages_from_kafka(message_set)
-
     GenStage.call(
       {:global, {KaufmannEx.Consumer.Stage.Producer, state.topic, state.partition}},
       {:notify, message_set}

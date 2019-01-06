@@ -192,7 +192,7 @@ defmodule IntegrationTest.IngrationBenchmarkTest do
           &IntegrationTest.KaufmannExSubscriberListener.publish_and_wait/1,
           input: {
             IntegrationTest.KaufmannExSubscriberListener,
-            KaufmannEx.Consumer.Stage.GenConsumer
+            KaufmannEx.Consumer.GenConsumer
           }
         }
       },

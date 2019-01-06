@@ -27,8 +27,6 @@ defmodule KaufmannEx.Consumer.Stage.Decoder do
     event_name = key |> String.to_atom()
     crc = Map.get(event, :crc)
 
-    KaufmannEx.Monitor.event(:begin_decode, crc)
-
     case KaufmannEx.Schemas.decode_message(key, value) do
       {:ok, %{meta: meta, payload: payload}} ->
         Logger.debug([
@@ -38,8 +36,6 @@ defmodule KaufmannEx.Consumer.Stage.Decoder do
           " from ",
           meta[:emitter_service_id]
         ])
-
-        KaufmannEx.Monitor.event(:end_decode, crc)
 
         %KaufmannEx.Schemas.Event{
           name: event_name,

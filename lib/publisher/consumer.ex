@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Publisher.Consumer do
+defmodule KaufmannEx.Publisher.ConsumerSupervisor do
   require Logger
   use ConsumerSupervisor
 
@@ -17,7 +17,7 @@ defmodule KaufmannEx.Publisher.Consumer do
 
     opts = [
       strategy: :one_for_one,
-      subscribe_to: KaufmannEx.Publisher.TopicSelector
+      subscribe_to: [KaufmannEx.Publisher.TopicSelector]
     ]
 
     ConsumerSupervisor.init(children, opts)
