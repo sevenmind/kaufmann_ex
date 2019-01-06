@@ -2,9 +2,9 @@ defmodule KaufmannEx.TestSupport.MockBus do
   use ExUnit.CaseTemplate
 
   @moduledoc """
-    Helper module for testing event flows.
+    Helper module for testing event handling.
 
-    Cannot be run Async, relies on sending messages to `self()`
+    Cannot be run Async, relies on sending messages to `self()` via a single producer GenStage
 
     For every `given_event/2` and `then_event/2`.
      * Validates events against schemas registered with Schema registry
@@ -32,10 +32,45 @@ defmodule KaufmannEx.TestSupport.MockBus do
     ```
   """
 
-  setup do
-    default_producer_mod = bus_setup()
+  defmodule Consumer do
+    @moduledoc """
+    The GenEvent handler implementation is a simple consumer.
+    """
 
-    on_exit(fn -> teardown(default_producer_mod) end)
+    use GenStage
+
+    @spec start_link(pid()) :: :ignore | {:error, any()} | {:ok, pid()}
+    def start_link(pid) do
+      GenStage.start_link(__MODULE__, pid)
+    end
+
+    # Callbacks
+
+    @impl true
+    def init(pid) do
+      # Starts a permanent subscription to the broadcaster
+      # which will automatically start requesting items.
+      {:consumer, pid, subscribe_to: [KaufmannEx.Publisher.Producer]}
+    end
+
+    @impl true
+    def handle_events(events, _from, pid) do
+      for %{
+            event_name: event_name,
+            body: body,
+            context: _context,
+            topic: topic
+          } <- events do
+        send(pid, {:produce, {event_name, body, topic}})
+      end
+
+      {:noreply, [], pid}
+    end
+  end
+
+  setup do
+    start_supervised!(KaufmannEx.Publisher.Producer)
+    start_supervised!({KaufmannEx.TestSupport.MockBus.Consumer, self()})
 
     :ok
   end
@@ -51,37 +86,6 @@ defmodule KaufmannEx.TestSupport.MockBus do
   import ExUnit.Assertions
   alias KaufmannEx.Schemas.Event
   alias KaufmannEx.TestSupport.MockSchemaRegistry
-
-  # Setup Helper
-  @doc false
-  def bus_setup do
-    default_producer_mod = Application.get_env(:kaufmann_ex, :producer_mod)
-    Application.put_env(:kaufmann_ex, :producer_mod, KaufmannEx.TestSupport.MockBus)
-
-    try do
-      Process.register(self(), :producer)
-    rescue
-      ArgumentError ->
-        Process.unregister(:producer)
-        Process.register(self(), :producer)
-    end
-
-    default_producer_mod
-  end
-
-  # Setup Helper
-  @doc false
-  def teardown(producer_mod) do
-    try do
-      Process.unregister(:producer)
-    rescue
-      # Nothing else to be done
-      _ ->
-        nil
-    end
-
-    Application.put_env(:kaufmann_ex, :producer_mod, producer_mod)
-  end
 
   @doc """
   Dispatches event to the default subscriber.
@@ -101,7 +105,10 @@ defmodule KaufmannEx.TestSupport.MockBus do
     }
 
     encodable_payload =
-      event |> Map.from_struct() |> Map.drop([:name]) |> Map.Helpers.stringify_keys()
+      event
+      |> Map.from_struct()
+      |> Map.drop([:name])
+      |> Map.Helpers.stringify_keys()
 
     # If message isn't encodable, big problems
     assert {:ok, _} = MockSchemaRegistry.encode_event(schema_name, encodable_payload),
@@ -120,9 +127,9 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   @spec then_event(atom, any) :: boolean
   def then_event(event_name, expected_payload) do
-    assert_received(
+    assert_receive(
       {:produce, {^event_name, %{payload: message_payload, meta: meta}, _topic}},
-      "#{event_name} was not triggered"
+      50
     )
 
     assert_matches_schema(event_name, message_payload, meta)
@@ -137,9 +144,9 @@ defmodule KaufmannEx.TestSupport.MockBus do
   """
   @spec then_event(atom) :: %{meta: map, payload: any}
   def then_event(event_name) do
-    assert_received(
+    assert_receive(
       {:produce, {^event_name, %{payload: message_payload, meta: meta}, topic}},
-      "#{event_name} was not triggered"
+      50
     )
 
     assert_matches_schema(event_name, message_payload, meta)
@@ -204,16 +211,6 @@ defmodule KaufmannEx.TestSupport.MockBus do
       message_name: event_name |> to_string,
       timestamp: DateTime.to_string(DateTime.utc_now())
     }
-  end
-
-  def produce(topic, event_name, payload, _context), do: produce(event_name, payload, topic)
-
-  # Internal Produce call, sends to self for assertion
-  @doc false
-  def produce(event_name, payload, topic) do
-    send(:producer, {:produce, {event_name, payload, topic}})
-
-    :ok
   end
 
   # Rename events were we use a generic schema for entire classes of events

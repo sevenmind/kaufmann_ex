@@ -108,10 +108,9 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
       end
     end
 
-    test "/1 returns topic if set" do
-      Application.put_env(:kaufmann_ex, :default_topic, "rapids")
+    test "/1 returns default topic" do
       given_event(:"test.event.publish", "Test")
-      assert %{topic: "rapids"} = then_event(:"test.event.publish")
+      assert %{topic: :default} = then_event(:"test.event.publish")
     end
   end
 
