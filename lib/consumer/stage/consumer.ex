@@ -27,7 +27,7 @@ defmodule KaufmannEx.Consumer.Stage.Consumer do
     opts = [
       strategy: :one_for_one,
       subscribe_to: [
-        {{:global, {KaufmannEx.Consumer.Stage.Decoder, topic, partition}}, max_demand: 50}
+        {:global, {KaufmannEx.Consumer.Stage.Decoder, topic, partition}}
       ]
     ]
 
