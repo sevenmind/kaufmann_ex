@@ -124,32 +124,18 @@ defmodule KaufmannEx.TestSupport.MockBus do
   Will test emitted payload from event matches payload
   Asserts payload matches argument
   """
-
-  @spec then_event(atom, any) :: boolean
-  def then_event(event_name, expected_payload) do
-    assert_receive(
-      {:produce, {^event_name, %{payload: message_payload, meta: meta}, _topic}},
-      50
-    )
-
-    assert_matches_schema(event_name, message_payload, meta)
-
-    assert message_payload == expected_payload
-  end
-
-  @doc """
-  Asserts an event has been emitted, returns the payload
-
-  Returned payload will include `meta` metadata
-  """
-  @spec then_event(atom) :: %{meta: map, payload: any}
-  def then_event(event_name) do
+  @spec then_event(atom, any, integer) :: map
+  def then_event(event_name, expected_payload \\ %{}, timeout \\ 50) do
     assert_receive(
       {:produce, {^event_name, %{payload: message_payload, meta: meta}, topic}},
-      50
+      timeout
     )
 
     assert_matches_schema(event_name, message_payload, meta)
+
+    if expected_payload != %{} do
+      assert message_payload == expected_payload
+    end
 
     %{payload: message_payload, meta: meta, topic: topic} |> Map.Helpers.atomize_keys()
   end
