@@ -7,6 +7,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
   require Logger
   use KafkaEx.GenConsumer
   alias KaufmannEx.Config
+  alias KaufmannEx.Consumer.Stage.Producer
   alias KaufmannEx.Consumer.StageSupervisor
 
   @impl true
@@ -26,13 +27,8 @@ defmodule KaufmannEx.Consumer.GenConsumer do
   end
 
   @impl true
-  def handle_message_set(message_set, state) do
-    GenStage.call(
-      {:via, Registry,
-       {Registry.ConsumerRegistry,
-        StageSupervisor.stage_name(KaufmannEx.Consumer.Stage.Producer, state.topic, state.partition)}},
-      {:notify, message_set}
-    )
+  def handle_message_set(message_set, %{topic: topic, partition: partition} = state) do
+    :ok = Producer.notify(message_set, topic, partition)
 
     {Map.get(state, :commit_strategy, :async_commit), state}
   end

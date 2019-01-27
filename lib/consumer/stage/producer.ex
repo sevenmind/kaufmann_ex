@@ -1,6 +1,11 @@
 defmodule KaufmannEx.Consumer.Stage.Producer do
   @moduledoc """
-  `GenStage` Producer to introduce backpressure between `KafkaEx.GenConsumer` and `Flow` stage in `KaufmannEx.Subscriber`
+  `GenStage` Producer to introduce backpressure between `KafkaEx.GenConsumer`
+  and `Flow` stage in `KaufmannEx.Subscriber`.
+
+  The core function of this module is to handle a `GenServer.call` from a
+  `KafkaEx.GenConsumer` module. Using a blocking call provides a back pressure
+  signal to constrain consumption.
   """
 
   require Logger
@@ -10,16 +15,20 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
   def start_link({topic, partition}) do
     :ok = Logger.info(fn -> "#{__MODULE__} #{topic}@#{partition} Starting" end)
 
-    name =
-      {:via, Registry,
-       {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
+    GenStage.start_link(__MODULE__, {topic, partition}, name: stage_name(topic, partition))
+  end
 
-    GenStage.start_link(__MODULE__, {topic, partition}, name: name)
+  defp stage_name(topic, partition) do
+    {:via, Registry,
+     {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
   end
 
   def init({topic, partition}) do
-    {:producer,
-     %{message_set: [], demand: 0, from: MapSet.new(), topic: topic, partition: partition}}
+    {:producer, %{message_set: [], demand: 0, topic: topic, partition: partition}}
+  end
+
+  def notify(message_set, topic, partition) do
+    GenStage.call(stage_name(topic, partition), {:notify, message_set})
   end
 
   # def notify(message_set, timeout \\ 50_000) do
@@ -35,66 +44,85 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
   def handle_demand(demand, %{message_set: message_set} = state)
       when demand > 0 and length(message_set) > demand do
     {to_dispatch, remaining} = Enum.split(message_set, demand)
-    {:noreply, to_dispatch, %{state | message_set: remaining, demand: 0}}
+
+    {:noreply, Enum.map(to_dispatch, &send_reply/1), %{state | message_set: remaining, demand: 0}}
   end
 
   # When demand & messages
-  def handle_demand(demand, %{message_set: message_set, from: from} = state) when demand > 0 do
+  def handle_demand(demand, %{message_set: message_set} = state) when demand > 0 do
     new_state = %{
       state
-      | from: MapSet.new(),
-        message_set: [],
+      | message_set: [],
         demand: demand - length(message_set)
     }
 
-    Enum.map(state.from, &GenStage.reply(&1, :ok))
+    Enum.each(message_set, &send_reply/1)
 
-    {:noreply, message_set, new_state}
+    {:noreply, Enum.map(message_set, &Enum.at(&1, 0)), new_state}
   end
 
   # When no demand, wait for demand
-  def handle_demand(demand, %{message_set: message_set} = state) when demand == 0 do
-    {:noreply, [], %{state | demand: demand}}
+  def handle_demand(0, state) do
+    {:noreply, [], %{state | demand: 0}}
   end
 
   # When no demand, save messages to state, wait.
   def handle_call({:notify, message_set}, from, %{demand: 0} = state) do
+    message_set = Enum.map(message_set, fn m -> [m, from] end)
+
     {:noreply, [],
      %{
        state
-       | message_set: Enum.concat(state[:message_set], message_set),
-         from: MapSet.put(state.from, from)
+       | message_set: Enum.concat(state[:message_set], message_set)
      }}
   end
 
   # When more messages than demand, dispatch to meet demand, wait for more demand
-  def handle_call({:notify, message_set}, from, %{demand: demand} = state)
-      when length(message_set) > demand do
+  def handle_call(
+        {:notify, message_set},
+        from,
+        %{demand: demand, message_set: existing_message_set} = state
+      )
+      when length(message_set) + length(existing_message_set) > demand do
+    message_set = Enum.map(message_set, fn m -> [m, from] end)
+    message_set = Enum.concat(existing_message_set, message_set)
+
     {to_dispatch, remaining} = Enum.split(message_set, demand)
 
     new_state = %{
       state
       | message_set: remaining,
-        demand: demand - length(to_dispatch),
-        from: MapSet.put(state.from, from)
+        demand: demand - length(to_dispatch)
     }
 
-    {:noreply, to_dispatch, new_state}
+    {:noreply, Enum.map(to_dispatch, &send_reply/1), new_state}
   end
 
   # When demand greater than message count, reply for more messages
-  def handle_call({:notify, message_set}, _from, %{demand: demand} = state) do
+  def handle_call(
+        {:notify, message_set},
+        _from,
+        %{demand: demand, message_set: existing_message_set} = state
+      ) do
+    existing_message_set = Enum.map(existing_message_set, &send_reply/1)
+    message_set = Enum.concat(existing_message_set, message_set)
+
     new_state = %{
       state
       | message_set: [],
-        demand: demand - length(message_set),
-        from: MapSet.new()
+        demand: demand - length(message_set)
     }
 
     {:reply, :ok, message_set, new_state}
   end
 
-  def handle_subscribe(producer_or_consumer, subscription_options, from, state) do
+  def handle_subscribe(_producer_or_consumer, _subscription_options, _from, state) do
     {:automatic, state}
+  end
+
+  def send_reply([message, from]) do
+    GenStage.reply(from, :ok)
+
+    message
   end
 end
