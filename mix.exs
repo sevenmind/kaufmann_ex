@@ -9,7 +9,7 @@ defmodule KaufmannEx.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      test_coverage: [tool: Coverex.Task],
+      test_coverage: [tool: ExCoveralls],
       docs: [
         main: "readme",
         extras: ["README.md"]
@@ -48,13 +48,14 @@ defmodule KaufmannEx.MixProject do
       {:nanoid, "~> 1.0"},
       {:memoize, "~> 1.2"},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:credo, "~> 0.9.1", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
       {:bypass, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
       {:inch_ex, only: :docs},
       {:benchee, "~> 0.11", only: [:dev, :test]},
-      {:mock, "~> 0.3.0", only: [:test]}
+      {:mock, "~> 0.3.0", only: [:test]},
+      {:ex_guard, "~> 1.3", only: :dev}
     ]
   end
 
