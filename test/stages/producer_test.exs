@@ -4,8 +4,12 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
 
   @topic :rapids
   @partition 0
+  @producer_name {:via, Registry,
+                  {Registry.ConsumerRegistry, "#{ProducerStage}-t#{@topic}-#{@partition}"}}
 
   setup do
+    {:ok, _} = start_supervised({Registry, keys: :unique, name: Registry.ConsumerRegistry})
+
     {:ok, pid} = start_supervised({ProducerStage, {@topic, @partition}})
 
     {:ok, %{pid: pid}}
@@ -86,7 +90,8 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
     def init(parent) do
       children = [{TestEventHandler, [parent]}]
 
-      producer = {:global, {ProducerStage, @topic, @partition}}
+      producer =
+        {:via, Registry, {Registry.ConsumerRegistry, "#{ProducerStage}-t#{@topic}-#{@partition}"}}
 
       # max_demand is highly resource dependent
       ConsumerSupervisor.init(children,
@@ -102,7 +107,7 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
 
       :ok =
         GenStage.call(
-          {:global, {ProducerStage, @topic, @partition}},
+          @producer_name,
           {:notify, Enum.to_list(1..10)}
         )
 
@@ -111,14 +116,14 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
       assert_receive 10
     end
 
-    test "will consume as as many events as there is demand " do
+    test "will consume as as many events as there is demand" do
       _ = start_supervised({TestConsumerSupervisor, self()})
 
       events = Enum.to_list(1..10_000)
 
       :ok =
         GenStage.call(
-          {:global, {ProducerStage, @topic, @partition}},
+          @producer_name,
           {:notify, events}
         )
 
@@ -136,7 +141,7 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
 
       :ok =
         GenStage.call(
-          {:global, {ProducerStage, @topic, @partition}},
+          @producer_name,
           {:notify, events}
         )
 
@@ -153,7 +158,7 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
 
       :ok =
         GenStage.call(
-          {:global, {ProducerStage, @topic, @partition}},
+          @producer_name,
           {:notify, events}
         )
 

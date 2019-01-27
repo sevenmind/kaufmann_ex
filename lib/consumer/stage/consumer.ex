@@ -6,10 +6,12 @@ defmodule KaufmannEx.Consumer.Stage.Consumer do
 
   require Logger
   use ConsumerSupervisor
+  alias KaufmannEx.Consumer.StageSupervisor
+
 
   def start_link({topic, partition}) do
     ConsumerSupervisor.start_link(__MODULE__, {topic, partition},
-      name: {:global, {__MODULE__, topic, partition}}
+      name: {:via, Registry, {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
     )
   end
 
@@ -27,7 +29,9 @@ defmodule KaufmannEx.Consumer.Stage.Consumer do
     opts = [
       strategy: :one_for_one,
       subscribe_to: [
-        {:global, {KaufmannEx.Consumer.Stage.Decoder, topic, partition}}
+        {:via, Registry,
+         {Registry.ConsumerRegistry,
+          StageSupervisor.stage_name(KaufmannEx.Consumer.Stage.Decoder, topic, partition)}}
       ]
     ]
 

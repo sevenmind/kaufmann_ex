@@ -5,10 +5,15 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
 
   require Logger
   use GenStage
+  alias KaufmannEx.Consumer.StageSupervisor
 
   def start_link({topic, partition}) do
     :ok = Logger.info(fn -> "#{__MODULE__} #{topic}@#{partition} Starting" end)
-    name = {:global, {__MODULE__, topic, partition}}
+
+    name =
+      {:via, Registry,
+       {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
+
     GenStage.start_link(__MODULE__, {topic, partition}, name: name)
   end
 

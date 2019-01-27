@@ -10,7 +10,7 @@ defmodule KaufmannEx.Consumer.StageSupervisor do
 
   def start_link({topic, partition}) do
     Supervisor.start_link(__MODULE__, {topic, partition},
-      name: {:global, {__MODULE__, topic, partition}}
+      name: {:via, Registry, {Registry.ConsumerRegistry, stage_name(__MODULE__, topic, partition)}}
     )
   end
 
@@ -22,5 +22,10 @@ defmodule KaufmannEx.Consumer.StageSupervisor do
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)
+  end
+
+  @spec stage_name(atom(), binary(), binary()) :: <<_::32, _::_*8>>
+  def stage_name(module, topic, partition) do
+    "#{module}-t#{topic}-p#{partition}"
   end
 end

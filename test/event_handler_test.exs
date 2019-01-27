@@ -46,6 +46,8 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
 
     Process.register(self(), :subscriber)
 
+    {:ok, _} = start_supervised({Registry, keys: :unique, name: Registry.ConsumerRegistry})
+
     assert {:ok, pid} = start_supervised({Producer, {@topic, @partition}})
     assert {:ok, _pid} = start_supervised({Decoder, {@topic, @partition}})
     assert {:ok, s_pid} = start_supervised({Consumer, {@topic, @partition}})

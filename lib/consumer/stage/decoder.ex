@@ -1,18 +1,25 @@
 defmodule KaufmannEx.Consumer.Stage.Decoder do
   use GenStage
   require Logger
+  alias KaufmannEx.Consumer.StageSupervisor
+
 
   def start_link({topic, partition}) do
     GenStage.start_link(__MODULE__, {topic, partition},
-      name: {:global, {__MODULE__, topic, partition}}
+      name: {:via, Registry, {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
     )
   end
 
   def init({topic, partition}) do
     {:producer_consumer, %{partition: partition, topic: topic},
-     subscribe_to: [{:global, {KaufmannEx.Consumer.Stage.Producer, topic, partition}}]}
+     subscribe_to: [
+       {:via, Registry,
+        {Registry.ConsumerRegistry,
+         StageSupervisor.stage_name(KaufmannEx.Consumer.Stage.Producer, topic, partition)}}
+     ]}
   end
 
+  @spec handle_events(any(), any(), any()) :: {:noreply, [any()], any()}
   def handle_events(events, _from, state) do
     {:noreply, Enum.map(events, &decode_event/1), state}
   end
