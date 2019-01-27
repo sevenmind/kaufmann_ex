@@ -1,9 +1,9 @@
 defmodule IntegrationTest.SubscriberListener do
   require Logger
 
-  def publish(pid) do
+  def publish(pid, noise \\ "") do
     message_body = %{
-      payload: %{message: pid_to_binary(pid)},
+      payload: %{message: pid_to_binary(pid) <> "::" <> noise},
       meta: %{
         message_id: Nanoid.generate(),
         emitter_service: KaufmannEx.Config.service_name(),
@@ -21,15 +21,19 @@ defmodule IntegrationTest.SubscriberListener do
   def given_event(%{name: :"command.test", payload: %{message: pid}} = event) do
     # Process.sleep(400)
 
+    pid =
+      pid
+      |> String.split("::")
+      |> Enum.at(0)
+
     pid
     |> pid_from_string()
     |> send({:hello, pid})
   end
 
   def given_event(other) do
-    IO.inspect(other, label: "Unhandled event")
+    Logger.info("Uhandled event: " <> inspect(other))
   end
-
   def publish_and_wait do
     :ok = publish(self())
 
@@ -57,9 +61,9 @@ defmodule IntegrationTest do
   use ExUnit.Case
   import Mock
 
-  @moduletag :integration
-
+  # @moduletag :integration
   setup_all do
+    Application.put_env(:kaufmann_ex, :schema_registry_uri, System.get_env("SCHEMA_REGISTRY_PATH"))
     KaufmannEx.ReleaseTasks.migrate_schemas("sample_application/priv/schemas/")
 
     Application.put_env(
@@ -68,17 +72,13 @@ defmodule IntegrationTest do
       IntegrationTest.SubscriberListener
     )
 
-    # Ensure topic is defined, raise error if not 
+    # Ensure topic is defined, raise error if not
     KafkaEx.metadata(topic: "rapids")
-
-    Process.sleep(1000)
 
     # Start supervision tree
     {:ok, kaufmann_supervisor} = start_supervised(KaufmannEx.Supervisor)
 
-    Process.sleep(4000)
-
-    # Ensure subscriber is working 
+    # Ensure subscriber is working
     IntegrationTest.SubscriberListener.publish_and_wait()
 
     [kaufmann_supervisor: kaufmann_supervisor]
@@ -105,7 +105,7 @@ defmodule IntegrationTest do
                {KafkaEx.ConsumerGroup.Manager, _, :worker, [KafkaEx.ConsumerGroup.Manager]}
              ] = Supervisor.which_children(k_consumer_group)
 
-      assert %{active: 4, specs: 4, supervisors: 1, workers: 3} =
+      assert %{active: _, specs: _, supervisors: _, workers: _} =
                Supervisor.count_children(kaufmann_supervisor)
     end
 

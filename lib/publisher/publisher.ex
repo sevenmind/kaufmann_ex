@@ -9,7 +9,14 @@ defmodule KaufmannEx.Publisher.Publisher do
 
   def start_link(%{encoded: encoded, topic: topic, partition: partition, event_name: event_name}) do
     Task.start_link(fn ->
-      Logger.debug(["Publishing Event ", event_name |> Atom.to_string(), " on ", topic, "@", partition])
+      Logger.debug([
+        "Publishing Event ",
+        event_name |> Atom.to_string(),
+        " on ",
+        topic,
+        "@",
+        partition
+      ])
 
       message = %Message{value: encoded, key: event_name |> Atom.to_string()}
 

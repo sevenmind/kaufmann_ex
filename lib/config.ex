@@ -90,8 +90,7 @@ defmodule KaufmannEx.Config do
   """
   @spec gen_consumer_mod() :: atom
   def gen_consumer_mod,
-    do:
-      Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Consumer.GenConsumer)
+    do: Application.get_env(:kaufmann_ex, :gen_consumer_mod, KaufmannEx.Consumer.GenConsumer)
 
   @doc """
   Partition selection strategy, default is :random, options are `[:random]
@@ -108,7 +107,7 @@ defmodule KaufmannEx.Config do
 
   @spec schema_cache_expires_in_ms() :: integer
   def schema_cache_expires_in_ms,
-    do: Application.get_env(:kaufmann_ex, :schema_cache_expires_in_ms, 60_000)
+    do: Application.get_env(:kaufmann_ex, :schema_cache_expires_in_ms, 10 * 60 * 1000)
 
   def commit_strategy, do: Application.get_env(:kaufmann_ex, :commit_strategy, :async_commit)
 end
