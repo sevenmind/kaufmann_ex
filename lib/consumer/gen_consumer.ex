@@ -15,7 +15,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting #{topic}@#{partition}" end)
 
     # Start Stage Supervisor
-    {:ok, pid} = KaufmannEx.Consumer.StageSupervisor.start_link({topic, partition})
+    {:ok, pid} = start_stage_supervisor(topic, partition)
 
     {:ok,
      %{
@@ -24,6 +24,14 @@ defmodule KaufmannEx.Consumer.GenConsumer do
        partition: partition,
        commit_strategy: Config.commit_strategy()
      }}
+  end
+
+  defp start_stage_supervisor(topic, partition) do
+    case StageSupervisor.start_link({topic, partition}) do
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
+      other -> other
+    end
   end
 
   @impl true
