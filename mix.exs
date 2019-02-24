@@ -49,19 +49,24 @@ defmodule KaufmannEx.MixProject do
       {:memoize, "~> 1.2"},
       {:ex_doc, "~> 0.16", only: :dev, runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:bypass, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.8", only: :test},
       {:inch_ex, only: :docs},
       {:benchee, "~> 0.11", only: [:dev, :test]},
       {:mock, "~> 0.3.0", only: [:test]},
-      {:ex_guard, "~> 1.3", only: :dev}
+      {:ex_guard, "~> 1.3", only: :dev},
+
+      # elixometer & updated dependencies
+      {:elixometer, github: "pinterest/elixometer"},
+      {:setup, "2.0.2", override: true, manager: :rebar},
     ]
   end
 
   defp aliases do
     [
-      test: "test --exclude integration"
+      test: "test --exclude integration",
+      bench: "run --no-start"
     ]
   end
 end

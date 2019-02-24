@@ -1,12 +1,14 @@
 defmodule KaufmannEx.Consumer.Stage.Decoder do
   use GenStage
+  use Elixometer
   require Logger
   alias KaufmannEx.Consumer.StageSupervisor
 
-
   def start_link({topic, partition}) do
     GenStage.start_link(__MODULE__, {topic, partition},
-      name: {:via, Registry, {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
+      name:
+        {:via, Registry,
+         {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
     )
   end
 
@@ -30,19 +32,30 @@ defmodule KaufmannEx.Consumer.Stage.Decoder do
   Returns Event or Error
   """
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
+  @timed key: :auto
   def decode_event(%{key: key, value: value} = event) do
     event_name = key |> String.to_atom()
     crc = Map.get(event, :crc)
 
     case KaufmannEx.Schemas.decode_message(key, value) do
       {:ok, %{meta: meta, payload: payload}} ->
+        {:ok, published_at, _} = DateTime.from_iso8601(meta[:timestamp])
+        bus_time = DateTime.diff(DateTime.utc_now(), published_at, :millisecond)
+
+        DateTime.utc_now()
+
         Logger.debug([
           meta[:message_name],
           " ",
           meta[:message_id],
           " from ",
-          meta[:emitter_service_id]
+          meta[:emitter_service_id],
+          " in ",
+          to_string(bus_time),
+          "ms"
         ])
+
+        update_gauge("bus_latency", bus_time)
 
         %KaufmannEx.Schemas.Event{
           name: event_name,

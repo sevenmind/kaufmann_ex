@@ -31,8 +31,8 @@ defmodule BenchEventPublisher do
         emitter_service_id: KaufmannEx.Config.service_id(),
         callback_id: nil,
         message_name: "command.test",
-        timestamp: DateTime.to_string(DateTime.utc_now()),
-        callback_topic: nil
+        timestamp: DateTime.to_string(DateTime.utc_now())
+        # callback_topic: nil
       }
     }
 
@@ -79,6 +79,8 @@ Application.put_env(
   BenchEventHandler
 )
 
+Application.put_env(:kaufmann_ex, :schema_path, "test/support")
+
 inputs = %{
   "Just PID" => "",
   "PID & some text" => String.duplicate("x", 500),
@@ -96,21 +98,35 @@ Benchee.run(
         {:ack, pid} -> Logger.debug("Publish Callback received")
       after
         2000 ->
-          {:error, :timeout}
+          {:error, :timeout} |> IO.inspect
       end
     end
   },
   # parallel: 3,
   before_scenario: fn input ->
-    KaufmannEx.Consumer.StageSupervisor.start_link({topic, partition})
+    {:ok, _} = KaufmannEx.Consumer.StageSupervisor.start_link({topic, partition})
 
     [BenchEventPublisher.encoded_payload(self(), input)]
   end,
   after_scenario: fn _ ->
-    Registry.unregister(
-      Registry.ConsumerRegistry,
-      StageSupervisor.stage_name(KaufmannEx.Consumer.Stage.Producer, topic, partition)
+    Supervisor.stop(
+      {:via, Registry,
+       {Registry.ConsumerRegistry,
+        KaufmannEx.Consumer.StageSupervisor.stage_name(
+          KaufmannEx.Consumer.StageSupervisor,
+          topic,
+          partition
+        )}}
     )
+
+    # Registry.unregister(
+    #   Registry.ConsumerRegistry,
+    #   KaufmannEx.Consumer.StageSupervisor.stage_name(
+    #     KaufmannEx.Consumer.Stage.Producer,
+    #     topic,
+    #     partition
+    #   )
+    # )
   end,
   warmup: 5,
   inputs: inputs

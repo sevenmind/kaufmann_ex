@@ -24,7 +24,7 @@ defmodule KaufmannEx.Consumer.StageSupervisor do
     Supervisor.init(children, strategy: :rest_for_one)
   end
 
-  @spec stage_name(atom(), binary(), binary()) :: <<_::32, _::_*8>>
+  @spec stage_name(atom(), binary(), integer()) :: <<_::32, _::_*8>>
   def stage_name(module, topic, partition) do
     "#{module}-t#{topic}-p#{partition}"
   end

@@ -2,7 +2,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   @moduledoc """
   Task for registering all schemas in `priv/schemas` with the schema registry.
 
-  Expects 
+  Expects
    - schemas to be defined in `priv/schemas`.
    - an `event_metadata.avsc` schema should be defined and required by all events
 
@@ -35,7 +35,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   @doc """
   Attempts to update all schemas defined in `app/priv/schemas`.
 
-  Expects a `event_metadata.avsc` metadata scheme to be defined for all other schemas. 
+  Expects a `event_metadata.avsc` metadata scheme to be defined for all other schemas.
   """
   def migrate_schemas(app \\ :kaufmann_ex)
 
@@ -44,11 +44,18 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     meta_data_schema = load_metadata(path)
 
     path
+    |> read_schemas()
+    |> Enum.map(&register_schema/1)
+    |> Enum.map(&IO.inspect/1)
+  end
+
+  def read_schemas(path) do
+    meta_data_schema = load_metadata(path)
+
+    path
     |> scan_dir()
     |> Enum.map(&load_and_parse_schema/1)
     |> Enum.map(&inject_metadata(&1, meta_data_schema))
-    |> Enum.map(&register_schema/1)
-    |> Enum.map(&IO.inspect/1)
   end
 
   def migrate_schemas(app) do
@@ -68,9 +75,9 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   end
 
   @doc """
-  Attempts to delete and recreate all schemas defined in `app/priv/schemas` 
+  Attempts to delete and recreate all schemas defined in `app/priv/schemas`
 
-  Expects a `event_metadata.avsc` metadata scheme to be defined for all other schemas. 
+  Expects a `event_metadata.avsc` metadata scheme to be defined for all other schemas.
   """
   def reset_schemas(app \\ :kaufmann_ex) do
     ensure_startup()
@@ -84,7 +91,8 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&load_and_parse_schema/1)
     |> Enum.map(&inject_metadata(&1, meta_data_schema))
     |> Enum.map(&reset_schema/1)
-    |> Enum.map(&IO.inspect/1)
+    |> IO.inspect
+    # |> Enum.map(&IO.inspect/1)
   end
 
   def load_metadata(path) when is_binary(path) do
@@ -154,7 +162,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     {schema_name, schema}
   end
 
-  defp inject_metadata({event_name, event_schema}, {_, meta_data_schema}) do
+  def inject_metadata({event_name, event_schema}, {_, meta_data_schema}) do
     # Only inject metadata into event-type schemas
     if String.match?(event_name, ~r/command\.|event\.|query\./) do
       {event_name, [meta_data_schema, event_schema]}
@@ -163,7 +171,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     end
   end
 
-  defp scan_dir(dir) do
+  def scan_dir(dir) do
     files = File.ls!(dir)
 
     child_schemas =

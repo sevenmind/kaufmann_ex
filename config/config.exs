@@ -25,6 +25,14 @@ config :kaufmann_ex,
 config :logger,
   level: :info
 
+
+# config(:exometer_core, report: [reporters: [{:exometer_report_tty, []}]])
+# config(:elixometer,
+#   reporter: :exometer_report_tty,
+#   env: Mix.env,
+#   metric_prefix: "kaufmann_ex")
+
+
 env_config = Path.expand("#{Mix.env()}.exs", __DIR__)
 
 if File.exists?(env_config) do

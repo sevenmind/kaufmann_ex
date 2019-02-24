@@ -1,5 +1,6 @@
 defmodule KaufmannEx.Publisher.Encoder do
   use GenStage
+  use Elixometer
   require Logger
   alias KaufmannEx.Schemas
 
@@ -15,6 +16,7 @@ defmodule KaufmannEx.Publisher.Encoder do
     {:noreply, Enum.map(events, &encode_event/1), state}
   end
 
+  @timed key: :auto
   def encode_event(%{event_name: event_name, body: body} = event) do
     {:ok, encoded} = Schemas.encode_message(event_name, body)
     Map.put(event, :encoded, encoded)

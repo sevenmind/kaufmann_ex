@@ -1,5 +1,5 @@
 defmodule Sample.Publisher do
-  def publish(event_name, payload, context) do
+  def publish(event_name, payload, context \\ %{}) do
     message_body = %{
       payload: payload,
       meta: event_metadata(event_name, context)

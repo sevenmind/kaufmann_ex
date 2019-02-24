@@ -10,6 +10,7 @@ defmodule KaufmannEx.Publisher.TopicSelector do
   """
 
   use GenStage
+  use Elixometer
   require Logger
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
@@ -35,7 +36,7 @@ defmodule KaufmannEx.Publisher.TopicSelector do
 
   @spec select_topic_and_partition(Request.t() | map(), map()) :: Request.t() | [Request.t()]
   def select_topic_and_partition(%{context: %{callback_topic: callback}} = event, state)
-      when not is_nil(callback) do
+      when not is_nil(callback) and callback != %{} do
     # If context includes callback topic create duplicate publish request to callback topic
     [
       Map.merge(event, callback)
@@ -45,6 +46,7 @@ defmodule KaufmannEx.Publisher.TopicSelector do
     ]
   end
 
+  @timed key: :auto
   def select_topic_and_partition(event, state) do
     topic =
       case event.topic do

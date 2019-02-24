@@ -5,6 +5,7 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
   Spawns tasks to process each event. Should still be within the KaufmannEx supervision tree.
   """
   require Logger
+  use Elixometer
 
   def start_link(event) do
     Task.start_link(fn ->
@@ -12,21 +13,24 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
     end)
   end
 
+  @timed key: :auto
   def handle_event(event) do
-    handler = KaufmannEx.Config.event_handler()
-
-    event
-    |> handler.given_event()
-  rescue
-    error ->
-      Logger.warn("Error Consuming #{inspect(event)} #{inspect(error)}")
+    try do
       handler = KaufmannEx.Config.event_handler()
 
       event
-      |> error_from_event(error)
       |> handler.given_event()
+    rescue
+      error ->
+        Logger.warn("Error Consuming #{inspect(event)} #{inspect(error)}")
+        handler = KaufmannEx.Config.event_handler()
 
-      reraise error, __STACKTRACE__
+        event
+        |> error_from_event(error)
+        |> handler.given_event()
+
+        reraise error, __STACKTRACE__
+    end
   end
 
   # if loop of error events, just emit whatever we got

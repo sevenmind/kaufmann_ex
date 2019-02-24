@@ -23,3 +23,9 @@ config :kaufmann_ex,
   service_name: "SampleService",
   service_id: "SampleHost",
   event_handler_demand: 50
+
+# config(:exometer_core, report: [reporters: [{:exometer_report_tty, []}]])
+# config(:elixometer,
+#   reporter: :exometer_report_tty,
+#   env: Mix.env,
+#   metric_prefix: "sample")
