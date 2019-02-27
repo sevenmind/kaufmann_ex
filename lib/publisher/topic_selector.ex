@@ -46,7 +46,6 @@ defmodule KaufmannEx.Publisher.TopicSelector do
     ]
   end
 
-  @timed key: :auto
   def select_topic_and_partition(event, state) do
     topic =
       case event.topic do
