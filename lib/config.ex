@@ -8,7 +8,7 @@ defmodule KaufmannEx.Config do
   config :kaufmann_ex,
     consumer_group: System.get_env("CONSUMER_GROUP"),
     default_topic: System.get_env("KAFKA_TOPIC"),
-    event_handler_demand: 50,
+    max_demand: 50,
     event_handler_mod: nil, # Be sure to specify your event handler
     gen_consumer_mod: KaufmannEx.Consumer.GenConsumer,
     producer_mod: KaufmannEx.Publisher,
@@ -80,10 +80,10 @@ defmodule KaufmannEx.Config do
   def service_id, do: Application.get_env(:kaufmann_ex, :service_id)
 
   @doc """
-  Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
+  Application.get_env(:kaufmann_ex, :max_demand, 50)
   """
-  @spec event_handler_demand() :: integer()
-  def event_handler_demand, do: Application.get_env(:kaufmann_ex, :event_handler_demand, 50)
+  @spec max_demand() :: integer()
+  def max_demand, do: Application.get_env(:kaufmann_ex, :max_demand, 50)
 
   @doc """
   Application.get_env(:kaufmann_ex, :gen_consumer_mod)

@@ -37,7 +37,7 @@ defmodule KaufmannEx.Consumer.Stage.Decoder do
         {:ok, published_at, _} = DateTime.from_iso8601(meta[:timestamp])
         bus_time = DateTime.diff(now, published_at, :millisecond)
 
-        Logger.debug([
+        Logger.debinfoug([
           meta[:message_name],
           " ",
           meta[:message_id],

@@ -22,7 +22,7 @@ config :kaufmann_ex,
   schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
   service_name: "SampleService",
   service_id: "SampleHost",
-  event_handler_demand: 50
+  max_demand: 50
 
 # config(:exometer_core, report: [reporters: [{:exometer_report_tty, []}]])
 # config(:elixometer,
