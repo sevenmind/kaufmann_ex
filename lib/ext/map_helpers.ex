@@ -12,7 +12,7 @@ defmodule Map.Helpers do
 
   def underscore_keys(%{} = map),
     do:
-      Enum.into(mao, %{}, fn {k, v} ->
+      Enum.into(map, %{}, fn {k, v} ->
         {k |> Macro.underscore() |> String.replace("-", "_"), underscore_keys(v)}
       end)
 
