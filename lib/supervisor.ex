@@ -22,11 +22,13 @@ defmodule KaufmannEx.Supervisor do
       gen_consumer_mod,
       consumer_group_name,
       topics,
-      heartbeat_interval: 1_000,
-      commit_interval: 10_000,
-      fetch_options: [
-        max_bytes: 20_971_520,
-        wait_time: 300
+      [
+        heartbeat_interval: 1_000,
+        commit_interval: 10_000,
+        fetch_options: [
+          max_bytes: 20_971_520,
+          wait_time: 300
+        ]
       ]
       # opts
     ]

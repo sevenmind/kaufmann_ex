@@ -21,8 +21,15 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
     publish_events =
       events
       |> Enum.map(&handle_event/1)
+
+      # Old event handler implementation calls publish from handler rather than
+      # return messages to be published. We filter out that behavior. Those
+      # messages are piped back into the publish portion of the pipeline via
+      # KaufmannEx.Publisher.Producer
+
       |> Enum.reject(fn
         :ok -> true
+        {:ok, z} when is_pid(z) -> true
         nil -> true
         _ -> false
       end)
