@@ -1,6 +1,12 @@
 defmodule KaufmannEx.Publisher.Producer do
   @moduledoc """
-  The Producer stage of the publish GenStage. Accepts events to be published.
+  A Producer stage of out GenStage pipeline. Used to inject publish events into
+  the Event Consumption and Publication pipeline.
+
+  Necessary for
+    a) legacy support of older EventHandler behavior which calls
+  `KaufmannEx.Publisher.publish` instead of returning events to publish
+    b) publish-only services where we don't need to consume events off of kafka
 
   This stage ignores demand and pushes all events directly to the next stage
 

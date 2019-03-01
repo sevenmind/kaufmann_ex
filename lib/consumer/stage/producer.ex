@@ -10,25 +10,28 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
 
   require Logger
   use GenStage
-  alias KaufmannEx.Consumer.StageSupervisor
+  use Elixometer
+  alias KaufmannEx.StageSupervisor
 
-  def start_link({topic, partition}) do
-    :ok = Logger.info(fn -> "#{__MODULE__} #{topic}@#{partition} Starting" end)
-
-    GenStage.start_link(__MODULE__, {topic, partition}, name: stage_name(topic, partition))
+  def start_link(opts \\ []) do
+    GenStage.start_link(__MODULE__, [], opts)
   end
 
-  defp stage_name(topic, partition) do
-    {:via, Registry,
-     {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
+  @impl true
+  def init(_opts \\ []) do
+    {:producer, %{message_set: [], demand: 0}}
   end
 
-  def init({topic, partition}) do
-    {:producer, %{message_set: [], demand: 0, topic: topic, partition: partition}}
+  @spec stop_self({binary(), integer()}) :: :ok
+  def stop_self({topic, partition}) do
+    GenServer.stop(StageSupervisor.stage_name(__MODULE__, topic, partition))
   end
 
   def notify(message_set, topic, partition) do
-    GenStage.call(stage_name(topic, partition), {:notify, message_set})
+    GenStage.call(
+      StageSupervisor.stage_name(__MODULE__, topic, partition),
+      {:notify, message_set}
+    )
   end
 
   # def notify(message_set, timeout \\ 50_000) do
@@ -37,7 +40,7 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
 
   # When no messages to meet demand, nothing to do
   def handle_demand(demand, %{message_set: []} = state) when demand > 0 do
-    {:noreply, [], %{state | demand: demand}}
+    {:noreply, [], %{state | demand: demand} |> state_metrics}
   end
 
   # when more messages than demand, no need to request more messages
@@ -45,16 +48,19 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
       when demand > 0 and length(message_set) > demand do
     {to_dispatch, remaining} = Enum.split(message_set, demand)
 
-    {:noreply, Enum.map(to_dispatch, &send_reply/1), %{state | message_set: remaining, demand: 0}}
+    {:noreply, Enum.map(to_dispatch, &send_reply/1),
+     %{state | message_set: remaining, demand: 0} |> state_metrics}
   end
 
   # When demand & messages
   def handle_demand(demand, %{message_set: message_set} = state) when demand > 0 do
-    new_state = %{
-      state
-      | message_set: [],
-        demand: demand - length(message_set)
-    }
+    new_state =
+      %{
+        state
+        | message_set: [],
+          demand: demand - length(message_set)
+      }
+      |> state_metrics
 
     Enum.each(message_set, &send_reply/1)
 
@@ -63,7 +69,7 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
 
   # When no demand, wait for demand
   def handle_demand(0, state) do
-    {:noreply, [], %{state | demand: 0}}
+    {:noreply, [], %{state | demand: 0} |> state_metrics}
   end
 
   # When no demand, save messages to state, wait.
@@ -74,7 +80,8 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
      %{
        state
        | message_set: Enum.concat(state[:message_set], message_set)
-     }}
+     }
+     |> state_metrics}
   end
 
   # When more messages than demand, dispatch to meet demand, wait for more demand
@@ -89,11 +96,13 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
 
     {to_dispatch, remaining} = Enum.split(message_set, demand)
 
-    new_state = %{
-      state
-      | message_set: remaining,
-        demand: demand - length(to_dispatch)
-    }
+    new_state =
+      %{
+        state
+        | message_set: remaining,
+          demand: demand - length(to_dispatch)
+      }
+      |> state_metrics
 
     {:noreply, Enum.map(to_dispatch, &send_reply/1), new_state}
   end
@@ -107,11 +116,13 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
     existing_message_set = Enum.map(existing_message_set, &send_reply/1)
     message_set = Enum.concat(existing_message_set, message_set)
 
-    new_state = %{
-      state
-      | message_set: [],
-        demand: demand - length(message_set)
-    }
+    new_state =
+      %{
+        state
+        | message_set: [],
+          demand: demand - length(message_set)
+      }
+      |> state_metrics
 
     {:reply, :ok, message_set, new_state}
   end
@@ -124,5 +135,12 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
     GenStage.reply(from, :ok)
 
     message
+  end
+
+  defp state_metrics(%{message_set: message_set, demand: demand} = state) do
+    update_gauge("backpressure", length(message_set))
+    update_gauge("demand", length(message_set))
+
+    state
   end
 end

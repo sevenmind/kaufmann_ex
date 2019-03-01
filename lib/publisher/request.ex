@@ -1,4 +1,7 @@
 defmodule KaufmannEx.Publisher.Request do
+  @moduledoc """
+  A Struct wrapping a publish request
+  """
   defstruct [:event_name, :body, :context, :topic, :partition, :encoded]
 
   @type t :: %__MODULE__{

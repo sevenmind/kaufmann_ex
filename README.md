@@ -217,3 +217,30 @@ Ideally the `kafka_ex :commit_threshold` should be set somewhat larger than `kau
 Kafka can only guarantee event ordering within a single partition. KaufmannEx will consume events in the order published, but event processing is not guaranteed to be sequential within the window of `max_demand`. 
 
 To guarantee sequential event processing set `max_demand: 1` in the configuration.
+
+
+## Exometer metrics
+
+Kaufmann currently has instrumentation for some metric collection with [Elixometer]().
+
+To enable this reporting add to your `mix.exs`
+
+```diff
+def application do
+ [
+-    extra_applications: [:logger]
++    extra_applications: [:logger, :elixometer]
+  ]
+end
+
+```
+
+and in `config.exs`
+
+```diff
++ config(:exometer_core, report: [reporters: [{:exometer_report_tty, []}]])
++ config(:elixometer,
++   reporter: :exometer_report_tty,
++   env: Mix.env,
++   metric_prefix: "kaufmann_ex")
+```

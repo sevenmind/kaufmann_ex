@@ -1,7 +1,7 @@
-defmodule KaufmannEx.Publisher.TopicSelectorTest do
+defmodule KaufmannEx.Publisher.Stage.TopicSelectorTest do
   use ExUnit.Case
   alias KaufmannEx.Publisher.Request
-  alias KaufmannEx.Publisher.TopicSelector
+  alias KaufmannEx.Publisher.Stage.TopicSelector
 
   setup do
     Application.put_env(:kaufmann_ex, :default_topic, "default_topic")

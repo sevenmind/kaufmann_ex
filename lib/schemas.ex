@@ -22,7 +22,7 @@ defmodule KaufmannEx.Schemas do
       encode_message_with_schema(schema, stringified)
     else
       {:error, error_message} ->
-        Logger.debug(fn -> "Error Encoding #{message_name}, #{inspect(payload)}" end)
+        Logger.warn(fn -> "Error Encoding #{message_name}, #{inspect(payload)}" end)
 
         {:error, {:schema_encoding_error, error_message}}
     end
@@ -45,7 +45,7 @@ defmodule KaufmannEx.Schemas do
 
   Memoized with permament caching.
   """
-  defmemo parsed_schema(message_name), expires_in: Config.schema_cache_expires_in_ms() do
+  defmemo parsed_schema(message_name) do
     with {:ok, schema_name} <- if_partial_schema(message_name),
          {:ok, %{"schema" => raw_schema}} <- get(schema_name) do
       AvroEx.parse_schema(raw_schema)
@@ -75,7 +75,7 @@ defmodule KaufmannEx.Schemas do
   rescue
     # avro_ex can become confused when trying to encode some schemas.
     error ->
-      Logger.debug(["Could not encode schema \n\t", inspect(error)])
+      Logger.warn(["Could not encode schema \n\t", inspect(error)])
       {:error, :unmatching_schema}
   end
 
@@ -98,7 +98,7 @@ defmodule KaufmannEx.Schemas do
 
   memoized permanetly
   """
-  defmemo get(subject), expires_in: Config.schema_cache_expires_in_ms() do
+  defmemo get(subject) do
     schema_registry_uri()
     |> Schemex.latest(subject)
   end
@@ -143,5 +143,41 @@ defmodule KaufmannEx.Schemas do
 
   defp schema_registry_uri do
     KaufmannEx.Config.schema_registry_uri()
+  end
+
+  def read_local_schema(schema_name) do
+    with path <-
+           Application.get_env(:kaufmann_ex, :schema_path, "priv/schemas")
+           |> Path.join(schema_name <> ".avsc"),
+         {:ok, file} <- File.read(path),
+         {:ok, raw_schema} <- Jason.decode(file),
+         {:ok, schema} <- parse_schema_with_metadata(raw_schema) do
+      {:ok, schema}
+    else
+      err -> err
+    end
+  end
+
+  def parse_schema_with_metadata(raw_schema) do
+    metadata_schema =
+      Application.get_env(:kaufmann_ex, :schema_path, "priv/schemas")
+      |> Path.join("event_metadata.avsc")
+      |> File.read!()
+      |> Jason.decode!()
+
+    [metadata_schema, raw_schema]
+    |> parse()
+  end
+
+  @doc """
+  AvroEx.parse without the initial json decode step
+  """
+  @spec parse(Enum.t(), AvroEx.Schema.Context.t()) :: {:ok, AvroEx.Schema.t()} | {:error, term}
+  def parse(schema, %AvroEx.Schema.Context{} = context \\ %AvroEx.Schema.Context{}) do
+    with {:ok, schema} <- AvroEx.Schema.cast(schema),
+         {:ok, schema} <- AvroEx.Schema.namespace(schema),
+         {:ok, context} <- AvroEx.Schema.expand(schema, context) do
+      {:ok, %AvroEx.Schema{schema: schema, context: context}}
+    end
   end
 end

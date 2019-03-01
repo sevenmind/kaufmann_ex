@@ -78,48 +78,50 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
                    from: MapSet.new()
                  })
 
-
-                 assert_receive({:called, :ok})
+        assert_receive({:called, :ok})
       end
 
       test "notify with messages equal to demand" do
         uncalled = {self(), :uncalled}
         called = {self(), :called}
 
-        assert {:noreply, ["a", "b"], %{message_set: [["c", ^uncalled], ["d", ^uncalled]], demand: 0}} =
+        assert {:noreply, ["a", "b"],
+                %{message_set: [["c", ^uncalled], ["d", ^uncalled]], demand: 0}} =
                  ProducerStage.handle_call({:notify, ["c", "d"]}, uncalled, %{
                    demand: 2,
                    message_set: [["a", called], ["b", called]],
                    from: MapSet.new()
                  })
-                 assert_receive({:called, :ok})
+
+        assert_receive({:called, :ok})
       end
 
       test "notify with messages less than demand" do
         called = {self(), :called}
+
         assert {:reply, :ok, ["a", "b", "c", "d"], %{message_set: [], demand: 6}} =
                  ProducerStage.handle_call({:notify, ["c", "d"]}, called, %{
                    demand: 10,
-                   message_set:  [["a", called], ["b", called]],
+                   message_set: [["a", called], ["b", called]],
                    from: MapSet.new()
                  })
 
-                 assert_receive({:called, :ok})
-
+        assert_receive({:called, :ok})
       end
     end
 
     test "call message_set is returned when the message set is sent to the next stage" do
       from = {self(), :called}
 
-      assert {:noreply, ["a", "b"], %{message_set: [["c", {self, :cd}], ["d", {self, :cd}]], demand: 0}} =
+      assert {:noreply, ["a", "b"],
+              %{message_set: [["c", {self, :cd}], ["d", {self, :cd}]], demand: 0}} =
                ProducerStage.handle_call({:notify, ["c", "d"]}, {self, :cd}, %{
                  demand: 2,
                  message_set: [["a", {self, :a}], ["b", {self, :b}]]
                })
 
-               assert_receive({:a, :ok})
-               assert_receive({:b, :ok})
+      assert_receive({:a, :ok})
+      assert_receive({:b, :ok})
 
       # assert {:noreply}
     end
@@ -130,18 +132,16 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
   alias KaufmannEx.Consumer.Stage.Producer, as: ProducerStage
   alias KaufmannEx.Consumer.Stage.ProducerTest.TestConsumerSupervisor
   alias KaufmannEx.Consumer.Stage.ProducerTest.TestConsumerSupTestEventHandlerervisor
-  alias KaufmannEx.Consumer.StageSupervisor
+  alias KaufmannEx.StageSupervisor
 
   @topic "rapids"
   @partition 0
-  @producer_name {:via, Registry,
-                  {Registry.ConsumerRegistry,
-                   StageSupervisor.stage_name(ProducerStage, "rapids", 0)}}
+  @producer_name ProducerStage
 
   setup do
-    {:ok, _} = start_supervised({Registry, keys: :unique, name: Registry.ConsumerRegistry})
+    # {:ok, _} = start_supervised({Registry, keys: :unique, name: Registry.ConsumerRegistry})
 
-    {:ok, pid} = start_supervised({ProducerStage, {@topic, @partition}})
+    {:ok, pid} = start_supervised({ProducerStage, [name: ProducerStage]})
 
     {:ok, %{pid: pid}}
   end
@@ -176,15 +176,10 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
     def init(parent) do
       children = [{TestEventHandler, [parent]}]
 
-      producer =
-        {:via, Registry,
-         {Registry.ConsumerRegistry,
-          StageSupervisor.stage_name(ProducerStage, @topic, @partition)}}
-
       # max_demand is highly resource dependent
       ConsumerSupervisor.init(children,
         strategy: :one_for_one,
-        subscribe_to: [{producer, max_demand: 50}]
+        subscribe_to: [{ProducerStage, max_demand: 50}]
       )
     end
   end

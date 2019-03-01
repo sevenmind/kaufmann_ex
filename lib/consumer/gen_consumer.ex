@@ -8,7 +8,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
   use KafkaEx.GenConsumer
   alias KaufmannEx.Config
   alias KaufmannEx.Consumer.Stage.Producer
-  alias KaufmannEx.Consumer.StageSupervisor
+  alias KaufmannEx.StageSupervisor
 
   @impl true
   def init(topic, partition) do

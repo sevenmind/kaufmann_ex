@@ -39,29 +39,34 @@ defmodule KaufmannEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:gen_stage, "~> 0.12"},
-      {:kafka_ex, "~> 0.8.3"},
-      {:poison, "~> 3.1"},
-      {:httpoison, "~> 1.0"},
+      {:gen_stage, "~> 0.14"},
+      {:kafka_ex, "~> 0.9"},
+      {:jason, "~> 1.1"},
+      {:httpoison, "~> 1.5"},
       {:avro_ex, "~> 0.1.0-beta.6"},
       {:schemex, "~> 0.1.1"},
       {:nanoid, "~> 1.0"},
       {:memoize, "~> 1.2"},
-      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:bypass, "~> 1.0", only: :test},
-      {:excoveralls, "~> 0.8", only: :test},
+      {:excoveralls, "~> 0.10", only: :test},
       {:inch_ex, only: :docs},
       {:benchee, "~> 0.11", only: [:dev, :test]},
       {:mock, "~> 0.3.0", only: [:test]},
-      {:ex_guard, "~> 1.3", only: :dev}
+      {:ex_guard, "~> 1.3", only: :dev},
+
+      # elixometer & updated dependencies
+      {:elixometer, github: "pinterest/elixometer"},
+      {:setup, "2.0.2", override: true, manager: :rebar}
     ]
   end
 
   defp aliases do
     [
-      test: "test --exclude integration"
+      test: "test --exclude integration",
+      bench: "run --no-start"
     ]
   end
 end

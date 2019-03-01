@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Publisher.TopicSelector do
+defmodule KaufmannEx.Publisher.Stage.TopicSelector do
   @moduledoc """
   Topic and partition selection stage.
 
@@ -10,22 +10,23 @@ defmodule KaufmannEx.Publisher.TopicSelector do
   """
 
   use GenStage
+  use Elixometer
   require Logger
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
 
-  def start_link(_ \\ []) do
-    GenStage.start_link(__MODULE__, :ok, name: __MODULE__)
+  def start_link(opts \\ []) do
+    GenStage.start_link(__MODULE__, opts, opts)
   end
 
   @impl true
-  def init(:ok) do
+  def init(opts) do
     state = %{
       partition_strategy: Config.partition_strategy(),
       topic_partitions: fetch_partitions_counts()
     }
 
-    {:producer_consumer, state, subscribe_to: [KaufmannEx.Publisher.Encoder]}
+    {:producer_consumer, state, Keyword.drop(opts, [:name])}
   end
 
   @impl true
@@ -35,7 +36,7 @@ defmodule KaufmannEx.Publisher.TopicSelector do
 
   @spec select_topic_and_partition(Request.t() | map(), map()) :: Request.t() | [Request.t()]
   def select_topic_and_partition(%{context: %{callback_topic: callback}} = event, state)
-      when not is_nil(callback) do
+      when not is_nil(callback) and callback != %{} do
     # If context includes callback topic create duplicate publish request to callback topic
     [
       Map.merge(event, callback)
@@ -67,10 +68,9 @@ defmodule KaufmannEx.Publisher.TopicSelector do
   def fetch_partitions_counts do
     KafkaEx.metadata()
     |> Map.get(:topic_metadatas)
-    |> Enum.map(fn %{topic: topic_name, partition_metadatas: partitions} ->
+    |> Enum.into(%{}, fn %{topic: topic_name, partition_metadatas: partitions} ->
       {topic_name, length(partitions)}
     end)
-    |> Enum.into(%{})
   end
 
   defp md5(key, partitions_count) do

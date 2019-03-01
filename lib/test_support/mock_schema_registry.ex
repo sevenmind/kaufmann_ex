@@ -38,10 +38,10 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   defp inject_metadata(schema) do
     # Decode + encode here is dumb and time consuming
     schema
-    |> Poison.decode!()
+    |> Jason.decode!()
     |> List.wrap()
     |> List.insert_at(0, load_metadata())
-    |> Poison.encode!()
+    |> Jason.encode!()
   end
 
   defp load_schema(schema_name) do
@@ -61,7 +61,7 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
 
   defp load_metadata do
     load_schema("event_metadata")
-    |> Poison.decode!()
+    |> Jason.decode!()
   end
 
   defp schema_path do

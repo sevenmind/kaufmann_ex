@@ -22,7 +22,13 @@ defmodule KaufmannEx.Supervisor do
       gen_consumer_mod,
       consumer_group_name,
       topics,
-      opts
+      heartbeat_interval: 1_000,
+      commit_interval: 10_000,
+      fetch_options: [
+        max_bytes: 20_971_520,
+        wait_time: 300
+      ]
+      # opts
     ]
 
     children = [
@@ -32,7 +38,7 @@ defmodule KaufmannEx.Supervisor do
         start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor
       },
-      KaufmannEx.Publisher.Supervisor
+      KaufmannEx.Publisher.Producer
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

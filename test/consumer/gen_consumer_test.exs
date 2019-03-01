@@ -12,6 +12,8 @@ defmodule KaufmannEx.Consumer.GenConsumerTest do
 
   describe "init/2" do
     test "starts stage supervisor & children" do
+      start_supervised(KaufmannEx.Publisher.Producer)
+
       assert {:ok,
               %{
                 commit_strategy: :async_commit,
@@ -21,8 +23,14 @@ defmodule KaufmannEx.Consumer.GenConsumerTest do
               }} = KaufmannEx.Consumer.GenConsumer.init(@topic, @partition)
 
       assert [
-               {KaufmannEx.Consumer.Stage.Consumer, _pid, :supervisor,
-                [KaufmannEx.Consumer.Stage.Consumer]},
+               {KaufmannEx.Publisher.Stage.PublishSupervisor, _, :supervisor,
+                [KaufmannEx.Publisher.Stage.PublishSupervisor]},
+               {KaufmannEx.Publisher.Stage.TopicSelector, _, :worker,
+                [KaufmannEx.Publisher.Stage.TopicSelector]},
+               {KaufmannEx.Publisher.Stage.Encoder, _, :worker,
+                [KaufmannEx.Publisher.Stage.Encoder]},
+               {KaufmannEx.Consumer.Stage.EventHandler, _, :worker,
+                [KaufmannEx.Consumer.Stage.EventHandler]},
                {KaufmannEx.Consumer.Stage.Decoder, _, :worker,
                 [KaufmannEx.Consumer.Stage.Decoder]},
                {KaufmannEx.Consumer.Stage.Producer, _, :worker,
@@ -35,7 +43,7 @@ defmodule KaufmannEx.Consumer.GenConsumerTest do
     test "notifies producer stage" do
       Registry.register(
         Registry.ConsumerRegistry,
-        KaufmannEx.Consumer.StageSupervisor.stage_name(
+        KaufmannEx.StageSupervisor.build_stage_name(
           KaufmannEx.Consumer.Stage.Producer,
           @topic,
           @partition

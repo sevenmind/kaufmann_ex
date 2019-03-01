@@ -1,15 +1,33 @@
 defmodule KaufmannEx.Consumer.Stage.EventHandler do
   @moduledoc """
-  Behavior module for consuming messages from Kafka bus.
-
-  Spawns tasks to process each event. Should still be within the KaufmannEx supervision tree.
+  A consumer will be a consumer supervisor that will
+  Subscriber tasks for each event.
   """
-  require Logger
 
-  def start_link(event) do
-    Task.start_link(fn ->
-      handle_event(event)
-    end)
+  require Logger
+  use GenStage
+  alias KaufmannEx.StageSupervisor
+
+  def start_link(opts \\ []) do
+    GenStage.start_link(__MODULE__, opts, opts)
+  end
+
+  def init(opts) do
+    {:producer_consumer, %{}, Keyword.drop(opts, [:name])}
+  end
+
+  @spec handle_events(any(), any(), any()) :: {:noreply, [any()], any()}
+  def handle_events(events, _from, state) do
+    publish_events =
+      events
+      |> Enum.map(&handle_event/1)
+      |> Enum.reject(fn
+        :ok -> true
+        nil -> true
+        _ -> false
+      end)
+
+    {:noreply, publish_events, state}
   end
 
   def handle_event(event) do
@@ -26,7 +44,7 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
       |> error_from_event(error)
       |> handler.given_event()
 
-      reraise error, __STACKTRACE__
+      # reraise error, __STACKTRACE__
   end
 
   # if loop of error events, just emit whatever we got
@@ -42,4 +60,27 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
       meta: event.meta
     }
   end
+
+  # Callbacks
+
+  # def init({topic, partition}) do
+  #   children = [
+  #     %{
+  #       id: KaufmannEx.Consumer.Stage.EventHandler,
+  #       start: {KaufmannEx.Consumer.Stage.EventHandler, :start_link, []},
+  #       restart: :temporary
+  #     }
+  #   ]
+
+  #   opts = [
+  #     strategy: :one_for_one,
+  #     subscribe_to: [
+  #       {:via, Registry,
+  #        {Registry.ConsumerRegistry,
+  #         StageSupervisor.stage_name(KaufmannEx.Consumer.Stage.Decoder, topic, partition)}}
+  #     ]
+  #   ]
+
+  #   ConsumerSupervisor.init(children, opts)
+  # end
 end

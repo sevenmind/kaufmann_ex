@@ -34,6 +34,7 @@ defmodule IntegrationTest.SubscriberListener do
   def given_event(other) do
     Logger.info("Uhandled event: " <> inspect(other))
   end
+
   def publish_and_wait do
     :ok = publish(self())
 
@@ -61,9 +62,14 @@ defmodule IntegrationTest do
   use ExUnit.Case
   import Mock
 
-  # @moduletag :integration
+  @moduletag :integration
   setup_all do
-    Application.put_env(:kaufmann_ex, :schema_registry_uri, System.get_env("SCHEMA_REGISTRY_PATH"))
+    Application.put_env(
+      :kaufmann_ex,
+      :schema_registry_uri,
+      System.get_env("SCHEMA_REGISTRY_PATH")
+    )
+
     KaufmannEx.ReleaseTasks.migrate_schemas("sample_application/priv/schemas/")
 
     Application.put_env(

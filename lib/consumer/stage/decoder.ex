@@ -1,22 +1,18 @@
 defmodule KaufmannEx.Consumer.Stage.Decoder do
+  @moduledoc """
+  Consumer Deocoder stage, decodes AvroEx messages.
+  """
   use GenStage
+  use Elixometer
   require Logger
-  alias KaufmannEx.Consumer.StageSupervisor
+  alias KaufmannEx.StageSupervisor
 
-
-  def start_link({topic, partition}) do
-    GenStage.start_link(__MODULE__, {topic, partition},
-      name: {:via, Registry, {Registry.ConsumerRegistry, StageSupervisor.stage_name(__MODULE__, topic, partition)}}
-    )
+  def start_link(opts \\ []) do
+    GenStage.start_link(__MODULE__, opts, opts)
   end
 
-  def init({topic, partition}) do
-    {:producer_consumer, %{partition: partition, topic: topic},
-     subscribe_to: [
-       {:via, Registry,
-        {Registry.ConsumerRegistry,
-         StageSupervisor.stage_name(KaufmannEx.Consumer.Stage.Producer, topic, partition)}}
-     ]}
+  def init(opts) do
+    {:producer_consumer, %{}, Keyword.drop(opts, [:name])}
   end
 
   @spec handle_events(any(), any(), any()) :: {:noreply, [any()], any()}
@@ -30,19 +26,29 @@ defmodule KaufmannEx.Consumer.Stage.Decoder do
   Returns Event or Error
   """
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
+  @timed key: :auto
   def decode_event(%{key: key, value: value} = event) do
     event_name = key |> String.to_atom()
     crc = Map.get(event, :crc)
+    now = DateTime.utc_now()
 
     case KaufmannEx.Schemas.decode_message(key, value) do
       {:ok, %{meta: meta, payload: payload}} ->
+        {:ok, published_at, _} = DateTime.from_iso8601(meta[:timestamp])
+        bus_time = DateTime.diff(now, published_at, :millisecond)
+
         Logger.debug([
           meta[:message_name],
           " ",
           meta[:message_id],
           " from ",
-          meta[:emitter_service_id]
+          meta[:emitter_service_id],
+          " in ",
+          to_string(bus_time),
+          "ms"
         ])
+
+        update_gauge("bus_latency", bus_time)
 
         %KaufmannEx.Schemas.Event{
           name: event_name,

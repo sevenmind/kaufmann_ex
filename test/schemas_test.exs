@@ -24,7 +24,7 @@ defmodule KaufmannEx.SchemasTest do
   end
 
   def init_schema_cache(bypass, event_name) do
-    fake_schema = Poison.encode!(%{type: "string", name: "field"})
+    fake_schema = Jason.encode!(%{type: "string", name: "field"})
 
     # bypass any http calls called time
     # mock_get_metadata_schema(bypass)
@@ -65,7 +65,7 @@ defmodule KaufmannEx.SchemasTest do
       event_name = "test_complex_event"
 
       fake_schema =
-        Poison.encode!(%{
+        Jason.encode!(%{
           type: "record",
           name: "fields",
           fields: [%{type: "string", name: "name"}, %{type: "string", name: "address"}]
@@ -88,7 +88,7 @@ defmodule KaufmannEx.SchemasTest do
       event_name = "test_record"
 
       fake_schema =
-        Poison.encode!(%{
+        Jason.encode!(%{
           type: "record",
           name: event_name,
           fields: [
@@ -110,20 +110,20 @@ defmodule KaufmannEx.SchemasTest do
       Plug.Conn.resp(
         conn,
         200,
-        Poison.encode!(%{subject: event_name, version: 1, id: 1, schema: fake_schema})
+        Jason.encode!(%{subject: event_name, version: 1, id: 1, schema: fake_schema})
       )
     end)
   end
 
   def mock_get_metadata_schema(bypass) do
     {:ok, schema} = File.read('test/support/event_metadata.avsc')
-    schema = schema |> Poison.decode!() |> Poison.encode!()
+    schema = schema |> Jason.decode!() |> Jason.encode!()
 
     Bypass.expect_once(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
-        Poison.encode!(%{subject: "event_metadata", version: 1, id: 1, schema: schema})
+        Jason.encode!(%{subject: "event_metadata", version: 1, id: 1, schema: schema})
       )
     end)
   end
