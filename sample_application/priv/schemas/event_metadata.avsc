@@ -37,7 +37,7 @@
     {
       "name": "callback_topic",
       "doc": "assert callback message topic & partition",
-      "default": "null",
+      "default": null,
       "type": [
         "null",
         {
