@@ -12,7 +12,7 @@ defmodule KaufmannEx.FlowConsumer do
 
     Flow.from_specs(
       producer_specs(topic_metadata),
-      stages: 64
+      stages: 16
     )
     |> Flow.map(&timestamp(&1, :consumer_producer))
     |> Flow.filter(&handled_event?(&1, event_handler.handled_events))
@@ -25,11 +25,9 @@ defmodule KaufmannEx.FlowConsumer do
     |> Flow.map(&timestamp(&1, :encode_event))
     |> Flow.flat_map(&TopicSelector.select_topic_and_partition(&1, topic_metadata))
     |> Flow.map(&timestamp(&1, :select_topic_and_partition))
-    |> Flow.partition(window: Flow.Window.periodic(4, :millisecond), stages: 128)
+    |> Flow.partition(window: Flow.Window.periodic(10, :millisecond), stages: 32, key: &event_key/1)
     # Group events in a 10 ms window by topic & partition
-    |> Flow.group_by(fn event ->
-      event.publish_request.topic <> to_string(event.publish_request.partition)
-    end)
+    |> Flow.group_by(&event_key/1)
     |> Flow.flat_map(&Publisher.publish(&1, workers))
     |> Flow.map(&timestamp(&1, :publish))
     |> Flow.each(&print_timings/1)
@@ -51,6 +49,10 @@ defmodule KaufmannEx.FlowConsumer do
 
   def timestamp(event, subject) do
     Map.put(event, :timestamps, [{subject, :erlang.monotonic_time()} | event.timestamps])
+  end
+
+  defp event_key(event) do
+    event.publish_request.topic <> to_string(event.publish_request.partition)
   end
 
   def print_timings(%{timestamps: timestamps} = event) do
