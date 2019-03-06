@@ -10,23 +10,28 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
   """
 
   use GenStage
-  use Elixometer
   require Logger
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
+  alias KaufmannEx.Schemas.Event
 
-  def start_link(opts \\ []) do
-    GenStage.start_link(__MODULE__, opts, opts)
+  def start_link(opts: opts, stage_opts: stage_opts) do
+    GenStage.start_link(__MODULE__, stage_opts, opts)
   end
 
-  @impl true
-  def init(opts) do
-    state = %{
+  def start_link(opts: opts), do: start_link(opts: opts, stage_opts: [])
+  def start_link([opts, args]), do: start_link(opts: opts, stage_opts: args)
+  def start_link(opts), do: start_link(opts: opts, stage_opts: [])
+
+  def init(stage_opts) do
+    {:producer_consumer, topic_metadata, stage_opts}
+  end
+
+  def topic_metadata do
+    %{
       partition_strategy: Config.partition_strategy(),
       topic_partitions: fetch_partitions_counts()
     }
-
-    {:producer_consumer, state, Keyword.drop(opts, [:name])}
   end
 
   @impl true
@@ -35,33 +40,64 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
   end
 
   @spec select_topic_and_partition(Request.t() | map(), map()) :: Request.t() | [Request.t()]
-  def select_topic_and_partition(%{context: %{callback_topic: callback}} = event, state)
+  def select_topic_and_partition(
+        %Event{publish_request: %Request{context: %{callback_topic: callback}} = publish_req} =
+          event,
+        state
+      )
       when not is_nil(callback) and callback != %{} do
     # If context includes callback topic create duplicate publish request to callback topic
-    [
-      Map.merge(event, callback)
-      | event
-        |> Map.replace!(:context, Map.drop(event.context, [:callback_topic]))
-        |> select_topic_and_partition(state)
-    ]
+
+    [%Event{event | publish_request: Map.merge(publish_req, callback)}, event]
+    |> Enum.map(&drop_callback_topic/1)
+    |> Enum.flat_map(&select_topic_and_partition(&1, state))
   end
 
-  def select_topic_and_partition(event, state) do
+  defp drop_callback_topic(%Event{publish_request: publish_req} = event) do
+    publish_request =
+      publish_req
+      |> Map.replace(
+        :context,
+        Map.drop(publish_req.context, [:callback_topic])
+      )
+
+    %Event{event | publish_request: publish_request}
+  end
+
+  def select_topic_and_partition(%Event{publish_request: publish_req} = event, state) do
     topic =
-      case event.topic do
+      case publish_req.topic do
         v when is_binary(v) -> v
         _ -> Config.default_publish_topic()
       end
 
-    partitions_count = Map.get(state.topic_partitions, topic)
-
-    partition =
-      case state.partition_strategy do
-        :md5 -> md5(event.encoded, partitions_count)
-        _ -> random(partitions_count)
+    partitions_count =
+      case Map.get(state.topic_partitions, topic) do
+        nil -> fetch_partitions_count(topic)
+        n -> n
       end
 
-    [Map.merge(event, %{topic: topic, partition: partition})]
+    partition =
+      case publish_req.partition do
+        n when is_integer(n) ->
+          n
+
+        _ ->
+          case state.partition_strategy do
+            :md5 -> md5(event.encoded, partitions_count)
+            _ -> random(partitions_count)
+          end
+      end
+
+    [
+      %Event{
+        event
+        | publish_request:
+            publish_req
+            |> Map.put(:topic, topic)
+            |> Map.put(:partition, partition)
+      }
+    ]
   end
 
   @spec fetch_partitions_counts() :: map()
@@ -71,6 +107,15 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
     |> Enum.into(%{}, fn %{topic: topic_name, partition_metadatas: partitions} ->
       {topic_name, length(partitions)}
     end)
+  end
+
+  @spec fetch_partitions_count(binary) :: integer
+  def fetch_partitions_count(topic) do
+    KafkaEx.metadata(topic: topic)
+    |> Map.get(:topic_metadatas)
+    |> Enum.at(0)
+    |> Map.get(:partition_metadatas)
+    |> length()
   end
 
   defp md5(key, partitions_count) do

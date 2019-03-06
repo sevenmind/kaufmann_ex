@@ -213,7 +213,7 @@ defmodule KaufmannEx.Consumer.Stage.ProducerTest do
       assert_receive 1
       assert_receive 2
       assert_receive 3
-      assert_receive 10_000
+      assert_receive 10_000, 300
     end
 
     test "When more demand than events" do

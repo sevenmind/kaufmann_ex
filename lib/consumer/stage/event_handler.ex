@@ -8,19 +8,23 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
   use GenStage
   alias KaufmannEx.StageSupervisor
 
-  def start_link(opts \\ []) do
-    GenStage.start_link(__MODULE__, opts, opts)
+  def start_link([opts: opts, stage_opts: stage_opts]) do
+    GenStage.start_link(__MODULE__, stage_opts, opts)
   end
+  def start_link([opts: opts]), do: start_link(opts: opts, stage_opts: [])
+  def start_link([opts, args]), do: start_link(opts: opts, stage_opts: args)
+  def start_link([]), do: start_link(opts: [], stage_opts: [])
+  def start_link(opts), do: start_link(opts: opts, stage_opts: [])
 
-  def init(opts) do
-    {:producer_consumer, %{}, Keyword.drop(opts, [:name])}
+  def init(stage_opts \\ []) do
+    {:producer_consumer, %{event_handler: KaufmannEx.Config.event_handler()}, stage_opts}
   end
 
   @spec handle_events(any(), any(), any()) :: {:noreply, [any()], any()}
-  def handle_events(events, _from, state) do
+  def handle_events(events, _from, %{event_handler: event_handler} = state) do
     publish_events =
       events
-      |> Enum.map(&handle_event/1)
+      |> Enum.map(&handle_event(&1, event_handler))
 
       # Old event handler implementation calls publish from handler rather than
       # return messages to be published. We filter out that behavior. Those
@@ -37,11 +41,8 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
     {:noreply, publish_events, state}
   end
 
-  def handle_event(event) do
-    handler = KaufmannEx.Config.event_handler()
-
-    event
-    |> handler.given_event()
+  def handle_event(event, event_handler) do
+    event_handler.given_event(event)
   rescue
     error ->
       Logger.warn("Error Consuming #{inspect(event)} #{inspect(error)}")

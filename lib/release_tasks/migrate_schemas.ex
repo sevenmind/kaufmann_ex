@@ -49,14 +49,6 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&IO.inspect/1)
   end
 
-  def read_schemas(path) do
-    meta_data_schema = load_metadata(path)
-
-    path
-    |> scan_dir()
-    |> Enum.map(&load_and_parse_schema/1)
-    |> Enum.map(&inject_metadata(&1, meta_data_schema))
-  end
 
   def migrate_schemas(app) do
     ensure_startup()
@@ -72,6 +64,15 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&inject_metadata(&1, meta_data_schema))
     |> Enum.map(&register_schema/1)
     |> Enum.map(&IO.inspect/1)
+  end
+
+  def read_schemas(path) do
+    meta_data_schema = load_metadata(path)
+
+    path
+    |> scan_dir()
+    |> Enum.map(&load_and_parse_schema/1)
+    |> Enum.map(&inject_metadata(&1, meta_data_schema))
   end
 
   @doc """

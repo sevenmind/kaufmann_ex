@@ -8,6 +8,7 @@ defmodule KaufmannEx.Supervisor do
   require Logger
   use Supervisor
 
+  @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(opts \\ []) do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
@@ -25,22 +26,24 @@ defmodule KaufmannEx.Supervisor do
       [
         heartbeat_interval: 1_000,
         commit_interval: 10_000,
+        auto_offset_reset: :latest,
         fetch_options: [
-          max_bytes: 20_971_520,
-          wait_time: 300
+          max_bytes: 10_971_520,
+          wait_time: 1
         ]
       ]
       # opts
     ]
 
-    children = [
+  children = [
       {Registry, keys: :unique, name: Registry.ConsumerRegistry},
       %{
         id: KafkaEx.ConsumerGroup,
         start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor
       },
-      KaufmannEx.Publisher.Producer
+      KaufmannEx.FlowConsumer,
+      KaufmannEx.Publisher.Supervisor
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

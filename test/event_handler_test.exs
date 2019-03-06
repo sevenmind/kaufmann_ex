@@ -7,9 +7,11 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
   alias KaufmannEx.TestSupport.MockBus
 
   @topic :rapids
-  @partition 0
+  @partition 11
 
   defmodule TestEventHandler do
+    use KaufmannEx.EventHandler
+
     def given_event(
           %KaufmannEx.Schemas.Event{name: :"test.event.publish", payload: "raise_error"} = event
         ) do
@@ -29,17 +31,19 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
 
       :ok
     end
+
+    # def handled_events, do: ["test.event.publish"]
   end
 
   defmodule EndConsumer do
     use GenStage
 
-    def start_link(opts \\ []) do
-      GenStage.start_link(EndConsumer, opts, opts)
+    def start_link([opts: opts, stage_opts: stage_opts]) do
+      GenStage.start_link(EndConsumer, stage_opts, opts)
     end
 
-    def init(opts) do
-      {:consumer, opts, Keyword.drop(opts, [:name])}
+    def init(args) do
+      {:consumer, [], args}
     end
 
     def handle_events(events, _from, number) do
@@ -68,23 +72,29 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
 
     assert {:ok, pid} =
              start_supervised(
-               {Producer, [name: StageSupervisor.stage_name(Producer, @topic, @partition)]}
+               {Producer, opts: [name: StageSupervisor.stage_name(Producer, @topic, @partition)]}
              )
 
     assert {:ok, _pid} =
              start_supervised(
                {Decoder,
-                [
-                  name: Decoder,
+                opts: [name: Decoder],
+                stage_opts: [
                   subscribe_to: [StageSupervisor.stage_name(Producer, @topic, @partition)]
                 ]}
              )
 
     assert {:ok, _pid} =
-             start_supervised({EventHandler, [name: EventHandler, subscribe_to: [Decoder]]})
+             start_supervised(
+               {EventHandler, opts: [name: EventHandler], stage_opts: [subscribe_to: [Decoder]]}
+             )
 
     assert {:ok, _pid} =
-             start_supervised({EndConsumer, [name: EndConsumer, subscribe_to: [EventHandler]]})
+             start_supervised(
+               {EndConsumer, opts: [name: EndConsumer], stage_opts: [subscribe_to: [EventHandler]]}
+             )
+
+    Process.sleep(100)
 
     {:ok, bypass: bypass, state: %{topic: @topic, partition: @partition}}
   end
@@ -94,8 +104,6 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
       event = encode_event(:"test.event.publish", "Hello")
 
       GenConsumer.handle_message_set([event], state)
-
-      # Stream.run(stream)
 
       assert_receive :event_recieved, 1000
     end

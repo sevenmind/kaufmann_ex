@@ -3,25 +3,35 @@ defmodule KaufmannEx.Publisher.Stage.Encoder do
   Publisher Encoder stage of
   """
   use GenStage
-  use Elixometer
   require Logger
   alias KaufmannEx.Schemas
+  alias KaufmannEx.Schemas.Event
+  alias KaufmannEx.Publisher.Request
 
-  def start_link(opts \\ []) do
-    GenStage.start_link(__MODULE__, opts, opts)
+  def start_link(opts: opts, stage_opts: stage_opts) do
+    GenStage.start_link(__MODULE__, stage_opts, opts)
   end
 
-  def init(opts \\ []) do
-    {:producer_consumer, %{}, Keyword.drop(opts, [:name])}
+  def start_link(opts: opts), do: start_link(opts: opts, stage_opts: [])
+  def start_link([opts, args]), do: start_link(opts: opts, stage_opts: args)
+  def start_link(opts), do: start_link(opts: opts, stage_opts: [])
+
+  def init(stage_opts \\ []) do
+    {:producer_consumer, %{}, stage_opts}
+  end
+
+  def init(stage_opts) do
+    {:producer_consumer, %{}, stage_opts}
   end
 
   def handle_events(events, _from, state) do
     {:noreply, Enum.map(events, &encode_event/1), state}
   end
 
-  @timed key: :auto
-  def encode_event(%{event_name: event_name, body: body} = event) do
+  def encode_event(
+        %Event{publish_request: %Request{event_name: event_name, body: body} = req} = event
+      ) do
     {:ok, encoded} = Schemas.encode_message(event_name, body)
-    Map.put(event, :encoded, encoded)
+    %Event{event | publish_request: Map.put(req, :encoded, encoded)}
   end
 end

@@ -3,21 +3,31 @@ defmodule KaufmannEx.Consumer.Stage.Decoder do
   Consumer Deocoder stage, decodes AvroEx messages.
   """
   use GenStage
-  use Elixometer
   require Logger
   alias KaufmannEx.StageSupervisor
+  alias KaufmannEx.Schemas.Event
 
-  def start_link(opts \\ []) do
-    GenStage.start_link(__MODULE__, opts, opts)
+  def start_link(opts: opts, stage_opts: stage_opts) do
+    GenStage.start_link(__MODULE__, stage_opts, opts)
   end
 
-  def init(opts) do
-    {:producer_consumer, %{}, Keyword.drop(opts, [:name])}
+  def start_link(opts: opts), do: start_link(opts: opts, stage_opts: [])
+  def start_link([opts, args]), do: start_link(opts: opts, stage_opts: args)
+  def start_link([]), do: start_link(opts: [], stage_opts: [])
+  def start_link(opts), do: start_link(opts: opts, stage_opts: [])
+
+  def init(stage_opts \\ []) do
+    {:producer_consumer, %{event_handler: KaufmannEx.Config.event_handler()}, stage_opts}
   end
 
   @spec handle_events(any(), any(), any()) :: {:noreply, [any()], any()}
   def handle_events(events, _from, state) do
-    {:noreply, Enum.map(events, &decode_event/1), state}
+    events =
+      events
+      |> Enum.filter(&(&1.key in state.event_handler.handled_events))
+      |> Enum.map(&decode_event/1)
+
+    {:noreply, events, state}
   end
 
   @doc """
@@ -26,44 +36,51 @@ defmodule KaufmannEx.Consumer.Stage.Decoder do
   Returns Event or Error
   """
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
-  @timed key: :auto
-  def decode_event(%{key: key, value: value} = event) do
+
+  def decode_event(%Event{raw_event: %{key: key, value: value}} = event) do
     event_name = key |> String.to_atom()
     crc = Map.get(event, :crc)
     now = DateTime.utc_now()
+    size = byte_size(value)
 
     case KaufmannEx.Schemas.decode_message(key, value) do
       {:ok, %{meta: meta, payload: payload}} ->
         {:ok, published_at, _} = DateTime.from_iso8601(meta[:timestamp])
         bus_time = DateTime.diff(now, published_at, :millisecond)
 
-        Logger.debinfoug([
-          meta[:message_name],
+        Logger.info([
+          key,
           " ",
           meta[:message_id],
           " from ",
           meta[:emitter_service_id],
+          " on ",
+          event.topic,
+          "@",
+          to_string(event.partition),
           " in ",
           to_string(bus_time),
-          "ms"
+          "ms ",
+          to_string(size),
+          " bytes"
         ])
 
-        update_gauge("bus_latency", bus_time)
-
         %KaufmannEx.Schemas.Event{
-          name: event_name,
-          meta: Map.put(meta, :crc, crc),
-          payload: payload
+          event
+          | name: event_name,
+            meta: Map.put(meta, :crc, crc),
+            payload: payload
         }
 
       {:error, error} ->
         Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
 
-        %KaufmannEx.Schemas.ErrorEvent{
-          name: key,
-          error: error,
-          message_payload: value
-        }
+        err_event =
+          event
+          |> Map.from_struct()
+          |> Map.merge(%{name: key, error: error, message_payload: value})
+
+        struct(KaufmannEx.Schemas.ErrorEvent, err_event)
     end
   end
 end

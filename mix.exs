@@ -32,7 +32,7 @@ defmodule KaufmannEx.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger]
+      extra_applications: [:logger, :snappy ]
     ]
   end
 
@@ -56,10 +56,14 @@ defmodule KaufmannEx.MixProject do
       {:benchee, "~> 0.11", only: [:dev, :test]},
       {:mock, "~> 0.3.0", only: [:test]},
       {:ex_guard, "~> 1.3", only: :dev},
+      {:snappy, git: "https://github.com/fdmanana/snappy-erlang-nif"},
 
       # elixometer & updated dependencies
-      {:elixometer, github: "pinterest/elixometer"},
-      {:setup, "2.0.2", override: true, manager: :rebar}
+      # {:elixometer, github: "pinterest/elixometer"},
+      # {:setup, "2.0.2", override: true, manager: :rebar},
+
+      # {:gen_metrics, "~> 0.3.0", optional: true},
+      {:flow, "~> 0.14.3"}
     ]
   end
 

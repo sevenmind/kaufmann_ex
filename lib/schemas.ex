@@ -57,6 +57,7 @@ defmodule KaufmannEx.Schemas do
 
     schema_name =
       cond do
+        # defined_event?(event_string) -> event_string
         Regex.match?(~r/^query\./, event_string) ->
           String.slice(event_string, 0..8)
 
@@ -130,10 +131,12 @@ defmodule KaufmannEx.Schemas do
     |> Schemex.delete(subject)
   end
 
-  def defined_event?(subject) do
-    {:ok, _} =
-      schema_registry_uri()
-      |> Schemex.latest(subject)
+  defmemo defined_event?(subject) do
+    case schema_registry_uri()
+      |> Schemex.latest(subject) do
+        {:ok, _} -> true
+        _ -> false
+      end
   end
 
   def encodable?(subject, payload) do

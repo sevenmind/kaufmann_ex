@@ -18,9 +18,9 @@ defmodule KaufmannEx.StageSupervisor do
   require Logger
   use Supervisor
 
-  alias KaufmannEx.Consumer.Stage.{Decoder, EventHandler, Producer}
-  alias KaufmannEx.Publisher.Stage.{Encoder, PublishSupervisor, TopicSelector}
   alias KaufmannEx.Config
+  alias KaufmannEx.Consumer.Stage.{Decoder, EventHandler, Producer}
+  alias KaufmannEx.Publisher.Stage.{Encoder, PublisherConsumer, TopicSelector}
 
   def start_link({topic, partition}) do
     Supervisor.start_link(__MODULE__, {topic, partition},
@@ -31,48 +31,57 @@ defmodule KaufmannEx.StageSupervisor do
   def init({topic, partition}) do
     children = [
       # Consumption stages
-      {Producer, [name: stage_name(Producer, topic, partition), max_demand: Config.max_demand()]},
+      {Producer,
+      opts: [
+         name: stage_name(Producer, topic, partition)
+       ]},
       {Decoder,
        [
-         name: stage_name(Decoder, topic, partition),
-         subscribe_to: [
-           stage_name(Producer, topic, partition)
-         ],
-         max_demand: Config.max_demand()
+         opts: [name: stage_name(Decoder, topic, partition)],
+         stage_opts: [
+           subscribe_to: [
+             {stage_name(Producer, topic, partition), max_demand: Config.max_demand()}
+           ]
+         ]
        ]},
       {EventHandler,
        [
-         name: stage_name(EventHandler, topic, partition),
-         subscribe_to: [
-           stage_name(Decoder, topic, partition)
-         ],
-         max_demand: Config.max_demand()
+         opts: [name: stage_name(EventHandler, topic, partition)],
+         stage_opts: [
+           subscribe_to: [
+             {stage_name(Decoder, topic, partition), max_demand: Config.max_demand()}
+           ]
+         ]
        ]},
 
       # Publish Stages
       {Encoder,
        [
-         name: stage_name(Encoder, topic, partition),
-         subscribe_to: [
-           stage_name(EventHandler, topic, partition),
-           KaufmannEx.Publisher.Producer
+         opts: [name: stage_name(Encoder, topic, partition)],
+         stage_opts: [
+           subscribe_to: [
+             {stage_name(EventHandler, topic, partition), max_demand: Config.max_demand()},
+             {KaufmannEx.Publisher.Producer, max_demand: Config.max_demand()}
+           ]
          ]
        ]},
       {TopicSelector,
        [
-         name: stage_name(TopicSelector, topic, partition),
-         subscribe_to: [
-           stage_name(Encoder, topic, partition)
-         ],
-         max_demand: Config.max_demand()
+         opts: [name: stage_name(TopicSelector, topic, partition)],
+         stage_opts: [
+           subscribe_to: [
+             {stage_name(Encoder, topic, partition), max_demand: Config.max_demand()}
+           ]
+         ]
        ]},
-      {PublishSupervisor,
+      {PublisherConsumer,
        [
-         name: stage_name(PublishSupervisor, topic, partition),
-         subscribe_to: [
-           stage_name(TopicSelector, topic, partition)
-         ],
-         max_demand: Config.max_demand()
+         opts: [name: stage_name(PublisherConsumer, topic, partition)],
+         stage_opts: [
+           subscribe_to: [
+             {stage_name(TopicSelector, topic, partition), max_demand: Config.max_demand()}
+           ]
+         ]
        ]}
     ]
 

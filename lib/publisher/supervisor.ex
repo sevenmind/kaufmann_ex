@@ -10,7 +10,8 @@ defmodule KaufmannEx.Publisher.Supervisor do
 
   require Logger
   use Supervisor
-  alias KaufmannEx.Publisher.Stage.{Encoder, PublishSupervisor, TopicSelector}
+  alias KaufmannEx.Config
+  alias KaufmannEx.Publisher.Stage.{Encoder, PublisherConsumer, TopicSelector}
 
   def start_link(opts \\ []) do
     :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
@@ -20,9 +21,33 @@ defmodule KaufmannEx.Publisher.Supervisor do
   def init(_opts \\ []) do
     children = [
       KaufmannEx.Publisher.Producer,
-      {Encoder, [name: Encoder, subscribe_to: [KaufmannEx.Publisher.Producer]]},
-      {TopicSelector, [name: TopicSelector, subscribe_to: [Encoder]]},
-      {PublishSupervisor, [name: PublishSupervisor, subscribe_to: [TopicSelector]]}
+      {Encoder,
+       [
+         opts: [name: Encoder],
+         stage_opts: [
+           subscribe_to: [
+             {KaufmannEx.Publisher.Producer, max_demand: Config.max_demand()}
+           ]
+         ]
+       ]},
+      {TopicSelector,
+       [
+         opts: [name: TopicSelector],
+         stage_opts: [
+           subscribe_to: [
+             {Encoder, max_demand: Config.max_demand()}
+           ]
+         ]
+       ]},
+      {PublisherConsumer,
+       [
+         opts: [name: PublisherConsumer],
+         stage_opts: [
+           subscribe_to: [
+             {TopicSelector, max_demand: Config.max_demand()}
+           ]
+         ]
+       ]}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

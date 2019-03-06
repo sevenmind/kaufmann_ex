@@ -6,11 +6,16 @@ defmodule KaufmannEx.Publisher.Stage.PublishSupervisor do
   require Logger
   use ConsumerSupervisor
 
-  def start_link(opts) do
-    ConsumerSupervisor.start_link(__MODULE__, opts, opts)
+
+  def start_link(opts: opts, stage_opts: stage_opts) do
+    ConsumerSupervisor.start_link(__MODULE__, stage_opts, opts)
   end
 
-  def init(opts) do
+  def start_link(opts: opts), do: start_link(opts: opts, stage_opts: [])
+  def start_link([opts, args]), do: start_link(opts: opts, stage_opts: args)
+  def start_link(opts), do: start_link(opts: opts, stage_opts: [])
+
+  def init(stage_opts \\ []) do
     children = [
       %{
         id: KaufmannEx.Publisher.Stage.Publisher,
@@ -19,6 +24,6 @@ defmodule KaufmannEx.Publisher.Stage.PublishSupervisor do
       }
     ]
 
-    ConsumerSupervisor.init(children, [{:strategy, :one_for_one} | Keyword.drop(opts, [:name])])
+    ConsumerSupervisor.init(children, [{:strategy, :one_for_one} | stage_opts])
   end
 end
