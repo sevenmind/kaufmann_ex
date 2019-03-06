@@ -37,12 +37,12 @@ defmodule KaufmannEx.Supervisor do
 
   children = [
       {Registry, keys: :unique, name: Registry.ConsumerRegistry},
+      KaufmannEx.FlowConsumer,
       %{
         id: KafkaEx.ConsumerGroup,
         start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
         type: :supervisor
       },
-      KaufmannEx.FlowConsumer,
       KaufmannEx.Publisher.Supervisor
     ]
 

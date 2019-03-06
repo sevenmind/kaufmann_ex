@@ -31,9 +31,8 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
   end
 
   def notify(message_set, topic, partition) do
-    GenStage.cast(
+    GenStage.call(
       StageSupervisor.stage_name(__MODULE__, topic, partition),
-      # __MODULE__,
       {:notify, message_set}
     )
   end
@@ -52,7 +51,7 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
       when demand > 0 and length(message_set) > demand do
     {to_dispatch, remaining} = Enum.split(message_set, demand)
 
-    {:noreply, to_dispatch, %{state | message_set: remaining, demand: 0}}
+    {:noreply, Enum.map(to_dispatch, &send_reply/1), %{state | message_set: remaining, demand: 0}}
   end
 
   # When demand & messages
@@ -63,9 +62,9 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
         demand: demand - length(message_set)
     }
 
-    # Enum.each(message_set, &send_reply/1)
+    Enum.each(message_set, &send_reply/1)
 
-    {:noreply, message_set, new_state}
+    {:noreply, Enum.map(message_set, &Enum.at(&1, 0)), new_state}
   end
 
   # When no demand, wait for demand
@@ -74,8 +73,8 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
   end
 
   # When no demand, save messages to state, wait.
-  def handle_cast({:notify, message_set}, %{demand: 0} = state) do
-    # message_set = Enum.map(message_set, fn m -> [m, from] end)
+  def handle_call({:notify, message_set}, from, %{demand: 0} = state) do
+    message_set = Enum.map(message_set, fn m -> [m, from] end)
 
     {:noreply, [],
      %{
@@ -85,12 +84,13 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
   end
 
   # When more messages than demand, dispatch to meet demand, wait for more demand
-  def handle_cast(
+  def handle_call(
         {:notify, message_set},
+        from,
         %{demand: demand, message_set: existing_message_set} = state
       )
       when length(message_set) + length(existing_message_set) > demand do
-    # message_set = Enum.map(message_set, fn m -> [m, from] end)
+    message_set = Enum.map(message_set, fn m -> [m, from] end)
     message_set = Enum.concat(existing_message_set, message_set)
 
     {to_dispatch, remaining} = Enum.split(message_set, demand)
@@ -101,14 +101,16 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
         demand: demand - length(to_dispatch)
     }
 
-    {:noreply, to_dispatch, new_state}
+    {:noreply, Enum.map(to_dispatch, &send_reply/1), new_state}
   end
 
   # When demand greater than message count, reply for more messages
-  def handle_cast(
+  def handle_call(
         {:notify, message_set},
+        _from,
         %{demand: demand, message_set: existing_message_set} = state
       ) do
+    existing_message_set = Enum.map(existing_message_set, &send_reply/1)
     message_set = Enum.concat(existing_message_set, message_set)
 
     new_state = %{
@@ -117,7 +119,7 @@ defmodule KaufmannEx.Consumer.Stage.Producer do
         demand: demand - length(message_set)
     }
 
-    {:noreply, message_set, new_state}
+    {:reply, :ok, message_set, new_state}
   end
 
   def handle_subscribe(_producer_or_consumer, _subscription_options, _from, state) do

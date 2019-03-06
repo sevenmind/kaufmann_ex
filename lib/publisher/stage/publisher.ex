@@ -73,7 +73,8 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
     produce_request = %Request{
       partition: partition,
       topic: topic,
-      messages: [message]
+      messages: [message],
+      required_acks: 1
     }
 
     KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
@@ -101,7 +102,8 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
     produce_request = %Request{
       partition: partition,
       topic: topic,
-      messages: messages
+      messages: messages,
+      required_acks: 1
     }
 
     KafkaEx.produce(produce_request, worker_name: Enum.random(workers))

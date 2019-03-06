@@ -25,7 +25,6 @@ defmodule KaufmannEx.FlowConsumer do
     |> Flow.map(&timestamp(&1, :encode_event))
     |> Flow.flat_map(&TopicSelector.select_topic_and_partition(&1, topic_metadata))
     |> Flow.map(&timestamp(&1, :select_topic_and_partition))
-    |> Flow.reject(fn event -> event.publish_request.topic == "content" end)
     |> Flow.partition(window: Flow.Window.periodic(4, :millisecond), stages: 128)
     # Group events in a 10 ms window by topic & partition
     |> Flow.group_by(fn event ->
