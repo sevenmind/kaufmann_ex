@@ -8,10 +8,11 @@ defmodule KaufmannEx.Consumer.Stage.EventHandler do
   use GenStage
   alias KaufmannEx.StageSupervisor
 
-  def start_link([opts: opts, stage_opts: stage_opts]) do
+  def start_link(opts: opts, stage_opts: stage_opts) do
     GenStage.start_link(__MODULE__, stage_opts, opts)
   end
-  def start_link([opts: opts]), do: start_link(opts: opts, stage_opts: [])
+
+  def start_link(opts: opts), do: start_link(opts: opts, stage_opts: [])
   def start_link([opts, args]), do: start_link(opts: opts, stage_opts: args)
   def start_link([]), do: start_link(opts: [], stage_opts: [])
   def start_link(opts), do: start_link(opts: opts, stage_opts: [])

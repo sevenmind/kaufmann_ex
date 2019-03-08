@@ -38,7 +38,7 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
   defmodule EndConsumer do
     use GenStage
 
-    def start_link([opts: opts, stage_opts: stage_opts]) do
+    def start_link(opts: opts, stage_opts: stage_opts) do
       GenStage.start_link(EndConsumer, stage_opts, opts)
     end
 
@@ -91,7 +91,8 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
 
     assert {:ok, _pid} =
              start_supervised(
-               {EndConsumer, opts: [name: EndConsumer], stage_opts: [subscribe_to: [EventHandler]]}
+               {EndConsumer,
+                opts: [name: EndConsumer], stage_opts: [subscribe_to: [EventHandler]]}
              )
 
     Process.sleep(100)

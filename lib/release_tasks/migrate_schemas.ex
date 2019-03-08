@@ -49,7 +49,6 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&IO.inspect/1)
   end
 
-
   def migrate_schemas(app) do
     ensure_startup()
     IO.puts("Migrating Schemas")

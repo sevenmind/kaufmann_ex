@@ -4,16 +4,18 @@ defmodule KaufmannEx.FlowConsumer do
 
   alias KaufmannEx.Consumer.Stage.{Decoder, EventHandler, Producer}
   alias KaufmannEx.Publisher.Stage.{Encoder, Publisher, TopicSelector}
+  alias KaufmannEx.Schemas.Event
 
-  def start_link(_) do
+
+  def start_link({pid, topic, partition}) when is_pid(pid), do: start_link({[pid], topic, partition})
+
+  def start_link({pids, topic, partition}) when is_list(pids) do
     event_handler = KaufmannEx.Config.event_handler()
     topic_metadata = TopicSelector.topic_metadata()
     workers = Enum.map(0..10, fn n -> create_worker(String.to_atom("worker_#{n}")) end)
 
-    Flow.from_specs(
-      producer_specs(topic_metadata),
-      stages: 16
-    )
+    Flow.from_stages(pids, stages: 2)
+    |> Flow.map(&inject_timestamp(&1, %{topic: topic, partition: partition}))
     |> Flow.map(&timestamp(&1, :consumer_producer))
     |> Flow.filter(&handled_event?(&1, event_handler.handled_events))
     |> Flow.map(&timestamp(&1, :accepted_event))
@@ -25,14 +27,29 @@ defmodule KaufmannEx.FlowConsumer do
     |> Flow.map(&timestamp(&1, :encode_event))
     |> Flow.flat_map(&TopicSelector.select_topic_and_partition(&1, topic_metadata))
     |> Flow.map(&timestamp(&1, :select_topic_and_partition))
-    |> Flow.partition(window: Flow.Window.periodic(10, :millisecond), stages: 32, key: &event_key/1)
+    |> Flow.partition(
+      window: Flow.Window.periodic(10, :millisecond),
+      stages: 4,
+      key: &event_key/1
+    )
     # Group events in a 10 ms window by topic & partition
     |> Flow.group_by(&event_key/1)
     |> Flow.flat_map(&Publisher.publish(&1, workers))
     |> Flow.map(&timestamp(&1, :publish))
     |> Flow.each(&print_timings/1)
     # KaufmannEx.StageSupervisor.stage_name(__MODULE__, topic, partition))
-    |> Flow.start_link(name: __MODULE__)
+    |> Flow.start_link()
+  end
+
+  def inject_timestamp(event, %{topic: topic, partition: partition} = _) do
+    %Event{
+      raw_event: event,
+      timestamps: [
+        gen_consumer: :erlang.monotonic_time()
+      ],
+      topic: topic,
+      partition: partition
+    }
   end
 
   def handle_event(event, event_handler) do

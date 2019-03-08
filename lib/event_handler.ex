@@ -18,8 +18,9 @@ defmodule KaufmannEx.EventHandler do
   end
 
   defmacro __before_compile__(env) do
-    handled_events = Module.get_attribute(env.module, :handled_events)
-    |> Enum.map(&to_string/1)
+    handled_events =
+      Module.get_attribute(env.module, :handled_events)
+      |> Enum.map(&to_string/1)
 
     quote do
       @doc "lists handled events, used for filtering unhandled events in consumption"

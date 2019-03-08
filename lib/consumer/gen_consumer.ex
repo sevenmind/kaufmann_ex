@@ -20,7 +20,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
 
     {:ok,
      %{
-      #  supervisor: pid,
+       #  supervisor: pid,
        topic: topic,
        partition: partition,
        commit_strategy: Config.commit_strategy()
@@ -45,9 +45,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
     {Map.get(state, :commit_strategy, :async_commit), state}
   end
 
-
   def handle_info({_, :ok}, state), do: {:noreply, state}
-
 
   def terminate(reason, state) do
     Supervisor.stop(state.supervisor, reason, 1000)

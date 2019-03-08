@@ -6,7 +6,6 @@ defmodule KaufmannEx.Publisher.Stage.PublishSupervisor do
   require Logger
   use ConsumerSupervisor
 
-
   def start_link(opts: opts, stage_opts: stage_opts) do
     ConsumerSupervisor.start_link(__MODULE__, stage_opts, opts)
   end

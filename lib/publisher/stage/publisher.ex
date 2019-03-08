@@ -48,6 +48,7 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
   # end
 
   def publish(event, workers \\ [:kafka_ex])
+
   def publish(
         %Event{
           publish_request: %PRequest{
@@ -58,7 +59,8 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
           }
         } = event,
         workers
-      ) when is_list(workers) do
+      )
+      when is_list(workers) do
     Logger.debug([
       "Publishing Event ",
       event_name |> Atom.to_string(),
@@ -91,25 +93,24 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
         partition: partition
         # event_name: event_name
       }
-      } = Enum.at(events, 0)
+    } = Enum.at(events, 0)
 
-      messages =
-        events
-        |> Enum.map(fn %Event{publish_request: %PRequest{encoded: encoded, event_name: event_name}} ->
-          %Message{value: encoded, key: event_name |> Atom.to_string()}
-        end)
+    messages =
+      events
+      |> Enum.map(fn %Event{publish_request: %PRequest{encoded: encoded, event_name: event_name}} ->
+        %Message{value: encoded, key: event_name |> Atom.to_string()}
+      end)
 
-        produce_request = %Request{
-          partition: partition,
-          topic: topic,
-          messages: messages,
-          required_acks: 1,
-          compression: :snappy
+    produce_request = %Request{
+      partition: partition,
+      topic: topic,
+      messages: messages,
+      required_acks: 1,
+      compression: :snappy
     }
 
     KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
 
     events
   end
-
 end

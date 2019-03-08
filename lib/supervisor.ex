@@ -28,19 +28,39 @@ defmodule KaufmannEx.Supervisor do
         commit_interval: 10_000,
         auto_offset_reset: :latest,
         fetch_options: [
-          max_bytes: 10_971_520,
-          wait_time: 1
+          max_bytes: 1_971_520,
+          wait_time: 1_000
         ]
       ]
       # opts
     ]
 
-  children = [
+    children = [
       {Registry, keys: :unique, name: Registry.ConsumerRegistry},
-      KaufmannEx.FlowConsumer,
+      # KaufmannEx.FlowConsumer,
+      # %{
+      #   id: KafkaEx.ConsumerGroup,
+      #   start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
+      #   type: :supervisor
+      # },
       %{
-        id: KafkaEx.ConsumerGroup,
-        start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
+        id: KafkaExGenStageConsumer.ConsumerGroup,
+        start:
+          {KafkaExGenStageConsumer.ConsumerGroup, :start_link,
+           [
+             KaufmannEx.FlowConsumer,
+             consumer_group_name,
+             topics,
+             [
+               heartbeat_interval: 1_000,
+               commit_interval: 10_000,
+               auto_offset_reset: :latest,
+               fetch_options: [
+                 max_bytes: 1_971_520,
+                 wait_time: 1_000
+               ]
+             ]
+           ]},
         type: :supervisor
       },
       KaufmannEx.Publisher.Supervisor

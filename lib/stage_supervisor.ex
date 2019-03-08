@@ -32,7 +32,7 @@ defmodule KaufmannEx.StageSupervisor do
     children = [
       # Consumption stages
       {Producer,
-      opts: [
+       opts: [
          name: stage_name(Producer, topic, partition)
        ]},
       {Decoder,

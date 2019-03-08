@@ -133,10 +133,10 @@ defmodule KaufmannEx.Schemas do
 
   defmemo defined_event?(subject) do
     case schema_registry_uri()
-      |> Schemex.latest(subject) do
-        {:ok, _} -> true
-        _ -> false
-      end
+         |> Schemex.latest(subject) do
+      {:ok, _} -> true
+      _ -> false
+    end
   end
 
   def encodable?(subject, payload) do

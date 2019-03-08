@@ -12,14 +12,17 @@ defmodule KaufmannEx.Publisher do
   alias KaufmannEx.Schemas.Event
 
   def publish(event_name, body, context \\ %{}, topic \\ :default) do
+    message_body =
+      case Map.has_key?(body, :meta) do
+        true ->
+          body
 
-    message_body = case Map.has_key?(body, :meta) do
-      true -> body
-      _ -> %{
-        payload: body,
-        meta: Event.event_metadata(event_name, context)
-      }
-    end
+        _ ->
+          %{
+            payload: body,
+            meta: Event.event_metadata(event_name, context)
+          }
+      end
 
     GenServer.cast(
       KaufmannEx.Publisher.Producer,
