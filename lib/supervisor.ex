@@ -44,10 +44,11 @@ defmodule KaufmannEx.Supervisor do
       #   type: :supervisor
       # },
       %{
-        id: KafkaExGenStageConsumer.ConsumerGroup,
+        id: KafkaEx.ConsumerGroup,
         start:
-          {KafkaExGenStageConsumer.ConsumerGroup, :start_link,
+          {KafkaEx.ConsumerGroup, :start_link,
            [
+             KafkaExGenStageConsumer,
              KaufmannEx.FlowConsumer,
              consumer_group_name,
              topics,
@@ -57,8 +58,9 @@ defmodule KaufmannEx.Supervisor do
                auto_offset_reset: :latest,
                fetch_options: [
                  max_bytes: 1_971_520,
-                 wait_time: 1_000
-               ]
+                 wait_time: 30
+               ],
+               commit_strategy: :async_commit
              ]
            ]},
         type: :supervisor

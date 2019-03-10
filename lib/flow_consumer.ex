@@ -6,36 +6,38 @@ defmodule KaufmannEx.FlowConsumer do
   alias KaufmannEx.Publisher.Stage.{Encoder, Publisher, TopicSelector}
   alias KaufmannEx.Schemas.Event
 
-
-  def start_link({pid, topic, partition}) when is_pid(pid), do: start_link({[pid], topic, partition})
-
-  def start_link({pids, topic, partition}) when is_list(pids) do
+  def start_link({pid, topic, partition, extra_consumer_args}) when is_pid(pid) do
+    # def start_link({pids, topic, partition}) when is_list(pids) do
     event_handler = KaufmannEx.Config.event_handler()
     topic_metadata = TopicSelector.topic_metadata()
     workers = Enum.map(0..10, fn n -> create_worker(String.to_atom("worker_#{n}")) end)
 
-    Flow.from_stages(pids, stages: 2)
+    Flow.from_stages([pid], stages: 2)
     |> Flow.map(&inject_timestamp(&1, %{topic: topic, partition: partition}))
-    |> Flow.map(&timestamp(&1, :consumer_producer))
+    |> flow_timestamp(:consumer_producer)
     |> Flow.filter(&handled_event?(&1, event_handler.handled_events))
-    |> Flow.map(&timestamp(&1, :accepted_event))
+    |> flow_timestamp(:accepted_event)
     |> Flow.map(&Decoder.decode_event/1)
-    |> Flow.map(&timestamp(&1, :decode_event))
+    |> flow_timestamp(:decode_event)
+    # |> Flow.each(
+    #   &KafkaExGenStageConsumer.trigger_commit(pid, {:async_commit, &1.raw_event.offset})
+    # )
+    # |> flow_timestamp(:commit_offset)
     |> Flow.flat_map(&handle_event(&1, event_handler))
-    |> Flow.map(&timestamp(&1, :event_handler))
+    |> flow_timestamp(:event_handler)
     |> Flow.map(&Encoder.encode_event/1)
-    |> Flow.map(&timestamp(&1, :encode_event))
+    |> flow_timestamp(:encode_event)
     |> Flow.flat_map(&TopicSelector.select_topic_and_partition(&1, topic_metadata))
-    |> Flow.map(&timestamp(&1, :select_topic_and_partition))
-    |> Flow.partition(
-      window: Flow.Window.periodic(10, :millisecond),
-      stages: 4,
-      key: &event_key/1
-    )
+    |> flow_timestamp(:select_topic_and_partition)
+    # |> Flow.partition(
+    #   window: Flow.Window.periodic(10, :millisecond),
+    #   stages: 4,
+    #   key: &event_key/1
+    # )
     # Group events in a 10 ms window by topic & partition
-    |> Flow.group_by(&event_key/1)
-    |> Flow.flat_map(&Publisher.publish(&1, workers))
-    |> Flow.map(&timestamp(&1, :publish))
+    # |> Flow.group_by(&event_key/1)
+    |> Flow.map(&Publisher.publish(&1, workers))
+    |> flow_timestamp(:publish)
     |> Flow.each(&print_timings/1)
     # KaufmannEx.StageSupervisor.stage_name(__MODULE__, topic, partition))
     |> Flow.start_link()
@@ -63,6 +65,10 @@ defmodule KaufmannEx.FlowConsumer do
 
   def handled_event?(_, [:all]), do: true
   def handled_event?(%{raw_event: %{key: key}} = _, handled_events), do: key in handled_events
+
+  def flow_timestamp(flow, subject) do
+    Flow.map(flow, &timestamp(&1, subject))
+  end
 
   def timestamp(event, subject) do
     Map.put(event, :timestamps, [{subject, :erlang.monotonic_time()} | event.timestamps])
