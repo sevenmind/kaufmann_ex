@@ -87,6 +87,7 @@ defmodule KaufmannEx.EventHandler do
       {:noreply, _} -> []
       {:reply, events} when is_list(events) -> events
       {:reply, event} when is_tuple(event) or is_map(event) -> [event]
+      {:error, error} -> wrap_error_event(event, error)
       _ -> []
     end
     |> Enum.map(&format_event(event, &1))
@@ -94,16 +95,18 @@ defmodule KaufmannEx.EventHandler do
     error ->
       Logger.warn(fn -> "Error handling #{event.name} #{inspect(error)}" end)
 
-      [
-        wrap_event(
-          :"event.error.#{event.name}",
-          %{
-            error: inspect(error),
-            message_payload: event.payload
-          },
-          event
-        )
-      ]
+      wrap_error_event(event, error)
+      |> Enum.map(&format_event(event, &1))
+  end
+
+  def wrap_error_event(event, error) do
+    payload = %{
+      error: %{error: inspect(error), message_payload: inspect(event.payload)}
+    }
+
+    [
+      {:"event.error.#{event.name}", payload}
+    ]
   end
 
   defp format_event(event, {event_name, payload}), do: wrap_event(event_name, payload, event)
