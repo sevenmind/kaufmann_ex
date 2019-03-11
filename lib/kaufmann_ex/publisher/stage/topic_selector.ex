@@ -84,7 +84,7 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
 
         _ ->
           case state.partition_strategy do
-            :md5 -> md5(event.encoded, partitions_count)
+            :md5 -> md5(publish_req.encoded, partitions_count)
             _ -> random(partitions_count)
           end
       end

@@ -1,6 +1,8 @@
 defmodule KaufmannEx.TestSupport.MockBus do
   use ExUnit.CaseTemplate
 
+  alias KaufmannEx.EventHandler
+
   @moduledoc """
     Helper module for testing event handling.
 
@@ -32,49 +34,6 @@ defmodule KaufmannEx.TestSupport.MockBus do
     ```
   """
 
-  defmodule Consumer do
-    @moduledoc """
-    The GenEvent handler implementation is a simple consumer.
-    """
-
-    use GenStage
-
-    @spec start_link(pid()) :: :ignore | {:error, any()} | {:ok, pid()}
-    def start_link(pid) do
-      GenStage.start_link(__MODULE__, pid)
-    end
-
-    # Callbacks
-
-    @impl true
-    def init(pid) do
-      # Starts a permanent subscription to the broadcaster
-      # which will automatically start requesting items.
-      {:consumer, pid, subscribe_to: [KaufmannEx.Publisher.Producer]}
-    end
-
-    @impl true
-    def handle_events(events, _from, pid) do
-      for %{
-            event_name: event_name,
-            body: body,
-            context: _context,
-            topic: topic
-          } <- events do
-        send(pid, {:produce, {event_name, body, topic}})
-      end
-
-      {:noreply, [], pid}
-    end
-  end
-
-  setup do
-    start_supervised!(KaufmannEx.Publisher.Producer)
-    start_supervised!({KaufmannEx.TestSupport.MockBus.Consumer, self()})
-
-    :ok
-  end
-
   using do
     quote do
       # Using doesn't just import itself
@@ -95,7 +54,11 @@ defmodule KaufmannEx.TestSupport.MockBus do
   @spec given_event(atom, any, binary | nil) :: :ok
   def given_event(event_name, payload, callback_id \\ nil) do
     schema_name = schema_name_if_query(event_name)
-    assert MockSchemaRegistry.defined_event?(schema_name), "Schema #{schema_name} not registered"
+
+    assert MockSchemaRegistry.defined_event?(schema_name),
+           "Schema #{schema_name} not registered, Is the schema in #{
+             KaufmannEx.Config.schema_path()
+           }?"
 
     # Inject fake MetaData into event
     event = %Event{
@@ -104,18 +67,31 @@ defmodule KaufmannEx.TestSupport.MockBus do
       payload: payload
     }
 
-    encodable_payload =
-      event
-      |> Map.from_struct()
-      |> Map.drop([:name])
-      |> Map.Helpers.stringify_keys()
-
     # If message isn't encodable, big problems
-    assert {:ok, _} = MockSchemaRegistry.encode_event(schema_name, encodable_payload),
-           "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
+    assert_matches_schema(
+      event_name,
+      payload,
+      event_metadata(event_name, %{callback_id: callback_id})
+    )
 
     event_consumer = Application.fetch_env!(:kaufmann_ex, :event_handler_mod)
-    event_consumer.given_event(event)
+
+    event
+    |> EventHandler.handle_event(event_consumer)
+    |> send_events()
+  end
+
+  defp send_events(events) do
+    for %{
+          publish_request: %{
+            event_name: event_name,
+            body: body,
+            context: _context,
+            topic: topic
+          }
+        } <- events do
+      send(self(), {:produce, {event_name, body, topic}})
+    end
   end
 
   @doc """
@@ -194,6 +170,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
       emitter_service: Nanoid.generate(),
       emitter_service_id: Nanoid.generate(),
       callback_id: callback_id,
+      callback_topic: nil,
       message_name: event_name |> to_string,
       timestamp: DateTime.to_string(DateTime.utc_now())
     }

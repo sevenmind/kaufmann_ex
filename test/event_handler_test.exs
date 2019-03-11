@@ -1,9 +1,10 @@
-defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
+defmodule KaufmannEx.EventHandlerTest do
   use ExUnit.Case
   alias KafkaEx.Protocol.Fetch.Message
-  alias KaufmannEx.Consumer.GenConsumer
-  alias KaufmannEx.Consumer.Stage.{Producer, Decoder, EventHandler}
-  alias KaufmannEx.StageSupervisor
+  alias KaufmannEx.EventHandler
+  alias KaufmannEx.Publisher.Request
+  alias KaufmannEx.Schemas.ErrorEvent
+  alias KaufmannEx.Schemas.Event
   alias KaufmannEx.TestSupport.MockBus
 
   @topic :rapids
@@ -11,156 +12,109 @@ defmodule KaufmannEx.Consumer.Stage.EventHandlerTest do
 
   defmodule TestEventHandler do
     use KaufmannEx.EventHandler
+    alias KaufmannEx.Schemas.Event
 
-    def given_event(
-          %KaufmannEx.Schemas.Event{name: :"test.event.publish", payload: "raise_error"} = event
-        ) do
+    def given_event(%Event{name: :"event.with.response", payload: pl}) do
+      {:reply, [{:response_event, pl}]}
+    end
+
+    def given_event(%Event{name: :"event.with.response.topic", payload: pl}) do
+      {:reply, [{:response_event, pl, "some_topic"}]}
+    end
+
+    def given_event(%Event{name: :"test.event.error", payload: "raise_error"} = event) do
       raise ArgumentError, "You know what you did"
 
-      :ok
+      {:noreply, []}
     end
 
-    def given_event(%KaufmannEx.Schemas.Event{} = event) do
-      :erlang.send(:subscriber, :event_recieved)
-
-      :ok
+    def given_event(%Event{name: _name} = event) do
+      {:noreply, []}
     end
 
-    def given_event(%KaufmannEx.Schemas.ErrorEvent{} = event) do
-      :erlang.send(:subscriber, :handled_error)
+    def given_event(%{name: :"another.test.event"}), do: {:noreply, []}
 
-      :ok
-    end
-
-    # def handled_events, do: ["test.event.publish"]
+    # def given_event(_), do: []
   end
 
-  defmodule EndConsumer do
-    use GenStage
-
-    def start_link(opts: opts, stage_opts: stage_opts) do
-      GenStage.start_link(EndConsumer, stage_opts, opts)
-    end
-
-    def init(args) do
-      {:consumer, [], args}
-    end
-
-    def handle_events(events, _from, number) do
-      # events = Enum.map(events, & &1 * number)z sim
-      {:noreply, [], number}
-    end
+  test "defines &handled_events/0" do
+    assert TestEventHandler.handled_events() == [
+             "another.test.event",
+             "test.event.error",
+             "event.with.response.topic",
+             "event.with.response"
+           ]
   end
 
-  setup do
-    {:ok, memo_pid} = Application.ensure_all_started(:memoize)
-    on_exit(fn -> Memoize.invalidate() end)
+  describe "&given_event/1" do
+    test "returns noreply tuple" do
+      assert TestEventHandler.given_event(%Event{name: :"another.test.event"}) == {:noreply, []}
 
-    bypass = Bypass.open()
-    Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
-
-    # Mock calls to schema registry, only expected once
-    # mock_get_metadata_schema(bypass)
-    mock_get_event_schema(bypass, "test.event.publish")
-
-    Application.put_env(:kaufmann_ex, :event_handler_mod, TestEventHandler)
-    Application.put_env(:kaufmann_ex, :schema_path, "test/support")
-
-    Process.register(self(), :subscriber)
-
-    {:ok, _} = start_supervised({Registry, keys: :unique, name: Registry.ConsumerRegistry})
-
-    assert {:ok, pid} =
-             start_supervised(
-               {Producer, opts: [name: StageSupervisor.stage_name(Producer, @topic, @partition)]}
-             )
-
-    assert {:ok, _pid} =
-             start_supervised(
-               {Decoder,
-                opts: [name: Decoder],
-                stage_opts: [
-                  subscribe_to: [StageSupervisor.stage_name(Producer, @topic, @partition)]
-                ]}
-             )
-
-    assert {:ok, _pid} =
-             start_supervised(
-               {EventHandler, opts: [name: EventHandler], stage_opts: [subscribe_to: [Decoder]]}
-             )
-
-    assert {:ok, _pid} =
-             start_supervised(
-               {EndConsumer,
-                opts: [name: EndConsumer], stage_opts: [subscribe_to: [EventHandler]]}
-             )
-
-    Process.sleep(100)
-
-    {:ok, bypass: bypass, state: %{topic: @topic, partition: @partition}}
-  end
-
-  describe "when started" do
-    test "Consumes Events to EventHandler", %{state: state} do
-      event = encode_event(:"test.event.publish", "Hello")
-
-      GenConsumer.handle_message_set([event], state)
-
-      assert_receive :event_recieved, 1000
+      assert TestEventHandler.given_event(%Event{name: :"completely.unhandled.event"}) ==
+               {:noreply, []}
     end
 
-    test "handles errors gracefully", %{state: state} do
-      first_event = encode_event(:"test.event.publish", "raise_error")
-      second_event = encode_event(:"test.event.publish", "Hello")
+    test "returns reply tuple" do
+      pl = %{}
 
-      GenConsumer.handle_message_set(
-        [
-          first_event,
-          second_event,
-          second_event,
-          second_event
-        ],
-        state
-      )
+      assert TestEventHandler.given_event(%Event{name: :"event.with.response", payload: pl}) ==
+               {:reply, [{:response_event, pl}]}
 
-      assert_receive :event_recieved, 1000
-      assert_receive :handled_error, 1000
+      assert TestEventHandler.given_event(%Event{name: :"event.with.response.topic", payload: pl}) ==
+               {:reply, [{:response_event, pl, "some_topic"}]}
     end
   end
 
-  def mock_get_event_schema(bypass, event_name) do
-    {:ok, schema} = File.read("test/support/#{event_name}.avsc")
-    {:ok, meta_schema} = File.read('test/support/event_metadata.avsc')
+  describe "&handle_event/1" do
+    test "transforms reply tuple to response events" do
+      assert [
+               %Event{
+                 publish_request: %Request{
+                   event_name: :response_event,
+                   body: %{meta: _, payload: %{}}
+                 }
+               }
+             ] =
+               EventHandler.handle_event(
+                 %Event{name: :"event.with.response", payload: %{}, meta: %{}},
+                 TestEventHandler
+               )
+    end
 
-    schema = schema |> Jason.decode!()
-    meta_schema = meta_schema |> Jason.decode!()
+    test "transforms reply tuple with topic" do
+      assert [%Event{publish_request: %Request{event_name: :response_event, topic: "some_topic"}}] =
+               EventHandler.handle_event(
+                 %Event{
+                   name: :"event.with.response.topic",
+                   payload: %{},
+                   meta: %{}
+                 },
+                 TestEventHandler
+               )
+    end
 
-    schemas = [meta_schema, schema] |> Jason.encode!()
-
-    Bypass.expect(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
-      Plug.Conn.resp(
-        conn,
-        200,
-        Jason.encode!(%{subject: event_name, version: 1, id: 1, schema: schemas})
-      )
-    end)
-  end
-
-  def mock_get_metadata_schema(bypass) do
-    {:ok, schema} = File.read('test/support/event_metadata.avsc')
-    schema = schema |> Jason.decode!() |> Jason.encode!()
-
-    Bypass.expect_once(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
-      Plug.Conn.resp(
-        conn,
-        200,
-        Jason.encode!(%{subject: "event_metadata", version: 1, id: 1, schema: schema})
-      )
-    end)
-  end
-
-  def encode_event(name, payload) do
-    {:ok, encoded_event} = MockBus.encoded_event(name, payload)
-    %Message{key: name |> to_string, value: encoded_event}
+    test "wraps exceptions into ErrorEvent" do
+      assert [
+               %Event{
+                 publish_request: %Request{
+                   event_name: :"event.error.test.event.error",
+                   body: %{
+                     payload: %{
+                       error: "%ArgumentError{message: \"You know what you did\"}",
+                       message_payload: "raise_error"
+                     }
+                   }
+                 }
+               }
+             ] =
+               EventHandler.handle_event(
+                 %Event{
+                   name: :"test.event.error",
+                   payload: "raise_error",
+                   meta: %{}
+                 },
+                 TestEventHandler
+               )
+    end
   end
 end

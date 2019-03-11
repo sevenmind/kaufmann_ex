@@ -9,8 +9,6 @@ defmodule KaufmannEx.Publisher.Producer do
     b) publish-only services where we don't need to consume events off of kafka
 
   This stage ignores demand and pushes all events directly to the next stage
-
-  /!\ How to handle errors in any stage?
   """
 
   use GenStage

@@ -14,35 +14,12 @@ defmodule KaufmannEx.Supervisor do
     Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
   end
 
-  def init(opts \\ []) do
+  def init(_opts \\ []) do
     consumer_group_name = KaufmannEx.Config.consumer_group()
     topics = KaufmannEx.Config.default_topics()
-    gen_consumer_mod = KaufmannEx.Config.gen_consumer_mod()
-
-    consumer_group_opts = [
-      gen_consumer_mod,
-      consumer_group_name,
-      topics,
-      [
-        heartbeat_interval: 1_000,
-        commit_interval: 10_000,
-        auto_offset_reset: :latest,
-        fetch_options: [
-          max_bytes: 1_971_520,
-          wait_time: 1_000
-        ]
-      ]
-      # opts
-    ]
 
     children = [
       {Registry, keys: :unique, name: Registry.ConsumerRegistry},
-      # KaufmannEx.FlowConsumer,
-      # %{
-      #   id: KafkaEx.ConsumerGroup,
-      #   start: {KafkaEx.ConsumerGroup, :start_link, consumer_group_opts},
-      #   type: :supervisor
-      # },
       %{
         id: KafkaEx.ConsumerGroup,
         start:
@@ -55,12 +32,13 @@ defmodule KaufmannEx.Supervisor do
              [
                heartbeat_interval: 1_000,
                commit_interval: 10_000,
-               auto_offset_reset: :latest, # Probably inadvisable in many uses
+               # Probably inadvisable in many uses
+               auto_offset_reset: :latest,
                fetch_options: [
                  max_bytes: 1_971_520,
                  wait_time: 100
                ],
-               commit_strategy: :sync_commit
+               commit_strategy: :async_commit
              ]
            ]},
         type: :supervisor

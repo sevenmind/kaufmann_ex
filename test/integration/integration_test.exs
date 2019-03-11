@@ -60,7 +60,6 @@ end
 
 defmodule IntegrationTest do
   use ExUnit.Case
-  import Mock
 
   @moduletag :integration
   setup_all do

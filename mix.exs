@@ -4,7 +4,7 @@ defmodule KaufmannEx.MixProject do
   def project do
     [
       app: :kaufmann_ex,
-      version: "0.3.2-beta",
+      version: "1.0.0",
       elixir: "~> 1.6",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -40,8 +40,9 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:gen_stage, "~> 0.14"},
+      {:kafka_ex_gen_stage_consumer,
+       git: "https://github.com/sevenmind/kafka_ex_gen_stage_consumer"},
       # {:kafka_ex, "~> 0.9"},
-      {:kafka_ex_gen_stage_consumer, git: "https://github.com/sevenmind/kafka_ex_gen_stage_consumer"},
       {:kafka_ex, git: "https://github.com/gerbal/kafka_ex", branch: "custom-genconsumer"},
       {:jason, "~> 1.1"},
       {:httpoison, "~> 1.5"},
@@ -56,15 +57,8 @@ defmodule KaufmannEx.MixProject do
       {:excoveralls, "~> 0.10", only: :test},
       {:inch_ex, only: :docs},
       {:benchee, "~> 0.11", only: [:dev, :test]},
-      {:mock, "~> 0.3.0", only: [:test]},
-      {:ex_guard, "~> 1.3", only: :dev},
+      # {:mock, "~> 0.3.0", only: [:test]},
       {:snappy, git: "https://github.com/fdmanana/snappy-erlang-nif"},
-
-      # elixometer & updated dependencies
-      # {:elixometer, github: "pinterest/elixometer"},
-      # {:setup, "2.0.2", override: true, manager: :rebar},
-
-      # {:gen_metrics, "~> 0.3.0", optional: true},
       {:flow, "~> 0.14.3"}
     ]
   end

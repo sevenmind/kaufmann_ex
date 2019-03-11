@@ -2,7 +2,8 @@ defmodule KaufmannEx.Schemas.Event do
   @type t :: %KaufmannEx.Schemas.Event{
           name: atom,
           meta: map,
-          payload: term
+          payload: term,
+          publish_request: KaufmannEx.Publisher.Request.t()
         }
   @moduledoc false
   defstruct [
@@ -63,4 +64,12 @@ defmodule KaufmannEx.Schemas.ErrorEvent do
     :topic,
     :partition
   ]
+
+  @doc """
+  Append "error.event." to an event name
+  """
+  @spec coerce_event_name(atom) :: atom
+  def coerce_event_name(command_name) do
+    :"event.error.#{command_name}"
+  end
 end

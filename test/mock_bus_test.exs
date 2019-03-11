@@ -17,6 +17,7 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
         emitter_service: KaufmannEx.Config.service_name(),
         emitter_service_id: KaufmannEx.Config.service_id(),
         callback_id: context[:callback_id],
+        callback_topic: nil,
         message_name: event_name |> to_string,
         timestamp: DateTime.to_string(DateTime.utc_now())
       }
@@ -24,14 +25,17 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
   end
 
   defmodule ExampleEventHandler do
-    def given_event(%KaufmannEx.Schemas.Event{} = event) do
-      case event.payload do
-        "no_event" -> :ok
-        _ -> ExamplePublisher.publish(event.name, event.payload)
-      end
+    use KaufmannEx.EventHandler
+
+    def given_event(%KaufmannEx.Schemas.Event{payload: "no_event"} = event) do
+      {:noreply, []}
     end
 
-    def given_event(error_event), do: :ok
+    def given_event(%KaufmannEx.Schemas.Event{payload: pl} = event) do
+      {:reply, {:"test.event.publish", pl}}
+    end
+
+    def given_event(error_event), do: []
   end
 
   setup do
@@ -43,7 +47,6 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     Application.put_env(:kaufmann_ex, :event_handler_mod, ExampleEventHandler)
     Application.put_env(:kaufmann_ex, :metadata_mod, ExamplePublisher)
     Application.put_env(:kaufmann_ex, :schema_path, "test/support")
-    # Application.put_env(:kaufmann_ex, :default_topic, nil)
 
     :ok
   end
@@ -58,20 +61,16 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     test "will raise execption if no schema" do
       message_name = :NOSCHEMA
 
-      try do
-        given_event(message_name, "Some kinda payload")
-      rescue
-        error in [ExUnit.AssertionError] ->
-          "Schema NOSCHEMA not registered" = error.message
-      end
+      assert_raise ExUnit.AssertionError,
+                   "\n\nSchema NOSCHEMA not registered, Is the schema in test/support?\n",
+                   fn ->
+                     given_event(message_name, "Some kinda payload")
+                   end
     end
 
     test "validates payload" do
-      try do
+      assert_raise ExUnit.AssertionError, fn ->
         given_event(:"test.event.publish", %{invalid_key: "unexpected value"})
-      rescue
-        error in [MatchError] ->
-          assert {:error, :data_does_not_match_schema, _, _} = error.term
       end
     end
 
@@ -86,7 +85,6 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
       given_event(:"test.event.publish", "Hello")
 
       assert %{meta: meta, payload: "Hello"} = then_event(:"test.event.publish")
-      # assert payload == "Hello"
     end
 
     test "/2 can assert a payload" do

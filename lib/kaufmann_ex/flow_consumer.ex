@@ -5,6 +5,9 @@ defmodule KaufmannEx.FlowConsumer do
 
     There is no intuitive method to force a pipeline to propegate demand without
     an external consumer. But this pipeline doesn't have a consuming audience.
+
+    Instead the `DemandVacuum` exerts a constant presure of 1000 events / sec on
+    the Kafka Consumer stage
     """
     use GenStage
     require Logger
@@ -32,10 +35,11 @@ defmodule KaufmannEx.FlowConsumer do
       GenStage.ask(from, demand)
 
       # Returns manual as we want control over the demand
+      # Automatic doesn't forward demand anyway :(
       {:manual, producers}
     end
 
-    def handle_subscribe(:consumer, opts, from, producers) do
+    def handle_subscribe(:consumer, _opts, _from, producers) do
       {:automatic, producers}
     end
 
@@ -44,7 +48,7 @@ defmodule KaufmannEx.FlowConsumer do
       {:noreply, [], Map.delete(producers, from)}
     end
 
-    def handle_events(events, from, producers) do
+    def handle_events(events, _from, producers) do
       {:noreply, events, producers}
     end
 
@@ -71,12 +75,13 @@ defmodule KaufmannEx.FlowConsumer do
   use Flow
   require Logger
 
-  alias KaufmannEx.Consumer.Stage.{Decoder, EventHandler, Producer}
+  # alias KaufmannEx.Consumer.Stage.{Decoder, EventHandler, Producer}
+  alias KaufmannEx.EventHandler
   alias KaufmannEx.Publisher.Stage.{Encoder, Publisher, TopicSelector}
+  alias KaufmannEx.Schemas
   alias KaufmannEx.Schemas.Event
 
-  def start_link({pid, topic, partition, extra_consumer_args}) when is_pid(pid) do
-    # def start_link({pids, topic, partition}) when is_list(pids) do
+  def start_link({pid, topic, partition, _extra_consumer_args}) when is_pid(pid) do
     event_handler = KaufmannEx.Config.event_handler()
     topic_metadata = TopicSelector.topic_metadata()
     workers = Enum.map(0..10, fn n -> create_worker(String.to_atom("worker_#{n}")) end)
@@ -88,9 +93,9 @@ defmodule KaufmannEx.FlowConsumer do
       |> flow_timestamp(:consumer_producer)
       |> Flow.filter(&handled_event?(&1, event_handler.handled_events))
       |> flow_timestamp(:accepted_event)
-      |> Flow.map(&Decoder.decode_event/1)
+      |> Flow.map(&Schemas.decode_event/1)
       |> flow_timestamp(:decode_event)
-      |> Flow.flat_map(&handle_event(&1, event_handler))
+      |> Flow.flat_map(&EventHandler.handle_event(&1, event_handler))
       |> flow_timestamp(:event_handler)
       |> Flow.map(&Encoder.encode_event/1)
       |> flow_timestamp(:encode_event)
@@ -113,15 +118,6 @@ defmodule KaufmannEx.FlowConsumer do
       topic: topic,
       partition: partition
     }
-  end
-
-  def handle_event(event, event_handler) do
-    case EventHandler.handle_event(event, event_handler) do
-      nil -> []
-      :ok -> []
-      {:ok, p} when is_pid(p) -> []
-      x -> x
-    end
   end
 
   def handled_event?(_, [:all]), do: true

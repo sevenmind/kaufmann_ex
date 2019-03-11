@@ -13,7 +13,55 @@ defmodule KaufmannEx.Schemas do
   use Memoize
   require Logger
   require Map.Helpers
-  alias KaufmannEx.Config
+  alias KaufmannEx.Schemas.Event
+
+  @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
+  def decode_event(%Event{raw_event: %{key: key, value: value}} = event) do
+    event_name = key |> String.to_atom()
+    crc = Map.get(event, :crc)
+    now = DateTime.utc_now()
+    size = byte_size(value)
+
+    case KaufmannEx.Schemas.decode_message(key, value) do
+      {:ok, %{meta: meta, payload: payload}} ->
+        {:ok, published_at, _} = DateTime.from_iso8601(meta[:timestamp])
+        bus_time = DateTime.diff(now, published_at, :millisecond)
+
+        Logger.debug([
+          key,
+          " ",
+          meta[:message_id],
+          " from ",
+          meta[:emitter_service_id],
+          " on ",
+          event.topic,
+          "@",
+          to_string(event.partition),
+          " in ",
+          to_string(bus_time),
+          "ms ",
+          to_string(size),
+          " bytes"
+        ])
+
+        %KaufmannEx.Schemas.Event{
+          event
+          | name: event_name,
+            meta: Map.put(meta, :crc, crc),
+            payload: payload
+        }
+
+      {:error, error} ->
+        Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
+
+        err_event =
+          event
+          |> Map.from_struct()
+          |> Map.merge(%{name: key, error: error, message_payload: value})
+
+        struct(KaufmannEx.Schemas.ErrorEvent, err_event)
+    end
+  end
 
   @spec encode_message(String.t(), Map) :: {atom, any}
   def encode_message(message_name, payload) do

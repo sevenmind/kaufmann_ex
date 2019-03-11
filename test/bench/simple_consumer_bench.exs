@@ -144,7 +144,6 @@ end
 
 defmodule IntegrationTest.IngrationBenchmarkTest do
   use ExUnit.Case
-  import Mock
 
   @moduletag :integration
 
