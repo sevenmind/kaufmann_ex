@@ -1,4 +1,73 @@
 defmodule KaufmannEx.FlowConsumer do
+  defmodule DemandVacuum do
+    @moduledoc """
+    A GenStage Producer Consumer to inject demand into our GenStage Flow pipeline.
+
+    There is no intuitive method to force a pipeline to propegate demand without
+    an external consumer. But this pipeline doesn't have a consuming audience.
+    """
+    use GenStage
+    require Logger
+
+    def start_link(args \\ []) do
+      GenStage.start(__MODULE__, args)
+    end
+
+    def init(_) do
+      {:producer_consumer, %{}}
+    end
+
+    def handle_subscribe(:producer, opts, from, producers) do
+      # We will only allow max_demand events every 500 milliseconds
+      # max demand is 100 events /sec probably too low.
+      demand = Keyword.get(opts, :max_demand, 1000)
+      interval = Keyword.get(opts, :interval, 1000)
+
+      producers =
+        producers
+        # Register the producer in the state
+        |> Map.put(from, {demand, interval})
+        |> ask_and_schedule(from)
+
+      GenStage.ask(from, demand)
+
+      # Returns manual as we want control over the demand
+      {:manual, producers}
+    end
+
+    def handle_subscribe(:consumer, opts, from, producers) do
+      {:automatic, producers}
+    end
+
+    def handle_cancel(_, from, producers) do
+      # Remove the producers from the map on unsubscribe
+      {:noreply, [], Map.delete(producers, from)}
+    end
+
+    def handle_events(events, from, producers) do
+      {:noreply, events, producers}
+    end
+
+    def handle_info({:ask, from}, producers) do
+      # This callback is invoked by the Process.send_after/3 message below.
+      {:noreply, [], ask_and_schedule(producers, from)}
+    end
+
+    defp ask_and_schedule(producers, from) do
+      case producers do
+        %{^from => {demand, interval}} ->
+          # Logger.info("asking for #{demand} events")
+          GenStage.ask(from, demand)
+          Process.send_after(self(), {:ask, from}, interval)
+
+          producers
+
+        %{} ->
+          producers
+      end
+    end
+  end
+
   use Flow
   require Logger
 
@@ -12,35 +81,27 @@ defmodule KaufmannEx.FlowConsumer do
     topic_metadata = TopicSelector.topic_metadata()
     workers = Enum.map(0..10, fn n -> create_worker(String.to_atom("worker_#{n}")) end)
 
-    Flow.from_stages([pid], stages: 2)
-    |> Flow.map(&inject_timestamp(&1, %{topic: topic, partition: partition}))
-    |> flow_timestamp(:consumer_producer)
-    |> Flow.filter(&handled_event?(&1, event_handler.handled_events))
-    |> flow_timestamp(:accepted_event)
-    |> Flow.map(&Decoder.decode_event/1)
-    |> flow_timestamp(:decode_event)
-    # |> Flow.each(
-    #   &KafkaExGenStageConsumer.trigger_commit(pid, {:async_commit, &1.raw_event.offset})
-    # )
-    # |> flow_timestamp(:commit_offset)
-    |> Flow.flat_map(&handle_event(&1, event_handler))
-    |> flow_timestamp(:event_handler)
-    |> Flow.map(&Encoder.encode_event/1)
-    |> flow_timestamp(:encode_event)
-    |> Flow.flat_map(&TopicSelector.select_topic_and_partition(&1, topic_metadata))
-    |> flow_timestamp(:select_topic_and_partition)
-    # |> Flow.partition(
-    #   window: Flow.Window.periodic(10, :millisecond),
-    #   stages: 4,
-    #   key: &event_key/1
-    # )
-    # Group events in a 10 ms window by topic & partition
-    # |> Flow.group_by(&event_key/1)
-    |> Flow.map(&Publisher.publish(&1, workers))
-    |> flow_timestamp(:publish)
-    |> Flow.each(&print_timings/1)
-    # KaufmannEx.StageSupervisor.stage_name(__MODULE__, topic, partition))
-    |> Flow.start_link()
+    {:ok, link_pid} =
+      Flow.from_stages([pid], stages: 16)
+      |> Flow.through_specs([{DemandVacuum, []}])
+      |> Flow.map(&inject_timestamp(&1, %{topic: topic, partition: partition}))
+      |> flow_timestamp(:consumer_producer)
+      |> Flow.filter(&handled_event?(&1, event_handler.handled_events))
+      |> flow_timestamp(:accepted_event)
+      |> Flow.map(&Decoder.decode_event/1)
+      |> flow_timestamp(:decode_event)
+      |> Flow.flat_map(&handle_event(&1, event_handler))
+      |> flow_timestamp(:event_handler)
+      |> Flow.map(&Encoder.encode_event/1)
+      |> flow_timestamp(:encode_event)
+      |> Flow.flat_map(&TopicSelector.select_topic_and_partition(&1, topic_metadata))
+      |> flow_timestamp(:select_topic_and_partition)
+      |> Flow.map(&Publisher.publish(&1, workers))
+      |> flow_timestamp(:publish)
+      |> Flow.each(&print_timings/1)
+      |> Flow.start_link()
+
+    {:ok, link_pid}
   end
 
   def inject_timestamp(event, %{topic: topic, partition: partition} = _) do

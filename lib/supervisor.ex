@@ -55,12 +55,12 @@ defmodule KaufmannEx.Supervisor do
              [
                heartbeat_interval: 1_000,
                commit_interval: 10_000,
-               auto_offset_reset: :latest,
+               auto_offset_reset: :latest, # Probably inadvisable in many uses
                fetch_options: [
                  max_bytes: 1_971_520,
-                 wait_time: 30
+                 wait_time: 100
                ],
-               commit_strategy: :async_commit
+               commit_strategy: :sync_commit
              ]
            ]},
         type: :supervisor
