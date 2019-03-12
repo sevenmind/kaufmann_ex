@@ -22,7 +22,7 @@ defmodule KaufmannEx.Schemas do
     now = DateTime.utc_now()
     size = byte_size(value)
 
-    case KaufmannEx.Schemas.decode_message(key, value) do
+    case decode_message(key, value) do
       {:ok, %{meta: meta, payload: payload}} ->
         {:ok, published_at, _} = DateTime.from_iso8601(meta[:timestamp])
         bus_time = DateTime.diff(now, published_at, :millisecond)

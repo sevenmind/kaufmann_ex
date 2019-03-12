@@ -29,7 +29,9 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   end
 
   defp priv_dir(app) do
-    "#{:code.priv_dir(app)}"
+    app
+    |> :code.priv_dir
+    |> to_string
   end
 
   @doc """
@@ -40,6 +42,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   def migrate_schemas(app \\ :kaufmann_ex)
 
   def migrate_schemas(path) when is_binary(path) do
+    ensure_startup()
     true = File.exists?(path)
     meta_data_schema = load_metadata(path)
 

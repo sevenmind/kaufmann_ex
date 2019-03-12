@@ -28,6 +28,9 @@ defmodule KaufmannEx.Publisher do
           }
   end
 
+  @doc """
+  trigger event publishing in the `KaufmannEx.Publisher.Supervisor` genstage pipeline
+  """
   def publish(event_name, body, context \\ %{}, topic \\ :default) do
     message_body =
       case Map.has_key?(body, :meta) do
@@ -53,5 +56,35 @@ defmodule KaufmannEx.Publisher do
          }
        }}
     )
+  end
+
+  @doc """
+  Execute Encode & publish inline, for when you just need to send something to
+  the bus right now.
+  """
+  def publish_inline(event_name, body, context \\ %{}, topic \\ :default) do
+    message_body =
+      case Map.has_key?(body, :meta) do
+        true ->
+          body
+
+        _ ->
+          %{
+            payload: body,
+            meta: Event.event_metadata(event_name, context)
+          }
+      end
+
+    %Event{
+      publish_request: %Request{
+        event_name: event_name,
+        body: message_body,
+        context: context,
+        topic: topic
+      }
+    }
+    |> KaufmannEx.Publisher.Stage.Encoder.encode_event()
+    |> KaufmannEx.Publisher.Stage.TopicSelector.select_topic_and_partition()
+    |> Enum.map(&KaufmannEx.Publisher.Stage.Publisher.publish/1)
   end
 end

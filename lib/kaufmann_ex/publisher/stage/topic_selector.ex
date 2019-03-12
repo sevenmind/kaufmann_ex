@@ -39,7 +39,10 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
     {:noreply, Enum.flat_map(events, &select_topic_and_partition(&1, state)), state}
   end
 
+
   @spec select_topic_and_partition(Request.t() | map(), map()) :: Request.t() | [Request.t()]
+  def select_topic_and_partition(event, state \\ %{})
+
   def select_topic_and_partition(
         %Event{publish_request: %Request{context: %{callback_topic: callback}} = publish_req} =
           event,
@@ -72,7 +75,7 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
       end
 
     partitions_count =
-      case Map.get(state.topic_partitions, topic) do
+      case state |> Map.get(:topic_partitions, %{}) |> Map.get(topic) do
         nil -> fetch_partitions_count(topic)
         n -> n
       end
@@ -83,7 +86,7 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
           n
 
         _ ->
-          case state.partition_strategy do
+          case Map.get(state, :partition_strategy, :random) do
             :md5 -> md5(publish_req.encoded, partitions_count)
             _ -> random(partitions_count)
           end
