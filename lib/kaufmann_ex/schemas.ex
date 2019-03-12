@@ -28,13 +28,13 @@ defmodule KaufmannEx.Schemas do
         bus_time = DateTime.diff(now, published_at, :millisecond)
 
         Logger.debug([
-          key,
+          to_string(key),
           " ",
-          meta[:message_id],
+          to_string(meta[:message_id]),
           " from ",
-          meta[:emitter_service_id],
+          to_string(meta[:emitter_service_id]),
           " on ",
-          event.topic,
+          to_string(event.topic),
           "@",
           to_string(event.partition),
           " in ",
