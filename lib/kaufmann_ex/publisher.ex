@@ -3,13 +3,10 @@ defmodule KaufmannEx.Publisher do
     Publishes Avro encoded messages to the default topic (`KaufmannEx.Config.default_topic/0`).
   """
   require Logger
-  # alias KaufmannEx.Publisher.PartitionSelector
-  # alias KaufmannEx.Publisher.Stage.TopicSelector
 
-  # alias KafkaEx.Protocol.Produce.Message
-  # alias KafkaEx.Protocol.Produce.Request
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
+  alias KaufmannEx.Publisher.Stage.{Encoder, Publisher, TopicSelector}
 
   defmodule Request do
     @moduledoc """
@@ -83,8 +80,8 @@ defmodule KaufmannEx.Publisher do
         topic: topic
       }
     }
-    |> KaufmannEx.Publisher.Stage.Encoder.encode_event()
-    |> KaufmannEx.Publisher.Stage.TopicSelector.select_topic_and_partition()
-    |> Enum.map(&KaufmannEx.Publisher.Stage.Publisher.publish/1)
+    |> Encoder.encode_event()
+    |> TopicSelector.select_topic_and_partition()
+    |> Enum.map(&Publisher.publish/1)
   end
 end

@@ -18,9 +18,9 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   KaufmannEx.ReleaseTasks.MigrateSchemas.reset_schemas(:app_name)
   ```
   """
-  alias KaufmannEx.Schemas
+  # credo:disable-for-this-file Credo.Check.Warning.IoInspect
 
-  # @schema_path 'priv/schemas'
+  alias KaufmannEx.Schemas
 
   defp ensure_startup do
     :ok = Application.ensure_started(:logger)
@@ -30,7 +30,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
 
   defp priv_dir(app) do
     app
-    |> :code.priv_dir
+    |> :code.priv_dir()
     |> to_string
   end
 

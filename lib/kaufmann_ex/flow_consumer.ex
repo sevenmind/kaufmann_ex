@@ -87,7 +87,8 @@ defmodule KaufmannEx.FlowConsumer do
     workers = Enum.map(0..10, fn n -> create_worker(String.to_atom("worker_#{n}")) end)
 
     {:ok, link_pid} =
-      Flow.from_stages([pid], stages: 16)
+      [pid]
+      |> Flow.from_stages(stages: 16)
       |> Flow.through_specs([{DemandVacuum, []}])
       |> Flow.map(&inject_timestamp(&1, %{topic: topic, partition: partition}))
       |> flow_timestamp(:consumer_producer)

@@ -10,7 +10,6 @@ defmodule KaufmannEx.EventHandler do
 
     @behaviour KaufmannEx.EventHandler
 
-
     @impl true
     def given_event(%Event{name: :"test.commnad", meta: meta} = event) do
       message_body = do_some_work()
@@ -44,7 +43,6 @@ defmodule KaufmannEx.EventHandler do
   def handled_events, do: [:all]
   ```
 
-
   ## Error handling
 
   If you wish to have events an emit an error event (like to signal to a RPC
@@ -64,7 +62,6 @@ defmodule KaufmannEx.EventHandler do
 
   """
   alias KaufmannEx.Publisher.Request
-  alias KaufmannEx.Schemas.ErrorEvent
   alias KaufmannEx.Schemas.Event
 
   require Logger
@@ -90,7 +87,8 @@ defmodule KaufmannEx.EventHandler do
 
   defmacro __before_compile__(env) do
     handled_events =
-      Module.get_attribute(env.module, :handled_events)
+      env.module
+      |> Module.get_attribute(:handled_events)
       |> Enum.map(&to_string/1)
 
     quote do
@@ -119,14 +117,16 @@ defmodule KaufmannEx.EventHandler do
   defp extract_event_name(_), do: []
 
   def handle_event(event, event_handler) do
-    case event_handler.given_event(event) do
-      {:noreply, _} -> []
-      {:reply, events} when is_list(events) -> events
-      {:reply, event} when is_tuple(event) or is_map(event) -> [event]
-      {:error, error} -> wrap_error_event(event, error)
-      _ -> []
-    end
-    |> Enum.map(&format_event(event, &1))
+    results =
+      case event_handler.given_event(event) do
+        {:noreply, _} -> []
+        {:reply, events} when is_list(events) -> events
+        {:reply, event} when is_tuple(event) or is_map(event) -> [event]
+        {:error, error} -> wrap_error_event(event, error)
+        _ -> []
+      end
+
+    Enum.map(results, &format_event(event, &1))
   end
 
   def wrap_error_event(event, error) do

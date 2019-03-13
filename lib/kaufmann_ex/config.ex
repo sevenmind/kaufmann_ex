@@ -37,7 +37,7 @@ defmodule KaufmannEx.Config do
     `[KaufmannEx.Config.default_topic()]`
   """
   @spec default_topics() :: [String.t()]
-  def default_topics, do:  Application.get_env(:kaufmann_ex, :default_topics, [default_topic()])
+  def default_topics, do: Application.get_env(:kaufmann_ex, :default_topics, [default_topic()])
 
   @spec default_publish_topic() :: String.t() | nil
   def default_publish_topic,

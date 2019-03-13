@@ -4,9 +4,9 @@ defmodule KaufmannEx.Publisher.Stage.Encoder do
   """
   use GenStage
   require Logger
+  alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas
   alias KaufmannEx.Schemas.Event
-  alias KaufmannEx.Publisher.Request
 
   def start_link(opts: opts, stage_opts: stage_opts) do
     GenStage.start_link(__MODULE__, stage_opts, opts)
@@ -17,10 +17,6 @@ defmodule KaufmannEx.Publisher.Stage.Encoder do
   def start_link(opts), do: start_link(opts: opts, stage_opts: [])
 
   def init(stage_opts \\ []) do
-    {:producer_consumer, %{}, stage_opts}
-  end
-
-  def init(stage_opts) do
     {:producer_consumer, %{}, stage_opts}
   end
 

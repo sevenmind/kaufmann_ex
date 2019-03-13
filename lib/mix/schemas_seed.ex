@@ -9,10 +9,12 @@ defmodule Mix.Tasks.Schemas.Seed do
   use Mix.Task
 
   def run([app | _]) do
-    case app do
-      ":" <> rest -> String.to_atom(rest)
-      _ -> app
-    end
-    |> KaufmannEx.ReleaseTasks.MigrateSchemas.migrate_schemas()
+    app =
+      case app do
+        ":" <> rest -> String.to_atom(rest)
+        _ -> app
+      end
+
+    KaufmannEx.ReleaseTasks.MigrateSchemas.migrate_schemas(app)
   end
 end

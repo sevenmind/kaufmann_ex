@@ -1,7 +1,7 @@
 defmodule KaufmannEx.Publisher.Stage.PublisherConsumer do
-  @moduledoc """
+  @moduledoc false
 
-  """
+  # this moule is a ConsuemrSupervisor for the publish.stage.publisher
 
   use GenStage
   require Logger
@@ -24,7 +24,7 @@ defmodule KaufmannEx.Publisher.Stage.PublisherConsumer do
 
   @impl true
   def handle_events(events, _from, state) do
-    Enum.map(events, &Publisher.publish/1)
+    Enum.each(events, &Publisher.publish/1)
 
     {:noreply, [], state}
   end

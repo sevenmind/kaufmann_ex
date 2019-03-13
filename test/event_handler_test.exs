@@ -24,8 +24,9 @@ defmodule KaufmannEx.EventHandlerTest do
 
     def given_event(%Event{name: :"test.event.error", payload: "raise_error"} = event) do
       raise ArgumentError, "You know what you did"
-
-      {:noreply, []}
+    rescue
+      error ->
+        {:error, error}
     end
 
     def given_event(%Event{name: _name} = event) do
@@ -100,8 +101,10 @@ defmodule KaufmannEx.EventHandlerTest do
                    event_name: :"event.error.test.event.error",
                    body: %{
                      payload: %{
-                       error: "%ArgumentError{message: \"You know what you did\"}",
-                       message_payload: "raise_error"
+                       error: %{
+                         error: "%ArgumentError{message: \"You know what you did\"}",
+                         message_payload: "\"raise_error\""
+                       }
                      }
                    }
                  }

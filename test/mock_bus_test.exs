@@ -1,7 +1,10 @@
 defmodule KaufmannEx.TestSupport.MockBusTest do
+  @moduledoc false
   use KaufmannEx.TestSupport.MockBus
+  alias KaufmannEx.TestSupport.MockSchemaRegistry
 
   defmodule ExamplePublisher do
+    @moduledoc false
     def publish(event_name, payload, context \\ %{}) do
       message_body = %{
         payload: payload,
@@ -25,6 +28,7 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
   end
 
   defmodule ExampleEventHandler do
+    @moduledoc false
     use KaufmannEx.EventHandler
 
     def given_event(%KaufmannEx.Schemas.Event{payload: "no_event"} = event) do
@@ -146,10 +150,9 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     test "loads schemas from multiple directories" do
       Application.put_env(:kaufmann_ex, :schema_path, ["priv/schemas", "test/support"])
 
-      assert KaufmannEx.TestSupport.MockSchemaRegistry.defined_event?("test.event.publish")
+      assert MockSchemaRegistry.defined_event?("test.event.publish")
 
-      assert %{} =
-               KaufmannEx.TestSupport.MockSchemaRegistry.fetch_event_schema("test.event.publish")
+      assert %{} = MockSchemaRegistry.fetch_event_schema("test.event.publish")
     end
   end
 end

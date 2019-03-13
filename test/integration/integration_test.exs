@@ -1,4 +1,5 @@
 defmodule IntegrationTest.SubscriberListener do
+  use KaufmannEx.EventHandler
   require Logger
 
   def publish(pid, noise \\ "") do
@@ -29,6 +30,8 @@ defmodule IntegrationTest.SubscriberListener do
     pid
     |> pid_from_string()
     |> send({:hello, pid})
+
+    []
   end
 
   def given_event(other) do
@@ -89,6 +92,8 @@ defmodule IntegrationTest do
     [kaufmann_supervisor: kaufmann_supervisor]
   end
 
+  # this test fails b/c starting a kafka consumergroup can take >20 seconds
+  # i.e. we have to wait for kafka to trigger a consumer reballance
   test "publish and consume" do
     assert :ok = IntegrationTest.SubscriberListener.publish(self())
 
@@ -106,30 +111,11 @@ defmodule IntegrationTest do
         end)
 
       assert [
-               {:consumer, _, :supervisor, [KafkaEx.GenConsumer.Supervisor]},
                {KafkaEx.ConsumerGroup.Manager, _, :worker, [KafkaEx.ConsumerGroup.Manager]}
              ] = Supervisor.which_children(k_consumer_group)
 
       assert %{active: _, specs: _, supervisors: _, workers: _} =
                Supervisor.count_children(kaufmann_supervisor)
-    end
-
-    test "when KafakEx.GenConsumer receives timeout", %{kaufmann_supervisor: kaufmann_supervisor} do
-      # Updates state, continues
-      {KafkaEx.ConsumerGroup, k_consumer_group, :supervisor, [KafkaEx.ConsumerGroup]} =
-        kaufmann_supervisor
-        |> Supervisor.which_children()
-        |> Enum.find(fn
-          {KafkaEx.ConsumerGroup, _, _, _} -> true
-          _ -> false
-        end)
-
-      consumer =
-        k_consumer_group
-        |> KafkaEx.ConsumerGroup.consumer_pids()
-        |> Enum.at(0)
-
-      send(consumer, :timeout)
     end
   end
 end

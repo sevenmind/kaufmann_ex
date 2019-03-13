@@ -6,7 +6,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
 
   Caveat: This task has not been tested in a true production environment. It likely still has some bugs.
   """
-  alias KaufmannEx.ReleaseTasks.ReInit
+  alias KaufmannEx.Consumer.Stage.Producer
 
   defmodule PublishNothing do
     @moduledoc """
@@ -19,7 +19,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
     @moduledoc """
     ETS table for storing target offset.
     """
-    def init() do
+    def init do
       :ets.new(:reinit_store, [:named_table, :public])
 
       :ok
@@ -50,14 +50,14 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
         true ->
           message_set
           |> Enum.filter(fn m -> m.offset < state[:target_offset] - 1 end)
-          |> KaufmannEx.Consumer.Stage.Producer.notify()
+          |> Producer.notify()
 
           # System.stop()
           send(:reinit, :shutdown)
           {:sync_commit, state}
 
         false ->
-          KaufmannEx.Consumer.Stage.Producer.notify(message_set)
+          Producer.notify(message_set)
           {:async_commit, state}
       end
     end
@@ -96,7 +96,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
   end
 
   def consume_queued_messages(%Config{} = _reinit, application) do
-    ensure_loaded(application)
+    :ok = ensure_loaded(application)
     :ok = Application.start(:kafka_ex)
     :ok = Application.start(application, :transient)
     Process.register(self(), :reinit)
@@ -117,7 +117,7 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
   end
 
   def start_services do
-    ensure_loaded(:kaufmann_ex)
+    :ok = ensure_loaded(:kaufmann_ex)
     :ok = Application.ensure_started(:kafka_ex)
     :ok = StateStore.init()
 
@@ -258,9 +258,9 @@ defmodule KaufmannEx.ReleaseTasks.ReInit do
 
   defp ensure_loaded(app) do
     case Application.load(app) do
-      :ok -> nil
-      {:error, {:already_loaded, _}} -> nil
-      x -> raise RuntimeError, x
+      :ok -> :ok
+      {:error, {:already_loaded, _}} -> :ok
+      x -> x
     end
   end
 

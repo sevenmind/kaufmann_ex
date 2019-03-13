@@ -39,7 +39,6 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
     {:noreply, Enum.flat_map(events, &select_topic_and_partition(&1, state)), state}
   end
 
-
   @spec select_topic_and_partition(Request.t() | map(), map()) :: Request.t() | [Request.t()]
   def select_topic_and_partition(event, state \\ %{})
 
