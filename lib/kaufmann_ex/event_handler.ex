@@ -13,19 +13,55 @@ defmodule KaufmannEx.EventHandler do
 
     @impl true
     def given_event(%Event{name: :"test.commnad", meta: meta} = event) do
-      # :erlang.send(:subscriber, :event_recieved)
       message_body = do_some_work()
 
-      {:reply, [%Request{
-            event_name: "test.event",
-            body: message_body,
-            context: meta,
-            topic: :default
-          }]}
+      {:reply, [{:"test.event", message_body, topic}]}
     end
-
   end
   ```
+
+  ## Defining accepted events
+
+  At compile time the `KaufmannEx.EventHandler` will evaluate the arguments of
+  all `given_event/1` functions and generate a list of accepted events. This
+  list of events is used to discard unhandled events in
+  `KaufmannEx.FlowConsumer`. This is an optimization that's quite useful if you
+  have a topic with many types of events you would prefer not to spend time
+  decoding.
+
+  Alternatively handled events can be defiened by overriding `handled_events/0`
+
+  ```elixir
+  def handled_events do
+    ["this.other.event", "a.genericly.handled event"]
+  end
+  ```
+
+  Or all events can be handled by returning `[:all]` from `handled_events/0`.
+  This will ensure no events are discarded.
+
+  ```elixir
+  def handled_events, do: [:all]
+  ```
+
+
+  ## Error handling
+
+  If you wish to have events an emit an error event (like to signal to a RPC
+  subscriber or a query response) its as simple as returning an `{:error, error}`
+  tuple from your event handler.
+
+  ```
+   def given_event(%Event{name: :"somthing.bad.happends", meta: meta} = event) do
+      message_body = do_some_work()
+
+      {:reply, [{:"test.event", message_body, topic}]}
+    rescue
+      error ->
+        {:error, error}
+    end
+  ```
+
   """
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.ErrorEvent
@@ -71,10 +107,10 @@ defmodule KaufmannEx.EventHandler do
 
   @doc "Event handler callback, accepts an Event, returns an Event with a Publish_request key or nothing"
   @callback given_event(Event.t()) ::
-              {:reply | :noreply, [Request.t()]}
+              {:reply | :noreply, [Request.t()]} | {:error, any}
 
   @doc "lists handled events, used for filtering unhandled events in consumption"
-  @callback handled_events :: [binary()]
+  @callback handled_events :: [binary() | :all]
 
   defp extract_event_name({:name, name}) when is_atom(name) or is_binary(name), do: [name]
   defp extract_event_name(args) when is_list(args), do: Enum.flat_map(args, &extract_event_name/1)
@@ -91,12 +127,6 @@ defmodule KaufmannEx.EventHandler do
       _ -> []
     end
     |> Enum.map(&format_event(event, &1))
-  rescue
-    error ->
-      Logger.warn(fn -> "Error handling #{event.name} #{inspect(error)}" end)
-
-      wrap_error_event(event, error)
-      |> Enum.map(&format_event(event, &1))
   end
 
   def wrap_error_event(event, error) do
