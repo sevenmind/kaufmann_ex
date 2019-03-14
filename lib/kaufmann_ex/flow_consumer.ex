@@ -88,8 +88,10 @@ defmodule KaufmannEx.FlowConsumer do
 
     {:ok, link_pid} =
       [pid]
-      |> Flow.from_stages(stages: 16)
-      |> Flow.through_specs([{DemandVacuum, []}])
+      # max_demand must be 1 so we can handle single messages.
+      # less efficient
+      |> Flow.from_stages(stages: 16, max_demand: 1)
+      # |> Flow.through_specs([{DemandVacuum, []}])
       |> Flow.map(&inject_timestamp(&1, %{topic: topic, partition: partition}))
       |> flow_timestamp(:consumer_producer)
       |> Flow.filter(&handled_event?(&1, event_handler.handled_events))
@@ -105,6 +107,7 @@ defmodule KaufmannEx.FlowConsumer do
       |> Flow.map(&Publisher.publish(&1, workers))
       |> flow_timestamp(:publish)
       |> Flow.each(&print_timings/1)
+      |> Flow.map(fn _ -> [] end)
       |> Flow.start_link()
 
     {:ok, link_pid}
@@ -130,10 +133,6 @@ defmodule KaufmannEx.FlowConsumer do
 
   def timestamp(event, subject) do
     Map.put(event, :timestamps, [{subject, :erlang.monotonic_time()} | event.timestamps])
-  end
-
-  defp event_key(event) do
-    event.publish_request.topic <> to_string(event.publish_request.partition)
   end
 
   def print_timings(%{timestamps: timestamps} = event) do

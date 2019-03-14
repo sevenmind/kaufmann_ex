@@ -30,7 +30,7 @@
   "inch_ex": {:hex, :inch_ex, "2.0.0", "24268a9284a1751f2ceda569cd978e1fa394c977c45c331bb52a405de544f4de", [:mix], [{:bunt, "~> 0.2", [hex: :bunt, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
   "jason": {:hex, :jason, "1.1.2", "b03dedea67a99223a2eaf9f1264ce37154564de899fd3d8b9a21b1a6fd64afe7", [:mix], [{:decimal, "~> 1.0", [hex: :decimal, repo: "hexpm", optional: true]}], "hexpm"},
   "kafka_ex": {:git, "https://github.com/gerbal/kafka_ex", "0eb40dd345ecbc84f9d2b2427cd5e4a6873032f2", [branch: "custom-genconsumer"]},
-  "kafka_ex_gen_stage_consumer": {:git, "https://github.com/sevenmind/kafka_ex_gen_stage_consumer", "1e48b1ffca1e57ae164306969cef15aa3ffce880", []},
+  "kafka_ex_gen_stage_consumer": {:git, "https://github.com/sevenmind/kafka_ex_gen_stage_consumer", "621e3623e9d912b1bc8ede9e591c4e25001fcf4f", []},
   "lager": {:hex, :lager, "3.6.8", "897efc7679bb82383448646c96768cdc4e747464dd18b999c7aaca485686b0da", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
   "makeup": {:hex, :makeup, "0.8.0", "9cf32aea71c7fe0a4b2e9246c2c4978f9070257e5c9ce6d4a28ec450a839b55f", [:mix], [{:nimble_parsec, "~> 0.5.0", [hex: :nimble_parsec, repo: "hexpm", optional: false]}], "hexpm"},
   "makeup_elixir": {:hex, :makeup_elixir, "0.13.0", "be7a477997dcac2e48a9d695ec730b2d22418292675c75aa2d34ba0909dcdeda", [:mix], [{:makeup, "~> 0.8", [hex: :makeup, repo: "hexpm", optional: false]}], "hexpm"},
