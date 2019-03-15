@@ -194,12 +194,10 @@ defmodule KaufmannEx.TestSupport.MockBus do
   end
 
   def encoded_event(event_name, payload, callback_id \\ nil) do
-    %Event{
+    %{
       meta: event_metadata(event_name, callback_id: callback_id),
       payload: payload
     }
-    |> Map.from_struct()
-    |> Map.drop([:name])
     |> Map.Helpers.stringify_keys()
     |> encode_payload(event_name)
   end
