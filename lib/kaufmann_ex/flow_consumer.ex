@@ -1,76 +1,7 @@
 defmodule KaufmannEx.FlowConsumer do
-  defmodule DemandVacuum do
-    @moduledoc """
-    A GenStage Producer Consumer to inject demand into our GenStage Flow pipeline.
-
-    There is no intuitive method to force a pipeline to propegate demand without
-    an external consumer. But this pipeline doesn't have a consuming audience.
-
-    Instead the `DemandVacuum` exerts a constant presure of 1000 events / sec on
-    the Kafka Consumer stage
-    """
-    use GenStage
-    require Logger
-
-    def start_link(args \\ []) do
-      GenStage.start(__MODULE__, args)
-    end
-
-    def init(_) do
-      {:producer_consumer, %{}}
-    end
-
-    def handle_subscribe(:producer, opts, from, producers) do
-      # We will only allow max_demand events every 500 milliseconds
-      # max demand is 100 events /sec probably too low.
-      demand = Keyword.get(opts, :max_demand, 1000)
-      interval = Keyword.get(opts, :interval, 1000)
-
-      producers =
-        producers
-        # Register the producer in the state
-        |> Map.put(from, {demand, interval})
-        |> ask_and_schedule(from)
-
-      GenStage.ask(from, demand)
-
-      # Returns manual as we want control over the demand
-      # Automatic doesn't forward demand anyway :(
-      {:manual, producers}
-    end
-
-    def handle_subscribe(:consumer, _opts, _from, producers) do
-      {:automatic, producers}
-    end
-
-    def handle_cancel(_, from, producers) do
-      # Remove the producers from the map on unsubscribe
-      {:noreply, [], Map.delete(producers, from)}
-    end
-
-    def handle_events(events, _from, producers) do
-      {:noreply, events, producers}
-    end
-
-    def handle_info({:ask, from}, producers) do
-      # This callback is invoked by the Process.send_after/3 message below.
-      {:noreply, [], ask_and_schedule(producers, from)}
-    end
-
-    defp ask_and_schedule(producers, from) do
-      case producers do
-        %{^from => {demand, interval}} ->
-          # Logger.info("asking for #{demand} events")
-          GenStage.ask(from, demand)
-          Process.send_after(self(), {:ask, from}, interval)
-
-          producers
-
-        %{} ->
-          producers
-      end
-    end
-  end
+  @moduledoc """
+  A series of Flow for handling kafka events.
+  """
 
   use Flow
   require Logger
@@ -89,9 +20,7 @@ defmodule KaufmannEx.FlowConsumer do
     {:ok, link_pid} =
       [pid]
       # max_demand must be 1 so we can handle single messages.
-      # less efficient
       |> Flow.from_stages(stages: 16, max_demand: 1)
-      # |> Flow.through_specs([{DemandVacuum, []}])
       |> Flow.map(&inject_timestamp(&1, %{topic: topic, partition: partition}))
       |> flow_timestamp(:consumer_producer)
       |> Flow.filter(&handled_event?(&1, event_handler.handled_events))

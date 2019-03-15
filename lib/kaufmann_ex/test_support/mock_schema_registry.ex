@@ -35,6 +35,16 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
     AvroEx.encode(schema, payload)
   end
 
+  def decode_event(%{key: key, value: value}) do
+    {:ok, schema} =
+      key
+      |> load_schema
+      |> inject_metadata
+      |> parse_schema
+
+    AvroEx.decode(schema, value)
+  end
+
   defp inject_metadata(schema) do
     # Decode + encode here is dumb and time consuming
     schema
