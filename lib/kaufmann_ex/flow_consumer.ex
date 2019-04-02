@@ -81,7 +81,7 @@ defmodule KaufmannEx.FlowConsumer do
         )
       )
 
-    Logger.info([to_string(event.name), " stage_timings: ", inspect(Enum.to_list(stage_timings))])
+    Logger.info("#{event.name} stage_timings: #{inspect(stage_timings)}")
   end
 
   defp time_diff(finish, start, unit \\ :millisecond) do

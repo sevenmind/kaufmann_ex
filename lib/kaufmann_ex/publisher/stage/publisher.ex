@@ -61,14 +61,7 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
         workers
       )
       when is_list(workers) do
-    Logger.debug([
-      "Publishing Event ",
-      event_name |> Atom.to_string(),
-      " on ",
-      topic,
-      "#",
-      to_string(partition)
-    ])
+    Logger.debug("Publishing Event #{event_name} on #{topic}##{partition}")
 
     message = %Message{value: encoded, key: event_name |> Atom.to_string()}
 
