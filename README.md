@@ -264,29 +264,20 @@ will consume events in the order published, but event processing is not
 guaranteed to be sequential. 
 
 
-## Exometer metrics
+## Telemetry
 
-Kaufmann currently has instrumentation for some metric collection with
-[Elixometer]().
+Kaufmann provides some internal
+[:temeletry](https://github.com/beam-telemetry/telemetry). 
 
-To enable this reporting add to your `mix.exs`
+Telemetry events:
 
-```diff
-def application do
- [
--    extra_applications: [:logger]
-+    extra_applications: [:logger, :elixometer]
-  ]
-end
-
+```elixir
+[:kaufmann_ex, :schemas, :decode]
+[:kaufmann_ex, :event_handler, :handle_event]
+[:kaufmann_ex, :schema, :encode]
+[:kaufmann_ex, :publisher, :publish]
 ```
 
-and in `config.exs`
-
-```diff
-+ config(:exometer_core, report: [reporters: [{:exometer_report_tty, []}]])
-+ config(:elixometer,
-+   reporter: :exometer_report_tty,
-+   env: Mix.env,
-+   metric_prefix: "kaufmann_ex")
-```
+Kaufmann provides an optional logger demonstrating consumption of these events
+in `KaufmannEx.TelemetryLogger`. This logger can be started by adding
+`KaufmannEx.TelemetryLogger` to your supervision tree.

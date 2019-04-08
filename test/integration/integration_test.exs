@@ -35,7 +35,7 @@ defmodule IntegrationTest.SubscriberListener do
   end
 
   def given_event(other) do
-    Logger.info("Uhandled event: " <> inspect(other))
+    Logger.debug("Uhandled event: " <> inspect(other))
   end
 
   def publish_and_wait do

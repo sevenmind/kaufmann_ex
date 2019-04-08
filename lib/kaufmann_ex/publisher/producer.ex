@@ -13,6 +13,7 @@ defmodule KaufmannEx.Publisher.Producer do
 
   use GenStage
   alias KaufmannEx.Publisher.Request
+  alias KaufmannEx.Schemas.Event
 
   def start_link(_ \\ []) do
     GenStage.start_link(__MODULE__, :ok, name: __MODULE__)
@@ -27,11 +28,13 @@ defmodule KaufmannEx.Publisher.Producer do
       GenServer.cast(
         __MODULE__,
         {:publish,
-         %Request{
-           event_name: event_name,
-           body: body,
-           context: context,
-           topic: topic
+         %Event{
+           publish_request: %Request{
+             event_name: event_name,
+             body: body,
+             context: context,
+             topic: topic
+           }
          }}
       )
 
