@@ -5,6 +5,8 @@ Status](https://travis-ci.org/sevenmind/kaufmann_ex.svg?branch=master)](https://
 [![Hex.pm](https://img.shields.io/hexpm/v/kaufmann_ex.svg)](https://hex.pm/packages/kaufmann_ex)
 [![Inline
 docs](http://inch-ci.org/github/sevenmind/kaufmann_ex.svg)](http://inch-ci.org/github/sevenmind/kaufmann_ex)
+[![Ebert](https://ebertapp.io/github/sevenmind/kaufmann_ex.svg)](https://ebertapp.io/github/sevenmind/kaufmann_ex)
+[![codebeat badge](https://codebeat.co/badges/5a95d37f-8087-4d99-8df3-758991d602ff)](https://codebeat.co/projects/github-com-sevenmind-kaufmann_ex-master)
 
 Check out [our blog post about
 KaufmannEx](https://medium.com/@7mind_dev/kaufmann-ex-317415c27978)
