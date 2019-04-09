@@ -1,0 +1,97 @@
+repository:
+  # See https://developer.github.com/v3/repos/#edit for all available settings.
+
+  # Either `true` to make the repository private, or `false` to make it public.
+  private: false
+
+  # Either `true` to enable issues for this repository, `false` to disable them.
+  has_issues: true
+
+  # Either `true` to enable the wiki for this repository, `false` to disable it.
+  has_wiki: true
+
+  # Either `true` to enable downloads for this repository, `false` to disable them.
+  has_downloads: false
+
+  # Updates the default branch for this repository.
+  default_branch: master
+
+  # Either `true` to allow squash-merging pull requests, or `false` to prevent
+  # squash-merging.
+  allow_squash_merge: true
+
+  # Either `true` to allow merging pull requests with a merge commit, or `false`
+  # to prevent merging pull requests with merge commits.
+  allow_merge_commit: false
+
+  # Either `true` to allow rebase-merging pull requests, or `false` to prevent
+  # rebase-merging.
+  allow_rebase_merge: false
+
+# Labels for Issues and Pull Requests
+labels:
+  # type
+  - name: bug
+    color: 0074d9
+  - name: enhancement
+    color: 0074d9
+  - name: epic
+    color: b10dc9
+
+  # state
+  - name: wip
+    color: ffdc00
+    oldname: WIP
+  - name: design required
+    color: ff7e42
+  - name: help wanted
+    color: 2ecc40
+  - name: duplicate
+    color: aaaaaa
+  - name: invalid
+    color: aaaaaa
+  - name: dependent
+    color: aaaaaa
+  - name: to estimate
+    color: f5a623
+  - name: to next sprint
+    color: f45aea
+  - name: tbd
+    color: f7839a
+
+  # priority
+  - name: prio high
+    color: f4e2ab
+    oldname: Prio High
+  - name: prio hot
+    color: f4e2ab
+    oldname: Prio Hot
+  - name: prio low
+    color: f4e2ab
+    oldname: Prio Low
+
+  # story points
+  - name: sp 1
+    color: b60205
+    oldname: SP 1
+  - name: sp 2
+    color: b60205
+    oldname: SP 2
+  - name: sp 3
+    color: b60205
+    oldname: SP 3
+  - name: sp 5
+    color: b60205
+    oldname: SP 5
+  - name: sp 8
+    color: b60205
+    oldname: SP 8
+  - name: sp 13
+    color: b60205
+    oldname: SP 13
+  - name: sp 21
+    color: b60205
+    oldname: SP 21
+  - name: sp 40
+    color: b60205
+    oldname: SP 40

@@ -33,8 +33,9 @@ defmodule Sample.ReInitTest do
       publish_events()
       Process.sleep(200)
 
+      final_offset = latest_offset_number(topic, 0)
       # Offset should have moved by 2 commands + 2 events
-      assert latest_offset_number(topic, 0) == initial_offset + 6
+      assert final_offset == initial_offset + 3
 
       Application.stop(:sample)
       stop_kafka()
@@ -44,7 +45,7 @@ defmodule Sample.ReInitTest do
 
       # Run ReInit should have rebuilt internal state, but not moved the offset
       start_kafka()
-      assert latest_offset_number(topic, 0) == initial_offset + 6
+      assert final_offset == initial_offset + 3
     end
   end
 
@@ -57,7 +58,20 @@ defmodule Sample.ReInitTest do
   end
 
   def publish_events do
-    KaufmannEx.Publisher.publish(:"command.test", %{message: "Test"})
+    KaufmannEx.Publisher.publish(:"event.test",
+      %{
+        meta: %{
+          callback_id: nil,
+          callback_topic: nil,
+          emitter_service: "SampleService",
+          emitter_service_id: "SampleHost",
+          message_id: "AfMz7EXG_hMfihB~YQ~1i",
+          message_name: "event.test",
+          timestamp: "2019-03-06 22:46:07.160817Z"
+        },
+        payload: %{message: "Test"}
+      }
+    )
   end
 
   def init_topic(topic) do
