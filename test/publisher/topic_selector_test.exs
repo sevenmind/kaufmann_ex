@@ -6,6 +6,8 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelectorTest do
   alias KaufmannEx.Publisher.Stage.TopicSelector
   alias KaufmannEx.Schemas.Event
 
+  import Mock
+
   setup do
     Application.put_env(:kaufmann_ex, :default_topic, "default_topic")
     :ok
@@ -54,30 +56,35 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelectorTest do
     end
 
     test "selects callback topic and default topic" do
-      event = %Event{
-        publish_request: %Request{
-          event_name: :whatever,
-          body: %{},
-          context: %{
-            callback_topic: %{
-              topic: "test_callback",
-              partition: 0
+      topic = "default_topic"
+
+      with_mock KafkaEx, [],
+        metadata: fn topic: _ -> %{topic_metadatas: [%{partition_metadatas: [%{}]}]} end do
+        event = %Event{
+          publish_request: %Request{
+            event_name: :whatever,
+            body: %{},
+            context: %{
+              callback_topic: %{
+                topic: "test_callback",
+                partition: 0
+              }
             }
           }
         }
-      }
 
-      state = %{
-        partition_strategy: :default,
-        topic_partitions: %{"default_topic" => 1}
-      }
+        state = %{
+          partition_strategy: :default,
+          topic_partitions: %{"default_topic" => 1}
+        }
 
-      assert {:noreply, [callback, event], _} = TopicSelector.handle_events([event], nil, state)
+        assert {:noreply, [callback, event], _} = TopicSelector.handle_events([event], nil, state)
 
-      assert callback.publish_request.topic == "test_callback"
-      assert callback.publish_request.partition == 0
-      assert event.publish_request.topic == "default_topic"
-      assert event.publish_request.partition == 0
+        assert callback.publish_request.topic == "test_callback"
+        assert callback.publish_request.partition == 0
+        assert event.publish_request.topic == "default_topic"
+        assert event.publish_request.partition == 0
+      end
     end
   end
 

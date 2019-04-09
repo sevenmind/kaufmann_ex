@@ -55,17 +55,6 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
     |> Enum.flat_map(&select_topic_and_partition(&1, state))
   end
 
-  defp drop_callback_topic(%Event{publish_request: publish_req} = event) do
-    publish_request =
-      publish_req
-      |> Map.replace(
-        :context,
-        Map.drop(publish_req.context, [:callback_topic])
-      )
-
-    %Event{event | publish_request: publish_request}
-  end
-
   def select_topic_and_partition(%Event{publish_request: publish_req} = event, state) do
     topic =
       case publish_req.topic do
@@ -100,6 +89,17 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
             |> Map.put(:partition, partition)
       }
     ]
+  end
+
+  defp drop_callback_topic(%Event{publish_request: publish_req} = event) do
+    publish_request =
+      publish_req
+      |> Map.replace(
+        :context,
+        Map.drop(publish_req.context, [:callback_topic])
+      )
+
+    %Event{event | publish_request: publish_request}
   end
 
   @spec fetch_partitions_counts() :: map()
