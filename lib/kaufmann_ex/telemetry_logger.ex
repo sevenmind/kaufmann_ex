@@ -36,7 +36,12 @@ defmodule KaufmannEx.TelemetryLogger do
         _config
       ) do
     time = :erlang.convert_time_unit(metrics.duration, :native, :microsecond)
-    Logger.debug("[#{event}] #{metrics.size}B from #{topic}##{partition}@#{metrics.offset} decode took #{time}μs")
+
+    Logger.debug(
+      "[#{event}] #{metrics.size}B from #{topic}##{partition}@#{metrics.offset} decode took #{
+        time
+      }μs"
+    )
   end
 
   def handle_event(

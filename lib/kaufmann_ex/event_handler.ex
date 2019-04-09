@@ -128,8 +128,12 @@ defmodule KaufmannEx.EventHandler do
         _ -> []
       end
 
-    events = Enum.map(results, &format_event(event, &1))
+    report_telemetry(start_time: start_time, event: event, event_handler: event_handler)
 
+    Enum.map(results, &format_event(event, &1))
+  end
+
+  defp report_telemetry(start_time: start_time, event: event, event_handler: event_handler) do
     :telemetry.execute(
       [:kaufmann_ex, :event_handler, :handle_event],
       %{
@@ -137,19 +141,16 @@ defmodule KaufmannEx.EventHandler do
       },
       %{event: event.name, topic: event.topic, partition: event.partition, handler: event_handler}
     )
-
-    events
   end
 
   def wrap_error_event(event, error) do
-    Logger.debug("Error: #{inspect(error)}")
-
-    payload = %{
-      error: %{error: inspect(error), message_payload: inspect(event.payload)}
-    }
+    Logger.warn("Error: #{inspect(error)}")
 
     [
-      {:"event.error.#{event.name}", payload}
+      {:"event.error.#{event.name}",
+       %{
+         error: %{error: inspect(error), message_payload: inspect(event.payload)}
+       }}
     ]
   end
 

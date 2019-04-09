@@ -41,17 +41,21 @@ defmodule KaufmannEx.Schemas do
           struct(KaufmannEx.Schemas.ErrorEvent, err_event)
       end
 
+    report_decode_time(start_time: start_time, event: event)
+
+    res
+  end
+
+  defp report_decode_time(start_time: start_time, event: event) do
     :telemetry.execute(
       [:kaufmann_ex, :schema, :decode],
       %{
         duration: System.monotonic_time() - start_time,
-        offset: raw_event.offset,
-        size: byte_size(value)
+        offset: event.raw_event.offset,
+        size: byte_size(event.raw_event.value)
       },
-      %{event: key, topic: event.topic, partition: event.partition}
+      %{event: event.raw_event.key, topic: event.topic, partition: event.partition}
     )
-
-    res
   end
 
   @spec encode_message(String.t(), Map) :: {atom, any}
@@ -62,14 +66,7 @@ defmodule KaufmannEx.Schemas do
          stringified <- Map.Helpers.stringify_keys(payload),
          {:ok, encoded} <- encode_message_with_schema(schema, stringified) do
       # send encoding time telemetry
-      :telemetry.execute(
-        [:kaufmann_ex, :schema, :encode],
-        %{
-          duration: System.monotonic_time() - start_time,
-          size: byte_size(encoded)
-        },
-        %{event: message_name}
-      )
+      report_encode_time(start_time: start_time, encoded: encoded, message_name: message_name)
 
       {:ok, encoded}
     else
@@ -85,6 +82,17 @@ defmodule KaufmannEx.Schemas do
 
         {:error, {:schema_encoding_error, error_message}}
     end
+  end
+
+  defp report_encode_time(start_time: start_time, encoded: encoded, message_name: message_name) do
+    :telemetry.execute(
+      [:kaufmann_ex, :schema, :encode],
+      %{
+        duration: System.monotonic_time() - start_time,
+        size: byte_size(encoded)
+      },
+      %{event: message_name}
+    )
   end
 
   @spec decode_message(String.t(), binary) :: {atom, any}

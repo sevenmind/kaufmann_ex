@@ -44,6 +44,16 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
 
     KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
 
+    report_publish_time(start_time: start_time, encoded: encoded, event: event)
+
+    event
+  end
+
+  defp report_publish_time(
+         start_time: start_time,
+         encoded: encoded,
+         event: %{publish_request: %{topic: topic, partition: partition, event_name: event_name}}
+       ) do
     :telemetry.execute(
       [:kaufmann_ex, :publisher, :publish],
       %{
@@ -52,7 +62,5 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
       },
       %{event: event_name, topic: topic, partition: partition}
     )
-
-    event
   end
 end
