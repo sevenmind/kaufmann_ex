@@ -42,7 +42,7 @@ defmodule KaufmannEx.SchemasTest do
     end
 
     test "when message doesn't match schema", %{event_name: event_name} do
-      {:error, :data_does_not_match_schema, _, _} =
+      {:error, {:schema_encoding_error, :data_does_not_match_schema}} =
         Schemas.encode_message(event_name, %{"hello" => "world"})
     end
 

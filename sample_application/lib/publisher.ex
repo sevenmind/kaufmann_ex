@@ -1,5 +1,6 @@
 defmodule Sample.Publisher do
   alias KaufmannEx.Publisher.Request
+  alias KaufmannEx.Schemas.Event
 
   def publish(event_name, payload, context \\ %{}, topic \\ :default) do
     message_body = %{
@@ -9,12 +10,16 @@ defmodule Sample.Publisher do
 
     # KaufmannEx.Publisher.publish(event_name, message_body, context)
 
-    [%Request{
-      event_name: event_name,
-      body: message_body,
-      context: context,
-      topic: topic
-    }]
+    [
+      %Event{
+        publish_request: %Request{
+          event_name: event_name,
+          body: message_body,
+          context: context,
+          topic: topic
+        }
+      }
+    ]
   end
 
   @spec event_metadata(atom, map) :: map

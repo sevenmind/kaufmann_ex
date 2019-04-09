@@ -57,15 +57,16 @@ defmodule KaufmannEx.MixProject do
       {:excoveralls, "~> 0.10", only: :test},
       {:inch_ex, only: :docs},
       {:benchee, "~> 0.11", only: [:dev, :test]},
-      # {:mock, "~> 0.3.0", only: [:test]},
+      {:mock, "~> 0.3.0", only: [:test]},
       {:snappy, git: "https://github.com/fdmanana/snappy-erlang-nif"},
-      {:flow, "~> 0.14.3"}
+      {:flow, "~> 0.14.3"},
+      {:telemetry, "~> 0.4"}
     ]
   end
 
   defp aliases do
     [
-      test: "test --exclude integration",
+      test: "test --exclude integration --no-start",
       bench: "run --no-start"
     ]
   end

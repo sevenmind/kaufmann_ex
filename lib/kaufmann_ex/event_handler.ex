@@ -117,6 +117,8 @@ defmodule KaufmannEx.EventHandler do
   defp extract_event_name(_), do: []
 
   def handle_event(event, event_handler) do
+    start_time = System.monotonic_time()
+
     results =
       case event_handler.given_event(event) do
         {:noreply, _} -> []
@@ -126,10 +128,22 @@ defmodule KaufmannEx.EventHandler do
         _ -> []
       end
 
-    Enum.map(results, &format_event(event, &1))
+    events = Enum.map(results, &format_event(event, &1))
+
+    :telemetry.execute(
+      [:kaufmann_ex, :event_handler, :handle_event],
+      %{
+        duration: System.monotonic_time() - start_time
+      },
+      %{event: event.name, topic: event.topic, partition: event.partition, handler: event_handler}
+    )
+
+    events
   end
 
   def wrap_error_event(event, error) do
+    Logger.debug("Error: #{inspect(error)}")
+
     payload = %{
       error: %{error: inspect(error), message_payload: inspect(event.payload)}
     }

@@ -59,5 +59,6 @@
   "setup": {:hex, :setup, "2.0.2", "1203f4cda11306c2e34434244576ded0a7bbfb0908d9a572356c809bd0cdf085", [:rebar3], [], "hexpm"},
   "snappy": {:git, "https://github.com/fdmanana/snappy-erlang-nif", "4e3b8611b6a1ff85a417b0f2fad8886c9485810e", []},
   "ssl_verify_fun": {:hex, :ssl_verify_fun, "1.1.4", "f0eafff810d2041e93f915ef59899c923f4568f4585904d010387ed74988e77b", [:make, :mix, :rebar3], [], "hexpm"},
+  "telemetry": {:hex, :telemetry, "0.4.0", "8339bee3fa8b91cb84d14c2935f8ecf399ccd87301ad6da6b71c09553834b2ab", [:rebar3], [], "hexpm"},
   "unicode_util_compat": {:hex, :unicode_util_compat, "0.4.1", "d869e4c68901dd9531385bb0c8c40444ebf624e60b6962d95952775cac5e90cd", [:rebar3], [], "hexpm"},
 }

@@ -16,59 +16,70 @@ defmodule KaufmannEx.Schemas do
   alias KaufmannEx.Schemas.Event
 
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
-  def decode_event(%Event{raw_event: %{key: key, value: value}} = event) do
+  def decode_event(%Event{raw_event: %{key: key, value: value} = raw_event} = event) do
+    start_time = System.monotonic_time()
     event_name = key |> String.to_atom()
-    crc = Map.get(event, :crc)
-    now = DateTime.utc_now()
-    size = byte_size(value)
 
-    case decode_message(key, value) do
-      {:ok, %{meta: meta, payload: payload}} ->
-        {:ok, published_at, _} = DateTime.from_iso8601(meta[:timestamp])
-        bus_time = DateTime.diff(now, published_at, :millisecond)
+    res =
+      case decode_message(key, value) do
+        {:ok, %{meta: meta, payload: payload}} ->
+          %KaufmannEx.Schemas.Event{
+            event
+            | name: event_name,
+              meta: meta,
+              payload: payload
+          }
 
-        Logger.debug([
-          to_string(key),
-          " ",
-          to_string(meta[:message_id]),
-          " from ",
-          to_string(meta[:emitter_service_id]),
-          " on ",
-          to_string(event.topic),
-          "@",
-          to_string(event.partition),
-          " in ",
-          to_string(bus_time),
-          "ms ",
-          to_string(size),
-          " bytes"
-        ])
+        {:error, error} ->
+          Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
 
-        %KaufmannEx.Schemas.Event{
-          event
-          | name: event_name,
-            meta: Map.put(meta, :crc, crc),
-            payload: payload
-        }
+          err_event =
+            event
+            |> Map.from_struct()
+            |> Map.merge(%{name: key, error: error, message_payload: value})
 
-      {:error, error} ->
-        Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
+          struct(KaufmannEx.Schemas.ErrorEvent, err_event)
+      end
 
-        err_event =
-          event
-          |> Map.from_struct()
-          |> Map.merge(%{name: key, error: error, message_payload: value})
+    :telemetry.execute(
+      [:kaufmann_ex, :schema, :decode],
+      %{
+        duration: System.monotonic_time() - start_time,
+        offset: raw_event.offset,
+        size: byte_size(value)
+      },
+      %{event: key, topic: event.topic, partition: event.partition}
+    )
 
-        struct(KaufmannEx.Schemas.ErrorEvent, err_event)
-    end
+    res
   end
 
   @spec encode_message(String.t(), Map) :: {atom, any}
   def encode_message(message_name, payload) do
-    with {:ok, schema} <- parsed_schema(message_name) do
-      stringified = Map.Helpers.stringify_keys(payload)
-      encode_message_with_schema(schema, stringified)
+    start_time = System.monotonic_time()
+
+    with {:ok, schema} <- parsed_schema(message_name),
+         stringified <- Map.Helpers.stringify_keys(payload),
+         {:ok, encoded} <- encode_message_with_schema(schema, stringified) do
+      # send encoding time telemetry
+      :telemetry.execute(
+        [:kaufmann_ex, :schema, :encode],
+        %{
+          duration: System.monotonic_time() - start_time,
+          size: byte_size(encoded)
+        },
+        %{event: message_name}
+      )
+
+      {:ok, encoded}
     else
+      {:error, error_message, to_encode, schema} ->
+        Logger.warn(fn ->
+          "Error Encoding #{message_name}, #{inspect(to_encode)} \n #{inspect(schema)}"
+        end)
+
+        {:error, {:schema_encoding_error, error_message}}
+
       {:error, error_message} ->
         Logger.warn(fn -> "Error Encoding #{message_name}, #{inspect(payload)}" end)
 
