@@ -146,7 +146,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
            "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
   end
 
-  defp event_metadata(event_name, context) do
+  def event_metadata(event_name, context \\ %{}) do
     metadata_mod = Application.get_env(:kaufmann_ex, :metadata_mod)
 
     if module_defined?(metadata_mod, :event_metadata, 2) do

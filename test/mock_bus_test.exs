@@ -1,31 +1,33 @@
+defmodule KaufmannEx.TestSupport.MockBusTest.ExamplePublisher do
+  @moduledoc false
+  def publish(event_name, payload, context \\ %{}) do
+    message_body = %{
+      payload: payload,
+      meta: event_metadata(event_name, context)
+    }
+
+    KaufmannEx.Publisher.publish(event_name, message_body, context)
+  end
+
+  def event_metadata(event_name, context) do
+    %{
+      message_id: Nanoid.generate(),
+      emitter_service: KaufmannEx.Config.service_name(),
+      emitter_service_id: KaufmannEx.Config.service_id(),
+      callback_id: context[:callback_id],
+      callback_topic: nil,
+      message_name: event_name |> to_string,
+      timestamp: DateTime.to_string(DateTime.utc_now())
+    }
+  end
+end
+
+
 defmodule KaufmannEx.TestSupport.MockBusTest do
   @moduledoc false
   use KaufmannEx.TestSupport.MockBus
   alias KaufmannEx.TestSupport.MockSchemaRegistry
-
-  defmodule ExamplePublisher do
-    @moduledoc false
-    def publish(event_name, payload, context \\ %{}) do
-      message_body = %{
-        payload: payload,
-        meta: event_metadata(event_name, context)
-      }
-
-      KaufmannEx.Publisher.publish(event_name, message_body, context)
-    end
-
-    def event_metadata(event_name, context) do
-      %{
-        message_id: Nanoid.generate(),
-        emitter_service: KaufmannEx.Config.service_name(),
-        emitter_service_id: KaufmannEx.Config.service_id(),
-        callback_id: context[:callback_id],
-        callback_topic: nil,
-        message_name: event_name |> to_string,
-        timestamp: DateTime.to_string(DateTime.utc_now())
-      }
-    end
-  end
+  alias KaufmannEx.TestSupport.MockBusTest.ExamplePublisher
 
   defmodule ExampleEventHandler do
     @moduledoc false

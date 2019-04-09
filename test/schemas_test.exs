@@ -3,7 +3,7 @@ defmodule KaufmannEx.SchemasTest do
   alias KaufmannEx.Schemas
 
   setup_all do
-    {:ok, memo_pid} = Application.ensure_all_started(:memoize)
+    # {:ok, memo_pid} = Application.ensure_all_started(:memoize)
 
     # Clear cached schemas
     on_exit(fn -> Memoize.invalidate() end)

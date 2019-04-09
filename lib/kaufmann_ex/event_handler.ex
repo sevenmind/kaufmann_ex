@@ -159,9 +159,6 @@ defmodule KaufmannEx.EventHandler do
   defp format_event(event, {event_name, payload, topic}),
     do: wrap_event(event_name, payload, event, topic)
 
-  defp format_event(event, %{event_name: event_name, payload: payload, topic: topic}),
-    do: wrap_event(event_name, payload, event, topic)
-
   defp wrap_event(event_name, body, event, topic \\ :default) do
     %Event{
       event
