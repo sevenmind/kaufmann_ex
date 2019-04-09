@@ -15,7 +15,9 @@ before_script:
 
 script:
   - if [ $PULL_REQUEST_ID != false ]; then pronto run -f github_pr; fi
-  - mix test --no-start
+  - mix test
+  - mix coveralls.json
+  - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
 
 after_script:
   - mix deps.get --only docs
