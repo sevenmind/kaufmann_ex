@@ -12,7 +12,7 @@ defmodule KaufmannEx.FlowConsumer do
   alias KaufmannEx.Schemas
   alias KaufmannEx.Schemas.Event
 
-  def start_link({pid, topic, partition, _extra_consumer_args}) when is_pid(pid) do
+  def start_link({pid, topic, partition, _extra_consumer_args}) do
     event_handler = KaufmannEx.Config.event_handler()
     topic_metadata = TopicSelector.topic_metadata()
     stages = Config.stages()
