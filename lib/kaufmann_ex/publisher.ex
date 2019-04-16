@@ -57,7 +57,7 @@ defmodule KaufmannEx.Publisher do
 
   @doc """
   Execute Encode & publish inline, for when you just need to send something to
-  the bus right now.
+  kafka right now.
   """
   def publish_inline(event_name, body, context \\ %{}, topic \\ :default) do
     message_body =

@@ -25,8 +25,7 @@ defmodule KaufmannEx.Supervisor do
         start:
           {KafkaEx.ConsumerGroup, :start_link,
            [
-             KafkaExGenStageConsumer,
-             KaufmannEx.FlowConsumer,
+             {KafkaExGenStageConsumer, KaufmannEx.FlowConsumer},
              consumer_group_name,
              topics,
              [
