@@ -26,42 +26,12 @@ defmodule KaufmannEx.Publisher do
   end
 
   @doc """
-  trigger event publishing in the `KaufmannEx.Publisher.Supervisor` genstage pipeline
-  """
-  def publish(event_name, body, context \\ %{}, topic \\ :default) do
-    message_body =
-      case Map.has_key?(body, :meta) do
-        true ->
-          body
-
-        _ ->
-          %{
-            payload: body,
-            meta: Event.event_metadata(event_name, context)
-          }
-      end
-
-    GenServer.cast(
-      KaufmannEx.Publisher.Producer,
-      {:publish,
-       %Event{
-         publish_request: %Request{
-           event_name: event_name,
-           body: message_body,
-           context: context,
-           topic: topic
-         }
-       }}
-    )
-  end
-
-  @doc """
   Execute Encode & publish inline, for when you just need to send something to
   kafka right now.
   """
-  def publish_inline(event_name, body, context \\ %{}, topic \\ :default) do
+  def publish(event_name, body, context \\ %{}, topic \\ :default) do
     message_body =
-      case Map.has_key?(body, :meta) do
+      case is_map(body) and Map.has_key?(body, :meta) do
         true ->
           body
 

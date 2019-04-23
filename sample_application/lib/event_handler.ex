@@ -6,6 +6,7 @@ defmodule Sample.EventHandler do
 
   def given_event(%Event{name: :"command.test", payload: payload} = event) do
     # Do something with event payload 😁
+    IO.inspect(payload)
 
     {:reply, [{Event.coerce_event_name(event.name), payload}]}
   end
