@@ -43,7 +43,7 @@ defmodule KaufmannEx.MixProject do
       {:kafka_ex_gen_stage_consumer,
        git: "https://github.com/sevenmind/kafka_ex_gen_stage_consumer"},
       # {:kafka_ex, "~> 0.9"},
-      {:kafka_ex, git: "https://github.com/gerbal/kafka_ex", branch: "custom-genconsumer"},
+      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex"},
       {:jason, "~> 1.1"},
       {:httpoison, "~> 1.5"},
       {:avro_ex, "~> 0.1.0-beta.6"},
