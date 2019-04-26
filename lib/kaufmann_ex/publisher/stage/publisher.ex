@@ -42,11 +42,11 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
 
     start_time = System.monotonic_time()
 
-    KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
+    res = KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
 
     report_publish_time(start_time: start_time, encoded: encoded, event: event)
 
-    event
+    res
   end
 
   defp report_publish_time(

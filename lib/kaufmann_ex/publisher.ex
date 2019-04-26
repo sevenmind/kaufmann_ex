@@ -53,5 +53,7 @@ defmodule KaufmannEx.Publisher do
     |> Encoder.encode_event()
     |> TopicSelector.select_topic_and_partition()
     |> Enum.map(&Publisher.publish/1)
+
+    :ok
   end
 end

@@ -55,6 +55,8 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelector do
     |> Enum.flat_map(&select_topic_and_partition(&1, state))
   end
 
+  def select_topic_and_partition(%Event{publish_request: %{topic: :no_publish}}, _state), do: []
+
   def select_topic_and_partition(%Event{publish_request: publish_req} = event, state) do
     topic =
       case publish_req.topic do
