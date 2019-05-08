@@ -3,6 +3,7 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
   A Consumer worker supervised by `KaufmannEx.Publisher.Stage.PublishSupervisor` responsible for
   publishing events to kafka
   """
+  import Opencensus.Trace
   require Logger
   alias KafkaEx.Protocol.Produce.Message
   alias KafkaEx.Protocol.Produce.Request
@@ -29,24 +30,26 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
         workers
       )
       when is_list(workers) do
-    Logger.debug("Publishing Event #{event_name} on #{topic}##{partition}")
+    with_child_span "publish" do
+      Logger.debug("Publishing Event #{event_name} on #{topic}##{partition}")
 
-    message = %Message{value: encoded, key: event_name |> Atom.to_string()}
+      message = %Message{value: encoded, key: event_name |> Atom.to_string()}
 
-    produce_request = %Request{
-      partition: partition,
-      topic: topic,
-      messages: [message],
-      required_acks: 1
-    }
+      produce_request = %Request{
+        partition: partition,
+        topic: topic,
+        messages: [message],
+        required_acks: 1
+      }
 
-    start_time = System.monotonic_time()
+      start_time = System.monotonic_time()
 
-    res = KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
+      res = KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
 
-    report_publish_time(start_time: start_time, encoded: encoded, event: event)
+      report_publish_time(start_time: start_time, encoded: encoded, event: event)
 
-    res
+      res
+    end
   end
 
   defp report_publish_time(

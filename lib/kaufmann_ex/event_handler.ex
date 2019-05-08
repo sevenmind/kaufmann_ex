@@ -61,6 +61,8 @@ defmodule KaufmannEx.EventHandler do
   ```
 
   """
+  import Opencensus.Trace
+
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
 
@@ -117,6 +119,8 @@ defmodule KaufmannEx.EventHandler do
   defp extract_event_name(_), do: []
 
   def handle_event(event, event_handler) do
+    with_child_span "handle_event" do
+
     start_time = System.monotonic_time()
 
     results =
@@ -131,6 +135,7 @@ defmodule KaufmannEx.EventHandler do
     report_telemetry(start_time: start_time, event: event, event_handler: event_handler)
 
     Enum.map(results, &format_event(event, &1))
+    end
   end
 
   defp report_telemetry(start_time: start_time, event: event, event_handler: event_handler) do

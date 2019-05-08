@@ -13,10 +13,14 @@ defmodule KaufmannEx.Schemas do
   use Memoize
   require Logger
   require Map.Helpers
+  import Opencensus.Trace
+
   alias KaufmannEx.Schemas.Event
 
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
   def decode_event(%Event{raw_event: %{key: key, value: value} = raw_event} = event) do
+    with_child_span "decode_event" do
+
     start_time = System.monotonic_time()
     event_name = key |> String.to_atom()
 
@@ -44,6 +48,7 @@ defmodule KaufmannEx.Schemas do
     report_decode_time(start_time: start_time, event: event)
 
     res
+    end
   end
 
   defp report_decode_time(start_time: start_time, event: event) do
@@ -60,6 +65,8 @@ defmodule KaufmannEx.Schemas do
 
   @spec encode_message(String.t(), Map) :: {atom, any}
   def encode_message(message_name, payload) do
+    with_child_span "encode_message" do
+
     start_time = System.monotonic_time()
 
     with {:ok, schema} <- parsed_schema(message_name),
@@ -83,6 +90,7 @@ defmodule KaufmannEx.Schemas do
         {:error, {:schema_encoding_error, error_message}}
     end
   end
+  end
 
   defp report_encode_time(start_time: start_time, encoded: encoded, message_name: message_name) do
     :telemetry.execute(
@@ -97,7 +105,8 @@ defmodule KaufmannEx.Schemas do
 
   @spec decode_message(String.t(), binary) :: {atom, any}
   def decode_message(message_name, encoded) do
-    with {:ok, schema} <- parsed_schema(message_name) do
+    with_child_span "decode_message" do
+      with {:ok, schema} <- parsed_schema(message_name) do
       schema
       |> decode_message_with_schema(encoded)
       |> atomize_keys()
@@ -105,6 +114,7 @@ defmodule KaufmannEx.Schemas do
       {:error, error_message} ->
         {:error, {:schema_decoding_error, error_message}}
     end
+  end
   end
 
   @doc """

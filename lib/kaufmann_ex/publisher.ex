@@ -3,6 +3,7 @@ defmodule KaufmannEx.Publisher do
     Publishes Avro encoded messages to the default topic (`KaufmannEx.Config.default_topic/0`).
   """
   require Logger
+  import Opencensus.Trace
 
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
@@ -30,30 +31,32 @@ defmodule KaufmannEx.Publisher do
   kafka right now.
   """
   def publish(event_name, body, context \\ %{}, topic \\ :default) do
-    message_body =
-      case is_map(body) and Map.has_key?(body, :meta) do
-        true ->
-          body
+    with_child_span "publish" do
+      message_body =
+        case is_map(body) and Map.has_key?(body, :meta) do
+          true ->
+            body
 
-        _ ->
-          %{
-            payload: body,
-            meta: Event.event_metadata(event_name, context)
-          }
-      end
+          _ ->
+            %{
+              payload: body,
+              meta: Event.event_metadata(event_name, context)
+            }
+        end
 
-    %Event{
-      publish_request: %Request{
-        event_name: event_name,
-        body: message_body,
-        context: context,
-        topic: topic
+      %Event{
+        publish_request: %Request{
+          event_name: event_name,
+          body: message_body,
+          context: context,
+          topic: topic
+        }
       }
-    }
-    |> Encoder.encode_event()
-    |> TopicSelector.select_topic_and_partition()
-    |> Enum.map(&Publisher.publish/1)
+      |> Encoder.encode_event()
+      |> TopicSelector.select_topic_and_partition()
+      |> Enum.map(&Publisher.publish/1)
 
-    :ok
+      :ok
+    end
   end
 end

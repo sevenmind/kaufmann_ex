@@ -60,7 +60,9 @@ defmodule KaufmannEx.MixProject do
       {:mock, "~> 0.3.0", only: [:test]},
       {:snappy, git: "https://github.com/fdmanana/snappy-erlang-nif"},
       {:flow, "~> 0.14.3"},
-      {:telemetry, "~> 0.4"}
+      {:telemetry, "~> 0.4"},
+      {:opencensus, "~> 0.9.0", override: true},
+      {:opencensus_elixir, "~> 0.3.0"},
     ]
   end
 
