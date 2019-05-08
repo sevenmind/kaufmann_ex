@@ -27,7 +27,8 @@ defmodule KaufmannEx.Schemas.Event do
       callback_id: context[:callback_id],
       message_name: event_name |> to_string,
       timestamp: DateTime.to_string(DateTime.utc_now()),
-      callback_topic: Map.get(context, :next_callback_topic, nil)
+      callback_topic: Map.get(context, :next_callback_topic, nil),
+      span_context: current_context()
     }
   end
 
@@ -40,6 +41,12 @@ defmodule KaufmannEx.Schemas.Event do
     |> to_string
     |> String.replace_prefix("command.", "event.")
     |> String.to_atom()
+  end
+
+  defp current_context do
+    :ocp.current_span_ctx()
+    |> :oc_propagation_binary.encode()
+    |> :binary.bin_to_list()
   end
 end
 

@@ -20,34 +20,34 @@ defmodule KaufmannEx.Schemas do
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
   def decode_event(%Event{raw_event: %{key: key, value: value} = raw_event} = event) do
     with_child_span "decode_event" do
+      start_time = System.monotonic_time()
+      event_name = key |> String.to_atom()
 
-    start_time = System.monotonic_time()
-    event_name = key |> String.to_atom()
+      res =
+        case decode_message(key, value) do
+          {:ok, %{meta: meta, payload: payload}} ->
+            %KaufmannEx.Schemas.Event{
+              event
+              | name: event_name,
+                meta: meta,
+                payload: payload
+            }
 
-    res =
-      case decode_message(key, value) do
-        {:ok, %{meta: meta, payload: payload}} ->
-          %KaufmannEx.Schemas.Event{
-            event
-            | name: event_name,
-              meta: meta,
-              payload: payload
-          }
 
-        {:error, error} ->
-          Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
+          {:error, error} ->
+            Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
 
-          err_event =
-            event
-            |> Map.from_struct()
-            |> Map.merge(%{name: key, error: error, message_payload: value})
+            err_event =
+              event
+              |> Map.from_struct()
+              |> Map.merge(%{name: key, error: error, message_payload: value})
 
-          struct(KaufmannEx.Schemas.ErrorEvent, err_event)
-      end
+            struct(KaufmannEx.Schemas.ErrorEvent, err_event)
+        end
 
-    report_decode_time(start_time: start_time, event: event)
+      report_decode_time(start_time: start_time, event: event)
 
-    res
+      res
     end
   end
 
@@ -66,30 +66,29 @@ defmodule KaufmannEx.Schemas do
   @spec encode_message(String.t(), Map) :: {atom, any}
   def encode_message(message_name, payload) do
     with_child_span "encode_message" do
+      start_time = System.monotonic_time()
 
-    start_time = System.monotonic_time()
+      with {:ok, schema} <- parsed_schema(message_name),
+           stringified <- Map.Helpers.stringify_keys(payload),
+           {:ok, encoded} <- encode_message_with_schema(schema, stringified) do
+        # send encoding time telemetry
+        report_encode_time(start_time: start_time, encoded: encoded, message_name: message_name)
 
-    with {:ok, schema} <- parsed_schema(message_name),
-         stringified <- Map.Helpers.stringify_keys(payload),
-         {:ok, encoded} <- encode_message_with_schema(schema, stringified) do
-      # send encoding time telemetry
-      report_encode_time(start_time: start_time, encoded: encoded, message_name: message_name)
+        {:ok, encoded}
+      else
+        {:error, error_message, to_encode, schema} ->
+          Logger.warn(fn ->
+            "Error Encoding #{message_name}, #{inspect(to_encode)} \n #{inspect(schema)}"
+          end)
 
-      {:ok, encoded}
-    else
-      {:error, error_message, to_encode, schema} ->
-        Logger.warn(fn ->
-          "Error Encoding #{message_name}, #{inspect(to_encode)} \n #{inspect(schema)}"
-        end)
+          {:error, {:schema_encoding_error, error_message}}
 
-        {:error, {:schema_encoding_error, error_message}}
+        {:error, error_message} ->
+          Logger.warn(fn -> "Error Encoding #{message_name}, #{inspect(payload)}" end)
 
-      {:error, error_message} ->
-        Logger.warn(fn -> "Error Encoding #{message_name}, #{inspect(payload)}" end)
-
-        {:error, {:schema_encoding_error, error_message}}
+          {:error, {:schema_encoding_error, error_message}}
+      end
     end
-  end
   end
 
   defp report_encode_time(start_time: start_time, encoded: encoded, message_name: message_name) do
@@ -107,14 +106,14 @@ defmodule KaufmannEx.Schemas do
   def decode_message(message_name, encoded) do
     with_child_span "decode_message" do
       with {:ok, schema} <- parsed_schema(message_name) do
-      schema
-      |> decode_message_with_schema(encoded)
-      |> atomize_keys()
-    else
-      {:error, error_message} ->
-        {:error, {:schema_decoding_error, error_message}}
+        schema
+        |> decode_message_with_schema(encoded)
+        |> atomize_keys()
+      else
+        {:error, error_message} ->
+          {:error, {:schema_decoding_error, error_message}}
+      end
     end
-  end
   end
 
   @doc """

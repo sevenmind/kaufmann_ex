@@ -119,22 +119,23 @@ defmodule KaufmannEx.EventHandler do
   defp extract_event_name(_), do: []
 
   def handle_event(event, event_handler) do
+    maybe_set_trace_span(event)
+
     with_child_span "handle_event" do
+      start_time = System.monotonic_time()
 
-    start_time = System.monotonic_time()
+      results =
+        case event_handler.given_event(event) do
+          {:noreply, _} -> []
+          {:reply, events} when is_list(events) -> events
+          {:reply, event} when is_tuple(event) or is_map(event) -> [event]
+          {:error, error} -> wrap_error_event(event, error)
+          _ -> []
+        end
 
-    results =
-      case event_handler.given_event(event) do
-        {:noreply, _} -> []
-        {:reply, events} when is_list(events) -> events
-        {:reply, event} when is_tuple(event) or is_map(event) -> [event]
-        {:error, error} -> wrap_error_event(event, error)
-        _ -> []
-      end
+      report_telemetry(start_time: start_time, event: event, event_handler: event_handler)
 
-    report_telemetry(start_time: start_time, event: event, event_handler: event_handler)
-
-    Enum.map(results, &format_event(event, &1))
+      Enum.map(results, &format_event(event, &1))
     end
   end
 
@@ -178,4 +179,13 @@ defmodule KaufmannEx.EventHandler do
         }
     }
   end
+
+  def maybe_set_trace_span(%{meta: %{span_context: span}}) do
+    span
+    |> :binary.list_to_bin()
+    |> :oc_propagation_binary.decode()
+    |> :ocp.with_span_ctx()
+  end
+
+  def maybe_set_trace_span(_), do: nil
 end

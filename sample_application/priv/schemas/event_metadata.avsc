@@ -24,6 +24,12 @@
       "doc": "uuid of waiting callback in the emitting service"
     },
     {
+      "name": "span_context",
+      "type": ["null", {"type": "array", "items": "int"}],
+      "doc": "binary span context from traces",
+      "default": null
+    },
+    {
       "name": "message_name",
       "type": "string",
       "doc":
