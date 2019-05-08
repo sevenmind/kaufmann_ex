@@ -3,7 +3,7 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
   A Consumer worker supervised by `KaufmannEx.Publisher.Stage.PublishSupervisor` responsible for
   publishing events to kafka
   """
-  import Opencensus.Trace
+  import OpencensusExt.Trace
   require Logger
   alias KafkaEx.Protocol.Produce.Message
   alias KafkaEx.Protocol.Produce.Request
@@ -30,7 +30,7 @@ defmodule KaufmannEx.Publisher.Stage.Publisher do
         workers
       )
       when is_list(workers) do
-    with_child_span "publish" do
+        with_trace do
       Logger.debug("Publishing Event #{event_name} on #{topic}##{partition}")
 
       message = %Message{value: encoded, key: event_name |> Atom.to_string()}

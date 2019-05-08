@@ -61,7 +61,7 @@ defmodule KaufmannEx.EventHandler do
   ```
 
   """
-  import Opencensus.Trace
+  import OpencensusExt.Trace
 
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
@@ -121,7 +121,7 @@ defmodule KaufmannEx.EventHandler do
   def handle_event(event, event_handler) do
     maybe_set_trace_span(event)
 
-    with_child_span "handle_event" do
+    with_trace do
       start_time = System.monotonic_time()
 
       results =

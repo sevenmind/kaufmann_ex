@@ -3,7 +3,7 @@ defmodule KaufmannEx.Publisher do
     Publishes Avro encoded messages to the default topic (`KaufmannEx.Config.default_topic/0`).
   """
   require Logger
-  import Opencensus.Trace
+  import OpencensusExt.Trace
 
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
@@ -31,7 +31,7 @@ defmodule KaufmannEx.Publisher do
   kafka right now.
   """
   def publish(event_name, body, context \\ %{}, topic \\ :default) do
-    with_child_span "publish" do
+    with_trace do
       message_body =
         case is_map(body) and Map.has_key?(body, :meta) do
           true ->

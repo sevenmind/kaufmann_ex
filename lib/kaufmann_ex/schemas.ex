@@ -13,13 +13,13 @@ defmodule KaufmannEx.Schemas do
   use Memoize
   require Logger
   require Map.Helpers
-  import Opencensus.Trace
+  import OpencensusExt.Trace
 
   alias KaufmannEx.Schemas.Event
 
   @spec decode_event(map) :: KaufmannEx.Schemas.Event.t() | KaufmannEx.Schemas.ErrorEvent.t()
   def decode_event(%Event{raw_event: %{key: key, value: value} = raw_event} = event) do
-    with_child_span "decode_event" do
+    with_trace do
       start_time = System.monotonic_time()
       event_name = key |> String.to_atom()
 
@@ -32,7 +32,6 @@ defmodule KaufmannEx.Schemas do
                 meta: meta,
                 payload: payload
             }
-
 
           {:error, error} ->
             Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
@@ -65,7 +64,7 @@ defmodule KaufmannEx.Schemas do
 
   @spec encode_message(String.t(), Map) :: {atom, any}
   def encode_message(message_name, payload) do
-    with_child_span "encode_message" do
+    with_trace do
       start_time = System.monotonic_time()
 
       with {:ok, schema} <- parsed_schema(message_name),
@@ -104,7 +103,7 @@ defmodule KaufmannEx.Schemas do
 
   @spec decode_message(String.t(), binary) :: {atom, any}
   def decode_message(message_name, encoded) do
-    with_child_span "decode_message" do
+    with_trace do
       with {:ok, schema} <- parsed_schema(message_name) do
         schema
         |> decode_message_with_schema(encoded)
@@ -122,9 +121,11 @@ defmodule KaufmannEx.Schemas do
   Memoized with permament caching.
   """
   defmemo parsed_schema(message_name) do
-    with {:ok, schema_name} <- if_partial_schema(message_name),
-         {:ok, %{"schema" => raw_schema}} <- get(schema_name) do
-      AvroEx.parse_schema(raw_schema)
+    with_trace do
+      with {:ok, schema_name} <- if_partial_schema(message_name),
+           {:ok, %{"schema" => raw_schema}} <- get(schema_name) do
+        AvroEx.parse_schema(raw_schema)
+      end
     end
   end
 
@@ -176,8 +177,10 @@ defmodule KaufmannEx.Schemas do
   memoized permanetly
   """
   defmemo get(subject) do
-    schema_registry_uri()
-    |> Schemex.latest(subject)
+    with_trace do
+      schema_registry_uri()
+      |> Schemex.latest(subject)
+    end
   end
 
   def register(subject, schema) do
