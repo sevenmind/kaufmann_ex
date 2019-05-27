@@ -59,8 +59,9 @@ defmodule KaufmannEx.Config do
   @doc """
   `Application.get_env(:kaufmann_ex, :schema_path)`
   """
-  @spec schema_path() :: String.t() | nil
-  def schema_path, do: Application.get_env(:kaufmann_ex, :schema_path, "priv/schemas")
+  @spec schema_path() :: [String.t() | nil]
+  def schema_path,
+    do: List.flatten([Application.get_env(:kaufmann_ex, :schema_path, "priv/schemas")])
 
   @doc """
   `Application.get_env(:kaufmann_ex, :schema_registry_uri)`
@@ -123,11 +124,11 @@ defmodule KaufmannEx.Config do
     do:
       :kaufmann_ex
       |> Application.get_env(:transcoder)
-      |> Map.get(format)
+      |> Keyword.get(format)
 
   def transcoders,
     do:
       :kaufmann_ex
       |> Application.get_env(:transcoder)
-      |> Map.values()
+      |> Keyword.values()
 end

@@ -73,4 +73,32 @@ defmodule KaufmannEx.Telemetry.Logger do
     time = :erlang.convert_time_unit(duration, :native, :microsecond)
     Logger.debug("[#{event}] #{size}B publish to #{topic}##{partition} took #{time}μs")
   end
+
+
+  def report_decode_time(start_time: start_time, event: event) do
+    :telemetry.execute(
+      [:kaufmann_ex, :schema, :decode],
+      %{
+        duration: System.monotonic_time() - start_time,
+        offset: event.raw_event.offset,
+        size: byte_size(event.raw_event.value)
+      },
+      %{event: event.raw_event.key, topic: event.topic, partition: event.partition}
+    )
+  end
+
+  def report_encode_duration(
+         start_time: start_time,
+         encoded: encoded,
+         message_name: message_name
+       ) do
+    :telemetry.execute(
+      [:kaufmann_ex, :schema, :encode],
+      %{
+        duration: System.monotonic_time() - start_time,
+        size: byte_size(encoded)
+      },
+      %{event: message_name}
+    )
+  end
 end

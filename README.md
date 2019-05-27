@@ -283,3 +283,7 @@ Telemetry events:
 Kaufmann provides an optional logger demonstrating consumption of these events
 in `KaufmannEx.TelemetryLogger`. This logger can be started by adding
 `KaufmannEx.TelemetryLogger` to your supervision tree.
+
+
+
+_explicit is better than implicit_

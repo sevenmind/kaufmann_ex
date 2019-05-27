@@ -31,16 +31,6 @@ defmodule KaufmannEx.Schemas.Event do
     }
   end
 
-  @doc """
-  Replace "command." with "event." in event names
-  """
-  @spec coerce_event_name(atom) :: atom
-  def coerce_event_name(command_name) do
-    command_name
-    |> to_string
-    |> String.replace_prefix("command.", "event.")
-    |> String.to_atom()
-  end
 end
 
 defmodule KaufmannEx.Schemas.ErrorEvent do

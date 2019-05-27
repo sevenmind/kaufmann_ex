@@ -46,12 +46,23 @@ defmodule KaufmannEx.TestSupport.MockBus do
   alias KaufmannEx.Schemas.Event
   alias KaufmannEx.TestSupport.MockSchemaRegistry
 
+  # handle case of unnamed event
+  def given_event(payload) do
+    handle_and_send_event(%Event{
+      payload: payload
+    })
+  end
+
+  defp event_consumer do
+    Application.fetch_env!(:kaufmann_ex, :event_handler_mod)
+  end
+
   @doc """
   Dispatches event to the default subscriber.
 
   Schema must be defined & payload must be valid/enocodable
   """
-  @spec given_event(atom, any, binary | nil) :: :ok
+  @spec given_event(atom | binary, any, binary | nil) :: :ok
   def given_event(event_name, payload, callback_id \\ nil) do
     schema_name = schema_name_if_query(event_name)
 
@@ -74,24 +85,24 @@ defmodule KaufmannEx.TestSupport.MockBus do
       event_metadata(event_name, %{callback_id: callback_id})
     )
 
-    event_consumer = Application.fetch_env!(:kaufmann_ex, :event_handler_mod)
-
-    event
-    |> EventHandler.handle_event(event_consumer)
-    |> send_events()
+    handle_and_send_event(event)
   end
 
-  defp send_events(events) do
+  defp handle_and_send_event(event) do
+    events = EventHandler.handle_event(event, event_consumer())
+
     for %{
-          publish_request: %{
-            event_name: event_name,
-            body: body,
-            context: _context,
-            topic: topic
-          }
-        } <- events do
-      send(self(), {:produce, {event_name, body, topic}})
+          event_name: event_name,
+          payload: payload,
+          metadata: meta,
+          context: _context,
+          topic: topic
+        } = ev <- events do
+      send(self(), {:produce, {event_name, %{payload: payload, meta: meta}, topic}})
+      handle_and_send_event(%Event{name: event_name, payload: payload, meta: meta})
     end
+
+    :ok
   end
 
   @doc """
@@ -101,7 +112,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   Asserts payload matches argument
   """
   @spec then_event(atom, any, integer) :: map
-  def then_event(event_name, expected_payload \\ %{}, timeout \\ 50) do
+  def then_event(event_name, expected_payload \\ %{}, timeout \\ 500) do
     assert_receive(
       {:produce, {^event_name, %{payload: message_payload, meta: meta}, topic}},
       timeout
@@ -178,32 +189,14 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   # Rename events were we use a generic schema for entire classes of events
   @doc false
-  def schema_name_if_query(event_name) do
-    event_string = event_name |> to_string
+  def schema_name_if_query(event_name) when is_atom(event_name),
+    do: event_name |> to_string |> schema_name_if_query
 
-    cond do
-      Regex.match?(~r/^query\./, event_string) ->
-        String.slice(event_string, 0..8)
+  def schema_name_if_query("query." <> _ = event_name), do: String.slice(event_name, 0..8)
 
-      Regex.match?(~r/^event\.error\./, event_string) ->
-        String.slice(event_string, 0..10)
+  def schema_name_if_query("event.error." <> _ = event_name),
+    do: String.slice(event_name, 0..10)
 
-      true ->
-        event_string
-    end
-  end
+  def schema_name_if_query(event_name), do: event_name
 
-  def encoded_event(event_name, payload, callback_id \\ nil) do
-    %{
-      meta: event_metadata(event_name, callback_id: callback_id),
-      payload: payload
-    }
-    |> Map.Helpers.stringify_keys()
-    |> encode_payload(event_name)
-  end
-
-  defp encode_payload(payload, event_name) do
-    schema_name = schema_name_if_query(event_name)
-    MockSchemaRegistry.encode_event(schema_name, payload)
-  end
 end

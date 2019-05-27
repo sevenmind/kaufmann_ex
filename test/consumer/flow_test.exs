@@ -28,6 +28,7 @@ defmodule KaufmannEx.Consumer.FlowTest do
     alias KaufmannEx.Schemas.Event
 
     def given_event(%Event{name: :"event.test", payload: pl}) do
+      IO.puts "REACHEEEED"
       {:reply, [{:"event.test", pl}]}
     end
   end
@@ -53,6 +54,8 @@ defmodule KaufmannEx.Consumer.FlowTest do
   alias KaufmannEx.Consumer.FlowTest.EventHandler
   alias KaufmannEx.Consumer.FlowTest.GenProducer
   alias KaufmannEx.Consumer.FlowTest.KafkaMock
+  alias KaufmannEx.Schemas.Avro
+  alias KaufmannEx.Schemas.Avro.Registry
   alias KaufmannEx.TestSupport.MockBus
 
   setup_all do
@@ -76,10 +79,10 @@ defmodule KaufmannEx.Consumer.FlowTest do
 
     Application.put_env(:kaufmann_ex, :event_handler_mod, EventHandler)
 
-    schema = KaufmannEx.Schemas.parsed_schema(event_name)
+    {:ok, schema} = Registry.parsed_schema(event_name)
 
     {:ok, encoded} =
-      KaufmannEx.Schemas.encode_message(event_name, %{
+      Avro.encode(schema, %{
         meta: MockBus.event_metadata(event_name),
         payload: %{message: "hello world"}
       })
@@ -141,19 +144,17 @@ defmodule KaufmannEx.Consumer.FlowTest do
   end
 
   def init_schema_cache(bypass, event_name) do
-    # fake_schema = Jason.encode!(%{type: "string", name: "field"})
-
     # bypass any http calls called time
     mock_get_metadata_schema(bypass)
     mock_get_event(bypass, event_name)
 
-    assert {:ok, %{}} = KaufmannEx.Schemas.parsed_schema(event_name)
+    assert {:ok, %{}} = Registry.parsed_schema(event_name)
     # mock_get_unkown_event(bypass)
   end
 
   def mock_get_event(bypass, event_name) do
-    {:ok, schema} = File.read("test/support/#{event_name}.avsc")
-    {:ok, meta_schema} = File.read("test/support/event_metadata.avsc")
+    {:ok, schema} = File.read("test/support/avro/#{event_name}.avsc")
+    {:ok, meta_schema} = File.read("test/support/avro/event_metadata.avsc")
 
     Bypass.stub(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
       Plug.Conn.resp(
@@ -170,7 +171,7 @@ defmodule KaufmannEx.Consumer.FlowTest do
   end
 
   def mock_get_metadata_schema(bypass) do
-    {:ok, schema} = File.read("test/support/event_metadata.avsc")
+    {:ok, schema} = File.read("test/support/avro/event_metadata.avsc")
 
     Bypass.stub(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
       Plug.Conn.resp(

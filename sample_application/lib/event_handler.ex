@@ -8,13 +8,13 @@ defmodule Sample.EventHandler do
     # Do something with event payload 😁
     IO.inspect(payload)
 
-    {:reply, [{Event.coerce_event_name(event.name), payload}]}
+    {:reply, [{"event.test", payload}]}
   end
 
   def given_event(%Event{name: :"another.event.here.test", payload: payload} = event) do
     # Do something with event payload 😁
 
-    {:reply, [{Event.coerce_event_name(event.name), payload}]}
+    {:reply, [{"another.event.here", payload}]}
   end
 
   # Handle unexpected Event

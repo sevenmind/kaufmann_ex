@@ -37,7 +37,29 @@ defmodule KaufmannEx.Transcode.Json do
   end
 
   @impl true
+  def schema_extension, do: ".json"
+
+  @impl true
+  def encodable?(schema, map) do
+    ExJsonSchema.Validator.valid?(schema, map)
+  end
+
+  @impl true
   def sniff_format("{" <> _), do: true
   def sniff_format("[" <> _), do: true
-  def sniff_format(_), do: false
+
+  def sniff_format(raw) when is_binary(raw) do
+    case Jason.decode(raw) do
+      {:ok, _} -> true
+      {:error, _} -> false
+    end
+  end
+
+  @impl true
+  def read_schema(path) do
+    path
+    |> File.read!()
+    |> Jason.decode!()
+    |> ExJsonSchema.Schema.resolve()
+  end
 end

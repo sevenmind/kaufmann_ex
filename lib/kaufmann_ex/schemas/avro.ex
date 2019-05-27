@@ -1,6 +1,6 @@
 defmodule KaufmannEx.Schemas.Avro do
   require Logger
-  alias KaufmannEx.Config
+  import Map.Helpers, only: [stringify_keys: 1]
 
   def decode(schema, encoded) do
     AvroEx.decode(schema, encoded)
@@ -11,7 +11,7 @@ defmodule KaufmannEx.Schemas.Avro do
   end
 
   def encode(schema, message) do
-    AvroEx.encode(schema, Map.Helpers.stringify_keys(message))
+    AvroEx.encode(schema, stringify_keys(message))
   rescue
     # avro_ex can become confused when trying to encode some schemas.
     error ->
@@ -19,26 +19,9 @@ defmodule KaufmannEx.Schemas.Avro do
       {:error, :unmatching_schema}
   end
 
-  def read_local_schema(schema_name) do
-    with path <- Path.join(Config.schema_path(), schema_name <> ".avsc"),
-         {:ok, file} <- File.read(path),
-         {:ok, raw_schema} <- Jason.decode(file),
-         {:ok, schema} <- parse_schema_with_metadata(raw_schema) do
-      {:ok, schema}
-    else
-      err -> err
-    end
-  end
-
-  def parse_schema_with_metadata(raw_schema) do
-    metadata_schema =
-      Config.schema_path()
-      |> Path.join("event_metadata.avsc")
-      |> File.read!()
-      |> Jason.decode!()
-
-    [metadata_schema, raw_schema]
-    |> parse()
+  @spec encodable?(AvroEx.Schema.t(), any) :: boolean
+  def encodable?(schema, payload) do
+    AvroEx.encodable?(schema, stringify_keys(payload))
   end
 
   @doc """

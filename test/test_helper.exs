@@ -27,11 +27,11 @@ defmodule TestHelper do
 
   def mock_get_schema(bypass, schema_name) do
     metadata_schema =
-      File.read!('test/support/event_metadata.avsc')
+      File.read!("test/support/avro/event_metadata.avsc")
       |> Jason.decode!()
 
     schema =
-      File.read!("test/support/#{schema_name}.avsc")
+      File.read!("test/support/avro/#{schema_name}.avsc")
       |> Jason.decode!()
 
     schema = [metadata_schema, schema] |> Jason.encode!()
@@ -47,7 +47,7 @@ defmodule TestHelper do
   end
 
   def mock_get_metadata_schema(bypass) do
-    {:ok, schema} = File.read('test/support/event_metadata.avsc')
+    {:ok, schema} = File.read("test/support/avro/event_metadata.avsc")
     schema = schema |> Jason.decode!() |> Jason.encode!()
 
     Bypass.expect_once(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->

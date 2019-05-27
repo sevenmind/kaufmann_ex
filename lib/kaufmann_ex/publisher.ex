@@ -16,7 +16,7 @@ defmodule KaufmannEx.Publisher do
   Execute Encode & publish inline, for when you just need to send something to
   kafka right now.
   """
-  def publish(event_name, body, context \\ %{}, topic \\ :default) do
+  def publish(event_name, body, context \\ %{}, topic \\ :default, format \\ :default) do
     message_body =
       case is_map(body) and Map.has_key?(body, :meta) do
         true ->
@@ -33,10 +33,11 @@ defmodule KaufmannEx.Publisher do
       event_name: event_name,
       payload: message_body,
       context: context,
-      topic: topic
+      topic: topic,
+      format: format
     }
     |> TopicSelector.resolve_topic()
-    |> Encoder.encode_event()
+    |> Enum.map(&Encoder.encode_event/1)
     |> Enum.each(&publish_request/1)
 
     :ok

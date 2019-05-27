@@ -9,7 +9,7 @@ defmodule KaufmannEx.Publisher.Request do
           payload: Map,
           metadata: Map,
           context: Map,
-          topic: binary | atom | list,
+          topic: binary | atom | map,
           partition: non_neg_integer | nil,
           format: atom,
           encoded: binary | nil

@@ -11,19 +11,18 @@ defmodule KaufmannEx.Publisher.TopicSelector do
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
 
+  @spec resolve_topic(KaufmannEx.Publisher.Request.t()) ::
+          [any] | KaufmannEx.Publisher.Request.t()
+
+  def resolve_topic(%Request{topic: topic} = request) when is_map(topic) do
+    [Map.merge(request, topic)]
+  end
+
+  def resolve_topic(%Request{topic: topic} = request) when is_binary(topic), do: [request]
+
   def resolve_topic(%Request{topic: :callback, context: %{callback_topic: callback}} = request)
       when not is_nil(callback) and callback != %{} do
     [Map.merge(request, callback)]
-  end
-
-  def resolve_topic(%Request{topic: :default, context: %{callback_topic: callback}} = request)
-      when not is_nil(callback) and callback != %{} do
-    defaults =
-      Enum.map(KaufmannEx.Config.default_topics(), fn topic ->
-        %Request{request | topic: topic}
-      end)
-
-    [Map.merge(request, callback) | defaults]
   end
 
   def resolve_topic(%Request{topic: :default} = request) do
@@ -32,9 +31,9 @@ defmodule KaufmannEx.Publisher.TopicSelector do
     end)
   end
 
-  def resolve_topic(%Request{topic: %{topic: topic, format: format}} = request) do
-    [%Request{request | topic: topic, format: format}]
+  def resolve_topic(%Request{topic: nil} = request) do
+    Enum.map(KaufmannEx.Config.default_topics(), fn topic ->
+      %Request{request | topic: topic}
+    end)
   end
-
-  def resolve_topic(%Request{topic: topic} = request) when is_binary(topic), do: request
 end

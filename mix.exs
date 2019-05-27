@@ -47,6 +47,7 @@ defmodule KaufmannEx.MixProject do
       {:jason, "~> 1.1"},
       {:httpoison, "~> 1.5"},
       {:avro_ex, "~> 0.1.0-beta.6"},
+      {:ex_json_schema, "~> 0.5.4"},
       {:schemex, "~> 0.1.1"},
       {:nanoid, "~> 2.0"},
       {:memoize, "~> 1.2"},

@@ -29,13 +29,9 @@ defmodule KaufmannEx.EventHandlerTest do
         {:error, error}
     end
 
-    def given_event(%Event{name: _name} = event) do
-      {:noreply, []}
-    end
-
     def given_event(%{name: :"another.test.event"}), do: {:noreply, []}
 
-    def given_event(%{name: "a.string.name" <> _}), do: {:reply, [:response_event, %{}]}
+    def given_event(%{name: "a.string.name" <> _}), do: {:reply, [{:response_event, %{}}]}
 
     def given_event(%{name: "with.a.json.response"}),
       do:
@@ -44,14 +40,19 @@ defmodule KaufmannEx.EventHandlerTest do
            %{
              event: "json.response.event",
              payload: %{timestamp: DateTime.utc_now()},
-             topics: [:callback, "rapids", [topic: :default, format: :json]]
+             topics: [:callback, "rapids", %{topic: :default, format: :json}]
            }
          ]}
+
+    def given_event(%Event{name: _name} = event) do
+      {:noreply, []}
+    end
   end
 
   test "defines &handled_events/0" do
     assert TestEventHandler.handled_events() |> Enum.sort() == [
              "a.string.name",
+             "all",
              "another.test.event",
              "event.with.response",
              "event.with.response.topic",
@@ -82,11 +83,10 @@ defmodule KaufmannEx.EventHandlerTest do
   describe "&handle_event/1" do
     test "transforms reply tuple to response events" do
       assert [
-               %Event{
-                 publish_request: %Request{
-                   event_name: :response_event,
-                   body: %{meta: _, payload: %{}}
-                 }
+               %Request{
+                 event_name: :response_event,
+                 payload: %{},
+                 metadata: _
                }
              ] =
                EventHandler.handle_event(
@@ -96,7 +96,7 @@ defmodule KaufmannEx.EventHandlerTest do
     end
 
     test "transforms reply tuple with topic" do
-      assert [%Event{publish_request: %Request{event_name: :response_event, topic: "some_topic"}}] =
+      assert [%Request{event_name: :response_event, topic: "some_topic"}] =
                EventHandler.handle_event(
                  %Event{
                    name: :"event.with.response.topic",
@@ -109,16 +109,12 @@ defmodule KaufmannEx.EventHandlerTest do
 
     test "wraps exceptions into ErrorEvent" do
       assert [
-               %Event{
-                 publish_request: %Request{
-                   event_name: :"event.error.test.event.error",
-                   body: %{
-                     payload: %{
-                       error: %{
-                         error: "%ArgumentError{message: \"You know what you did\"}",
-                         message_payload: "\"raise_error\""
-                       }
-                     }
+               %Request{
+                 event_name: :"event.error.test.event.error",
+                 payload: %{
+                   error: %{
+                     error: "%ArgumentError{message: \"You know what you did\"}",
+                     message_payload: "\"raise_error\""
                    }
                  }
                }
@@ -135,11 +131,9 @@ defmodule KaufmannEx.EventHandlerTest do
 
     test "handles binary event names" do
       assert [
-               %Event{
-                 publish_request: %Request{
-                   event_name: :"event.error.test.event.error",
-                   body: %{}
-                 }
+               %Request{
+                 event_name: :response_event,
+                 payload: %{}
                }
              ] =
                EventHandler.handle_event(
@@ -150,6 +144,26 @@ defmodule KaufmannEx.EventHandlerTest do
                  },
                  TestEventHandler
                )
+    end
+
+    test "when multiple topics are specified" do
+      res =
+        EventHandler.handle_event(
+          %Event{
+            name: "with.a.json.response",
+            payload: %{},
+            meta: %{}
+          },
+          TestEventHandler
+        )
+
+      assert length(res) == 3
+
+      assert Enum.map(res, &Map.get(&1, :topic)) == [
+               :callback,
+               "rapids",
+               %{format: :json, topic: :default}
+             ]
     end
   end
 end

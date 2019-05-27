@@ -4,84 +4,47 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
 
   Looks for Schemas at `Application.get_env(:kaufmann_ex, :schema_path)`
   """
-  def fetch_event_schema(schema_name) do
-    schema_name
-    |> load_schema
-    |> inject_metadata
-    |> AvroEx.parse_schema!()
-  end
+
+  import ExUnit.Assertions
 
   @spec defined_event?(String.t()) :: boolean
   def defined_event?(schema_name) do
-    schema_path()
-    |> build_paths(schema_name)
-    |> Enum.any?(&File.exists?/1)
+    case find_schema(all_schemas(), schema_name) do
+      nil -> false
+      _ -> true
+    end
+  end
+
+  @spec find_schema(any, any) :: any
+  def find_schema(paths, schema_name) do
+    Enum.find(paths, &(Path.rootname(Path.basename(&1)) == schema_name))
   end
 
   @spec encodable?(String.t(), any) :: boolean
   def encodable?(schema_name, payload) do
-    schema_name
-    |> fetch_event_schema
-    |> AvroEx.encodable?(payload)
+    # find schema file
+    schema_path = find_schema(all_schemas(), schema_name)
+    # identify transcoder
+
+    assert schema_path != nil, "no valid schema found for event #{schema_name}"
+
+    file_extension = Path.extname(schema_path)
+
+    transcoder =
+      Enum.find(KaufmannEx.Config.transcoders(), &(&1.schema_extension == file_extension))
+
+    assert transcoder != nil, "no valid transcoder found for schema #{file_extension}"
+
+    # validate schema
+
+    schema_path
+    |> transcoder.read_schema
+    |> transcoder.encodable?(payload)
   end
 
-  def encode_event(schema_name, payload) do
-    {:ok, schema} =
-      schema_name
-      |> load_schema
-      |> inject_metadata
-      |> parse_schema
-
-    AvroEx.encode(schema, payload)
-  end
-
-  def decode_event(%{key: key, value: value}) do
-    {:ok, schema} =
-      key
-      |> load_schema
-      |> inject_metadata
-      |> parse_schema
-
-    AvroEx.decode(schema, value)
-  end
-
-  defp inject_metadata(schema) do
-    # Decode + encode here is dumb and time consuming
-    schema
-    |> Jason.decode!()
-    |> List.wrap()
-    |> List.insert_at(0, load_metadata())
-    |> Jason.encode!()
-  end
-
-  defp load_schema(schema_name) do
-    {:ok, schema} =
-      schema_path()
-      |> build_paths(schema_name)
-      |> Enum.filter(&File.exists?/1)
-      |> Enum.at(0)
-      |> File.read()
-
-    schema
-  end
-
-  defp parse_schema(schema) do
-    AvroEx.parse_schema(schema)
-  end
-
-  defp load_metadata do
-    load_schema("event_metadata")
-    |> Jason.decode!()
-  end
-
-  defp schema_path do
-    [
-      KaufmannEx.Config.schema_path()
-    ]
+  defp all_schemas do
+    KaufmannEx.Config.schema_path()
     |> List.flatten()
-  end
-
-  defp build_paths(schema_path, schema_name) when is_list(schema_path) do
-    Enum.map(schema_path, &Path.join(&1, [schema_name |> to_string, ".avsc"]))
+    |> Enum.flat_map(&Path.wildcard([&1, "/**"]))
   end
 end

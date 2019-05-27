@@ -22,8 +22,8 @@ config :kaufmann_ex,
   max_demand: 50,
   commit_strategy: :async_commit,
   transcoder: [
-    default: KaufmannEx.Transcoder.SevenAvro,
-    json: KaufmannEx.Transcoder.Json
+    default: KaufmannEx.Transcode.SevenAvro,
+    json: KaufmannEx.Transcode.Json
   ]
 
 config :logger,

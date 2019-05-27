@@ -127,6 +127,7 @@ defmodule KaufmannEx.EventHandler do
   defp dig_for_binary(bin) when is_binary(bin), do: [bin]
   defp dig_for_binary(_), do: []
 
+  @spec handle_event(Event.t(), atom) :: [any]
   def handle_event(event, event_handler) do
     start_time = System.monotonic_time()
 
@@ -175,7 +176,7 @@ defmodule KaufmannEx.EventHandler do
       %{
         duration: System.monotonic_time() - start_time
       },
-      %{event: event.name, topic: event.topic, partition: event.partition, handler: event_handler}
+      %{event: Map.get(event, :name, "none"), topic: event.topic, partition: event.partition, handler: event_handler}
     )
   end
 

@@ -58,5 +58,11 @@ defmodule KaufmannEx.Consumer.Flow do
 
   defp decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
     # I guess we just try all the encoders?
+
+    # /!\ I'm not sure how to handle this, leaving for later.
+    # FIXME: FIX ME
+    # TODO: FIXME
+
+    event
   end
 end
