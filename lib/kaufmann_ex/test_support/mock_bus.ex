@@ -97,8 +97,10 @@ defmodule KaufmannEx.TestSupport.MockBus do
           metadata: meta,
           context: _context,
           topic: topic
-        } = ev <- events do
+        } <- events do
       send(self(), {:produce, {event_name, %{payload: payload, meta: meta}, topic}})
+
+      # Ensure event effect is consumed by event handler
       handle_and_send_event(%Event{name: event_name, payload: payload, meta: meta})
     end
 
@@ -198,5 +200,4 @@ defmodule KaufmannEx.TestSupport.MockBus do
     do: String.slice(event_name, 0..10)
 
   def schema_name_if_query(event_name), do: event_name
-
 end

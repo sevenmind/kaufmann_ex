@@ -1,27 +1,4 @@
 defmodule Sample.Publisher do
-  alias KaufmannEx.Publisher.Request
-  alias KaufmannEx.Schemas.Event
-
-  def publish(event_name, payload, context \\ %{}, topic \\ :default) do
-    message_body = %{
-      payload: payload,
-      meta: event_metadata(event_name, context)
-    }
-
-    # KaufmannEx.Publisher.publish(event_name, message_body, context)
-
-    [
-      %Event{
-        publish_request: %Request{
-          event_name: event_name,
-          body: message_body,
-          context: context,
-          topic: topic
-        }
-      }
-    ]
-  end
-
   @spec event_metadata(atom, map) :: map
   def event_metadata(event_name, context) do
     %{

@@ -11,8 +11,8 @@ defmodule KaufmannEx.Transcode.Json do
   @impl true
   def decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
     case Jason.decode(encoded) do
-      {:ok, %{meta: meta, payload: payload}} ->
-        %KaufmannEx.Schemas.Event{
+      {:ok, %{"meta" => meta, "payload" => payload}} ->
+        %Event{
           event
           | name: key,
             meta: meta,
@@ -20,7 +20,7 @@ defmodule KaufmannEx.Transcode.Json do
         }
 
       {:ok, payload} ->
-        %KaufmannEx.Schemas.Event{
+        %Event{
           event
           | name: key,
             payload: payload
@@ -42,17 +42,6 @@ defmodule KaufmannEx.Transcode.Json do
   @impl true
   def encodable?(schema, map) do
     ExJsonSchema.Validator.valid?(schema, map)
-  end
-
-  @impl true
-  def sniff_format("{" <> _), do: true
-  def sniff_format("[" <> _), do: true
-
-  def sniff_format(raw) when is_binary(raw) do
-    case Jason.decode(raw) do
-      {:ok, _} -> true
-      {:error, _} -> false
-    end
   end
 
   @impl true

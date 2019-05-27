@@ -23,5 +23,8 @@ config :kaufmann_ex,
   service_name: "SampleService",
   service_id: "SampleHost",
   max_demand: 50,
-  stages: 4
-
+  stages: 4,
+  transcoder: [
+    default: KaufmannEx.Transcode.SevenAvro,
+    json: KaufmannEx.Transcode.Json
+  ]

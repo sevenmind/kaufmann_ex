@@ -1,4 +1,7 @@
 defmodule KaufmannEx.Publisher.Encoder do
+  @moduledoc """
+  Encode an publish request in the requested format
+  """
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
 

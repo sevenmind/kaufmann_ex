@@ -2,8 +2,7 @@ defmodule KaufmannEx.Schemas.Event do
   @type t :: %KaufmannEx.Schemas.Event{
           name: atom,
           meta: map,
-          payload: term,
-          publish_request: KaufmannEx.Publisher.Request.t()
+          payload: term
         }
   @moduledoc false
   defstruct [
@@ -12,7 +11,6 @@ defmodule KaufmannEx.Schemas.Event do
     :payload,
     :raw_event,
     :timestamps,
-    :publish_request,
     :context,
     :topic,
     :partition
@@ -30,7 +28,6 @@ defmodule KaufmannEx.Schemas.Event do
       callback_topic: Map.get(context, :next_callback_topic, nil)
     }
   end
-
 end
 
 defmodule KaufmannEx.Schemas.ErrorEvent do

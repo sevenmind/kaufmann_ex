@@ -11,8 +11,7 @@ defmodule KaufmannEx.Publisher.TopicSelector do
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
 
-  @spec resolve_topic(KaufmannEx.Publisher.Request.t()) ::
-          [any] | KaufmannEx.Publisher.Request.t()
+  @spec resolve_topic(KaufmannEx.Publisher.Request.t()) :: [KaufmannEx.Publisher.Request.t()]
 
   def resolve_topic(%Request{topic: topic} = request) when is_map(topic) do
     [Map.merge(request, topic)]
@@ -26,13 +25,13 @@ defmodule KaufmannEx.Publisher.TopicSelector do
   end
 
   def resolve_topic(%Request{topic: :default} = request) do
-    Enum.map(KaufmannEx.Config.default_topics(), fn topic ->
+    Enum.map(Config.default_topics(), fn topic ->
       %Request{request | topic: topic}
     end)
   end
 
   def resolve_topic(%Request{topic: nil} = request) do
-    Enum.map(KaufmannEx.Config.default_topics(), fn topic ->
+    Enum.map(Config.default_topics(), fn topic ->
       %Request{request | topic: topic}
     end)
   end

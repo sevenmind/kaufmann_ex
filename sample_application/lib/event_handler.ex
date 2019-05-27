@@ -2,16 +2,16 @@ defmodule Sample.EventHandler do
   use KaufmannEx.EventHandler
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
-  # alias Sample.Publisher
 
-  def given_event(%Event{name: :"command.test", payload: payload} = event) do
+  require Logger
+
+  def given_event(%Event{name: "command.test", payload: payload} = event) do
     # Do something with event payload 😁
-    IO.inspect(payload)
 
     {:reply, [{"event.test", payload}]}
   end
 
-  def given_event(%Event{name: :"another.event.here.test", payload: payload} = event) do
+  def given_event(%Event{name: "another.event.here.test", payload: payload} = event) do
     # Do something with event payload 😁
 
     {:reply, [{"another.event.here", payload}]}
@@ -19,7 +19,7 @@ defmodule Sample.EventHandler do
 
   # Handle unexpected Event
   def given_event(event) do
-    IO.inspect(event.name, label: "unhandled_event")
+    Logger.debug("Unhandleded event: #{event.name}")
 
     {:noreply, []}
   end

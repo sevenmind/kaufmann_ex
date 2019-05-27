@@ -1,4 +1,7 @@
 defmodule KaufmannEx.Consumer.GenConsumer do
+  @moduledoc """
+  If Kaufmann were implemented as regular `KafkaEx.GenConsumer`
+  """
   use KafkaEx.GenConsumer
 
   alias KaufmannEx.Config
@@ -41,7 +44,12 @@ defmodule KaufmannEx.Consumer.GenConsumer do
     {:async_commit, state}
   end
 
-  defp decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
-    # I guess we just try all the encoders?
+  defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
+    # when in doubt try all the transcoders
+    Enum.map(Config.transcoders(), fn trns -> trns.decode_event(event) end)
+    |> Enum.find(fn
+      %Event{} = _ -> true
+      _ -> false
+    end)
   end
 end

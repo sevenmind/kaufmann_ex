@@ -74,7 +74,6 @@ defmodule KaufmannEx.Telemetry.Logger do
     Logger.debug("[#{event}] #{size}B publish to #{topic}##{partition} took #{time}μs")
   end
 
-
   def report_decode_time(start_time: start_time, event: event) do
     :telemetry.execute(
       [:kaufmann_ex, :schema, :decode],
@@ -88,10 +87,10 @@ defmodule KaufmannEx.Telemetry.Logger do
   end
 
   def report_encode_duration(
-         start_time: start_time,
-         encoded: encoded,
-         message_name: message_name
-       ) do
+        start_time: start_time,
+        encoded: encoded,
+        message_name: message_name
+      ) do
     :telemetry.execute(
       [:kaufmann_ex, :schema, :encode],
       %{

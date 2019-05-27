@@ -56,13 +56,12 @@ defmodule KaufmannEx.Consumer.Flow do
 
   defp drain_flow_tail(flow), do: Flow.map(flow, fn _ -> [] end)
 
-  defp decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
-    # I guess we just try all the encoders?
-
-    # /!\ I'm not sure how to handle this, leaving for later.
-    # FIXME: FIX ME
-    # TODO: FIXME
-
-    event
+  defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
+    # when in doubt try all the transcoders
+    Enum.map(Config.transcoders(), fn trns -> trns.decode_event(event) end)
+    |> Enum.find(fn
+      %Event{} = _ -> true
+      _ -> false
+    end)
   end
 end

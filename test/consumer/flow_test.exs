@@ -28,7 +28,6 @@ defmodule KaufmannEx.Consumer.FlowTest do
     alias KaufmannEx.Schemas.Event
 
     def given_event(%Event{name: :"event.test", payload: pl}) do
-      IO.puts "REACHEEEED"
       {:reply, [{:"event.test", pl}]}
     end
   end

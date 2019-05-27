@@ -14,7 +14,7 @@ defmodule KaufmannEx.PublisherTest do
       with_mock KafkaEx, [],
         produce: fn _, _ -> nil end,
         metadata: fn _ -> %{topic_metadatas: [%{topic: "rapids", partition_metadatas: [%{}]}]} end do
-        assert KaufmannEx.Publisher.publish(:"event.test", %{message: "hello"})
+        assert KaufmannEx.Publisher.publish("event.test", %{message: "hello"})
       end
     end
   end

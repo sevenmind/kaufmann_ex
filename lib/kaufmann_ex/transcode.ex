@@ -7,13 +7,11 @@ defmodule KaufmannEx.Transcode do
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
 
-  @callback decode_event(Event.t()) :: {:ok, Event.t()} | {:error, any}
+  @callback decode_event(Event.t()) :: Event.t() | {:error, any}
   @callback encode_event(Request.t()) :: Request.t()
-  @callback sniff_format(binary) :: boolean
 
-  # Used in tests to validate test events and effects
-  # match schema expectations
+  # Used in tests to validate test events match schema expectations
   @callback schema_extension :: binary
-  @callback valid_schema(map, map) :: boolean
+  @callback encodable?(map, map) :: boolean
   @callback read_schema(binary) :: any()
 end

@@ -14,7 +14,7 @@ defmodule Sample.ReInitTest do
   end
 
   setup context do
-    topic =  Nanoid.generate(16, "qwertyuiop")
+    topic = Nanoid.generate(16, "qwertyuiop")
     override_consumer_group(Nanoid.generate())
     init_topic(topic)
 
@@ -42,7 +42,6 @@ defmodule Sample.ReInitTest do
 
       Sample.ReleaseTasks.reinit_service()
 
-
       # Run ReInit should have rebuilt internal state, but not moved the offset
       start_kafka()
       assert final_offset == initial_offset + 3
@@ -58,7 +57,8 @@ defmodule Sample.ReInitTest do
   end
 
   def publish_events do
-    KaufmannEx.Publisher.publish(:"event.test",
+    KaufmannEx.Publisher.publish(
+      :"event.test",
       %{
         meta: %{
           callback_id: nil,
@@ -95,6 +95,7 @@ defmodule Sample.ReInitTest do
       :consumer_group,
       group
     )
+
     Application.put_env(
       :kafka_ex,
       :consumer_group,
@@ -120,21 +121,21 @@ defmodule Sample.ReInitTest do
     target_offset
   end
 
-
   def latest_offset_number(topic, partition_id, worker \\ :kafka_ex) do
-    offset = KafkaEx.latest_offset(topic, partition_id, worker)
+    offset =
+      KafkaEx.latest_offset(topic, partition_id, worker)
       |> first_partition_offset
 
     offset || 0
-end
+  end
 
- defp first_partition_offset(:topic_not_found) do
+  defp first_partition_offset(:topic_not_found) do
     nil
   end
+
   defp first_partition_offset(response) do
-    [%KafkaEx.Protocol.Offset.Response{partition_offsets: partition_offsets}] =
-      response
+    [%KafkaEx.Protocol.Offset.Response{partition_offsets: partition_offsets}] = response
     first_partition = hd(partition_offsets)
     first_partition.offset |> hd
-end
+  end
 end

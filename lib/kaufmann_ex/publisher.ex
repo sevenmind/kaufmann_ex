@@ -17,24 +17,13 @@ defmodule KaufmannEx.Publisher do
   kafka right now.
   """
   def publish(event_name, body, context \\ %{}, topic \\ :default, format \\ :default) do
-    message_body =
-      case is_map(body) and Map.has_key?(body, :meta) do
-        true ->
-          body
-
-        _ ->
-          %{
-            payload: body,
-            meta: Event.event_metadata(event_name, context)
-          }
-      end
-
     %Request{
       event_name: event_name,
-      payload: message_body,
+      payload: body,
       context: context,
       topic: topic,
-      format: format
+      format: format,
+      metadata: Event.event_metadata(event_name, context)
     }
     |> TopicSelector.resolve_topic()
     |> Enum.map(&Encoder.encode_event/1)

@@ -11,9 +11,7 @@ defmodule KaufmannEx.TestSupport.MockBusTest.ExamplePublisher do
     KaufmannEx.Publisher.publish(event_name, message_body, context)
   end
 
-  def event_metadata(event_name, context), do:
-    MockBus.fake_meta(event_name, nil)
-
+  def event_metadata(event_name, context), do: MockBus.fake_meta(event_name, nil)
 end
 
 defmodule KaufmannEx.TestSupport.MockBusTest do

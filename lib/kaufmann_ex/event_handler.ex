@@ -176,7 +176,12 @@ defmodule KaufmannEx.EventHandler do
       %{
         duration: System.monotonic_time() - start_time
       },
-      %{event: Map.get(event, :name, "none"), topic: event.topic, partition: event.partition, handler: event_handler}
+      %{
+        event: Map.get(event, :name, "none"),
+        topic: event.topic,
+        partition: event.partition,
+        handler: event_handler
+      }
     )
   end
 

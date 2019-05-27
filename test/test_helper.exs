@@ -6,7 +6,7 @@ ExUnit.start()
 {:ok, _} = Application.ensure_all_started(:memoize)
 
 defmodule TestHelper do
-  def init_schema_cache(bypass, event_name) do
+  def init_schema_cache(bypass, event_name \\ "test_event") do
     fake_schema = Jason.encode!(%{type: "string", name: "field"})
 
     # bypass any http calls called time
@@ -16,7 +16,7 @@ defmodule TestHelper do
   end
 
   def mock_get_fake_event(bypass, event_name, fake_schema) do
-    Bypass.expect_once(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
+    Bypass.stub(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
@@ -37,7 +37,7 @@ defmodule TestHelper do
     schema = [metadata_schema, schema] |> Jason.encode!()
 
     bypass
-    |> Bypass.expect_once("GET", "/subjects/#{schema_name}/versions/latest", fn conn ->
+    |> Bypass.stub("GET", "/subjects/#{schema_name}/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
@@ -50,7 +50,7 @@ defmodule TestHelper do
     {:ok, schema} = File.read("test/support/avro/event_metadata.avsc")
     schema = schema |> Jason.decode!() |> Jason.encode!()
 
-    Bypass.expect_once(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
+    Bypass.stub(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
       Plug.Conn.resp(
         conn,
         200,
@@ -60,7 +60,7 @@ defmodule TestHelper do
   end
 
   def mock_get_unkown_event(bypass) do
-    Bypass.expect_once(bypass, "GET", "/subjects/UnknownEvent/versions/latest", fn conn ->
+    Bypass.stub(bypass, "GET", "/subjects/UnknownEvent/versions/latest", fn conn ->
       Plug.Conn.resp(conn, 404, ~s<{"error_code": "40401", "message": "Subject not found."}>)
     end)
   end

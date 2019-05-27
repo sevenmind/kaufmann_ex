@@ -1,4 +1,8 @@
 defmodule KaufmannEx.Schemas.Avro do
+  @moduledoc """
+  Convience module wrapping AvroEx behavior
+  """
+
   require Logger
   import Map.Helpers, only: [stringify_keys: 1]
 

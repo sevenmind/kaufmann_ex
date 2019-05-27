@@ -22,10 +22,9 @@ defmodule Sample.Mixfile do
 
   def deps do
     [
-      {:kaufmann_ex, path: ".."},
+      {:kaufmann_ex, path: ".."}
     ]
   end
-
 
   defp aliases do
     [

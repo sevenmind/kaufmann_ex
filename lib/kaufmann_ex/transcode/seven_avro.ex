@@ -4,6 +4,8 @@ defmodule KaufmannEx.Transcode.SevenAvro do
 
   require Logger
 
+  import Map.Helpers, only: [atomize_keys: 1]
+
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Avro
   alias KaufmannEx.Schemas.Avro.Registry
@@ -18,7 +20,14 @@ defmodule KaufmannEx.Transcode.SevenAvro do
 
     res =
       with {:ok, schema} <- Registry.parsed_schema(key),
-           {:ok, %{meta: meta, payload: payload}} <- Avro.decode(schema, encoded) do
+           {:ok, decoded} <- Avro.decode(schema, encoded) do
+        %{meta: meta, payload: payload} =
+          case atomize_keys(decoded) do
+            %{meta: meta, payload: payload} -> %{meta: meta, payload: payload}
+            %{metadata: meta, payload: payload} -> %{meta: meta, payload: payload}
+            payload -> %{meta: %{}, payload: payload}
+          end
+
         %KaufmannEx.Schemas.Event{
           event
           | name: key,
@@ -43,12 +52,20 @@ defmodule KaufmannEx.Transcode.SevenAvro do
   end
 
   @impl true
-  def encode_event(%Request{format: _, payload: payload, event_name: event_name} = request) do
+  def encode_event(
+        %Request{format: _, payload: payload, event_name: event_name, metadata: meta} = request
+      ) do
     start_time = System.monotonic_time()
+
+    %{payload: payload, meta: meta} =
+      case payload do
+        %{payload: payload, meta: meta} -> %{payload: payload, meta: meta}
+        payload -> %{payload: payload, meta: meta}
+      end
 
     {:ok, encoded} =
       with {:ok, schema} <- Registry.parsed_schema(event_name),
-           {:ok, encoded} <- Avro.encode(schema, payload) do
+           {:ok, encoded} <- Avro.encode(schema, %{payload: payload, meta: meta}) do
         Telem.report_encode_duration(
           start_time: start_time,
           encoded: encoded,
@@ -74,10 +91,6 @@ defmodule KaufmannEx.Transcode.SevenAvro do
   end
 
   @impl true
-  def sniff_format(<<0>> <> _), do: true
-  def sniff_format(_), do: false
-
-  @impl true
   def schema_extension, do: ".avsc"
 
   @impl true
@@ -101,8 +114,9 @@ defmodule KaufmannEx.Transcode.SevenAvro do
       |> File.read!()
       |> Jason.decode!()
 
-    {:ok, schema} = [metadata_schema, raw_schema]
-    |> Avro.parse()
+    {:ok, schema} =
+      [metadata_schema, raw_schema]
+      |> Avro.parse()
 
     schema
   end
