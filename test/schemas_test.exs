@@ -95,6 +95,4 @@ defmodule KaufmannEx.SchemasTest do
       assert decoded == %{hello: "world"}
     end
   end
-
-
 end

@@ -22,7 +22,6 @@ defmodule KaufmannEx.TestSupport.MockBusTest.ExamplePublisher do
   end
 end
 
-
 defmodule KaufmannEx.TestSupport.MockBusTest do
   @moduledoc false
   use KaufmannEx.TestSupport.MockBus

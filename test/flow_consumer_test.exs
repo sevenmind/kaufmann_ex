@@ -1,4 +1,4 @@
-defmodule KaufmannEx.FlowConsumerTest do
+defmodule KaufmannEx.Consumer.FlowTest do
   use ExUnit.Case
 
   import Mock
@@ -50,9 +50,9 @@ defmodule KaufmannEx.FlowConsumerTest do
   end
 
   alias KafkaEx.Protocol.OffsetFetch.Response, as: OffsetFetchResponse
-  alias KaufmannEx.FlowConsumerTest.EventHandler
-  alias KaufmannEx.FlowConsumerTest.GenProducer
-  alias KaufmannEx.FlowConsumerTest.KafkaMock
+  alias KaufmannEx.Consumer.FlowTest.EventHandler
+  alias KaufmannEx.Consumer.FlowTest.GenProducer
+  alias KaufmannEx.Consumer.FlowTest.KafkaMock
   alias KaufmannEx.TestSupport.MockBus
 
   setup_all do
@@ -107,7 +107,9 @@ defmodule KaufmannEx.FlowConsumerTest do
           ]
         end do
         {:ok, pid} = start_supervised({GenProducer, 0})
-        assert {:ok, flow_pid} = start_supervised({KaufmannEx.FlowConsumer, {pid, "rapids", 0, []}})
+
+        assert {:ok, flow_pid} =
+                 start_supervised({KaufmannEx.Consumer.Flow, {pid, "rapids", 0, []}})
       end
     end
 
@@ -129,7 +131,9 @@ defmodule KaufmannEx.FlowConsumerTest do
           ]
         end do
         {:ok, pid} = start_supervised({GenProducer, 0})
-        assert {:ok, flow_pid} = start_supervised({KaufmannEx.FlowConsumer, {pid, "rapids", 0, []}})
+
+        assert {:ok, flow_pid} =
+                 start_supervised({KaufmannEx.Consumer.Flow, {pid, "rapids", 0, []}})
 
         GenServer.cast(pid, %{key: event_name, value: encoded, offset: 0})
       end

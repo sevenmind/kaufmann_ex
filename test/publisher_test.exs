@@ -17,6 +17,5 @@ defmodule KaufmannEx.PublisherTest do
         assert KaufmannEx.Publisher.publish(:"event.test", %{message: "hello"})
       end
     end
-
   end
 end

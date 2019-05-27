@@ -1,4 +1,4 @@
-defmodule KaufmannEx.TelemetryLogger do
+defmodule KaufmannEx.Telemetry.Logger do
   @moduledoc """
   Logs telemetry events to the console. Start by adding to a supervision tree.
 

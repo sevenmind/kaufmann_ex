@@ -117,4 +117,17 @@ defmodule KaufmannEx.Config do
     do: Application.get_env(:kaufmann_ex, :schema_cache_expires_in_ms, 10 * 60 * 1000)
 
   def commit_strategy, do: Application.get_env(:kaufmann_ex, :commit_strategy, :async_commit)
+
+  @spec transcoder(atom) :: atom
+  def transcoder(format),
+    do:
+      :kaufmann_ex
+      |> Application.get_env(:transcoder)
+      |> Map.get(format)
+
+  def transcoders,
+    do:
+      :kaufmann_ex
+      |> Application.get_env(:transcoder)
+      |> Map.values()
 end

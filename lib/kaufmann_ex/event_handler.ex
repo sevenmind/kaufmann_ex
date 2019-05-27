@@ -24,7 +24,7 @@ defmodule KaufmannEx.EventHandler do
   At compile time the `KaufmannEx.EventHandler` will evaluate the arguments of
   all `given_event/1` functions and generate a list of accepted events. This
   list of events is used to discard unhandled events in
-  `KaufmannEx.FlowConsumer`. This is an optimization that's quite useful if you
+  `KaufmannEx.Consumer.Flow`. This is an optimization that's quite useful if you
   have a topic with many types of events you would prefer not to spend time
   decoding.
 
@@ -79,7 +79,7 @@ defmodule KaufmannEx.EventHandler do
   def __on_definition__(env, _kind, :given_event, args, _guards, _body) do
     case extract_event_name(args) do
       [event_name] -> Module.put_attribute(env.module, :handled_events, event_name)
-      _ -> nil
+      _ -> Module.put_attribute(env.module, :handled_events, :all)
     end
   end
 
@@ -96,7 +96,7 @@ defmodule KaufmannEx.EventHandler do
         unquote(handled_events)
       end
 
-      def given_event(event), do: {:noreply, []}
+      def given_event(event), do: {:unhandled, []}
 
       defoverridable handled_events: 0,
                      given_event: 1
@@ -111,26 +111,62 @@ defmodule KaufmannEx.EventHandler do
   @callback handled_events :: [binary() | :all]
 
   defp extract_event_name({:name, name}) when is_atom(name) or is_binary(name), do: [name]
+  defp extract_event_name({:name, name}), do: dig_for_binary(name)
   defp extract_event_name(args) when is_list(args), do: Enum.flat_map(args, &extract_event_name/1)
   defp extract_event_name({_k, _o, t}), do: extract_event_name(t)
   defp extract_event_name({_k, t}), do: extract_event_name(t)
   defp extract_event_name(_), do: []
 
+  defp dig_for_binary(tuple) when is_tuple(tuple),
+    do:
+      tuple
+      |> Tuple.to_list()
+      |> dig_for_binary()
+
+  defp dig_for_binary(list) when is_list(list), do: Enum.flat_map(list, &dig_for_binary/1)
+  defp dig_for_binary(bin) when is_binary(bin), do: [bin]
+  defp dig_for_binary(_), do: []
+
   def handle_event(event, event_handler) do
     start_time = System.monotonic_time()
 
-    results =
-      case event_handler.given_event(event) do
-        {:noreply, _} -> []
-        {:reply, events} when is_list(events) -> events
-        {:reply, event} when is_tuple(event) or is_map(event) -> [event]
-        {:error, error} -> wrap_error_event(event, error)
-        _ -> []
-      end
+    results = handle_event_and_response(event, event_handler)
 
     report_telemetry(start_time: start_time, event: event, event_handler: event_handler)
 
-    Enum.map(results, &format_event(event, &1))
+    Enum.flat_map(results, &format_event(event, &1))
+  end
+
+  defp handle_event_and_response(event, event_handler) do
+    case event_handler.given_event(event) do
+      {:noreply, _} ->
+        []
+
+      :noreply ->
+        []
+
+      {:reply, events} when is_list(events) ->
+        events
+
+      {:reply, event} when is_tuple(event) or is_map(event) ->
+        [event]
+
+      {:unhandled, _} ->
+        # try casting the event name to atom
+        event_name =
+          event.name
+          |> String.split("#")
+          |> Enum.at(0)
+          |> String.to_atom()
+
+        handle_event_and_response(%Event{event | name: event_name}, event_handler)
+
+      {:error, error} ->
+        wrap_error_event(event, error)
+
+      _ ->
+        []
+    end
   end
 
   defp report_telemetry(start_time: start_time, event: event, event_handler: event_handler) do
@@ -156,21 +192,24 @@ defmodule KaufmannEx.EventHandler do
 
   defp format_event(event, {event_name, payload}), do: wrap_event(event_name, payload, event)
 
-  defp format_event(event, {event_name, payload, topic}),
-    do: wrap_event(event_name, payload, event, topic)
+  defp format_event(event, {event_name, payload, topics}) when is_list(topics),
+    do: wrap_event(event_name, payload, event, topics)
 
-  defp wrap_event(event_name, body, event, topic \\ :default) do
-    %Event{
-      event
-      | publish_request: %Request{
-          event_name: event_name,
-          body: %{
-            payload: body,
-            meta: Event.event_metadata(event_name, event.meta)
-          },
-          context: event.meta,
-          topic: topic
-        }
-    }
+  defp format_event(event, {event_name, payload, topic}),
+    do: wrap_event(event_name, payload, event, [topic])
+
+  defp format_event(event, %{event: event_name, payload: payload, topics: topics}),
+    do: wrap_event(event_name, payload, event, topics)
+
+  defp wrap_event(event_name, payload, event, topics \\ [:default]) do
+    Enum.map(topics, fn topic ->
+      %Request{
+        event_name: event_name,
+        metadata: Event.event_metadata(event_name, event.meta),
+        payload: payload,
+        context: event.meta,
+        topic: topic
+      }
+    end)
   end
 end

@@ -1,4 +1,4 @@
-defmodule KaufmannEx.FlowConsumer do
+defmodule KaufmannEx.Consumer.Flow do
   @moduledoc """
   A series of Flow for handling kafka events.
   """
@@ -12,14 +12,13 @@ defmodule KaufmannEx.FlowConsumer do
   alias KaufmannEx.Publisher.{Encoder, TopicSelector}
   alias KaufmannEx.Schemas.Event
 
-  def start_link({pid, topic, partition, _extra_consumer_args}) do
-    event_handler = KaufmannEx.Config.event_handler()
+  def start_link({producer_stage, topic, partition, _extra_consumer_args}) do
+    event_handler = Config.event_handler()
     stages = Config.stages()
     workers = spawn_workers(topic, partition, stages)
 
     {:ok, link_pid} =
-      [pid]
-      # Initialize Flow from the stage provided in PID
+      [producer_stage]
       |> Flow.from_stages(stages: stages, max_demand: Config.max_demand())
       # wrap events into our event struct
       |> Flow.map(fn event ->

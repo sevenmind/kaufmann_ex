@@ -20,7 +20,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   """
   # credo:disable-for-this-file Credo.Check.Warning.IoInspect
 
-  alias KaufmannEx.Schemas
+  alias KaufmannEx.Schemas.Avro.Registry
 
   defp ensure_startup do
     :ok = Application.ensure_started(:logger)
@@ -44,7 +44,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   def migrate_schemas(path) when is_binary(path) do
     ensure_startup()
     true = File.exists?(path)
-    meta_data_schema = load_metadata(path)
+    _ = load_metadata(path)
 
     path
     |> read_schemas()
@@ -117,18 +117,9 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> load_metadata()
   end
 
-  def schema_registered({schema_name, schema}) do
-    case Schemas.test(schema_name, schema) do
-      {:ok, res} -> {:ok, res}
-      {:error, %{"error_code" => 40_401}} -> {:ok, %{"is_compatible" => false}}
-    end
-  rescue
-    exception -> {:error, exception}
-  end
-
   @spec register_schema({String.t(), map}) :: {atom, String.t(), any}
-  def register_schema({event_name, _} = schema) do
-    with {:ok, status} <- update_schema(schema) do
+  def register_schema({event_name, schema}) do
+    with {:ok, status} <- update_schema({event_name, schema}) do
       {:ok, event_name, status}
     else
       {:error, error} ->
@@ -136,8 +127,8 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     end
   end
 
-  defp update_schema(schema) do
-    case Schemas.register(schema) do
+  defp update_schema({event_name, schema}) do
+    case Registry.register(event_name, schema) do
       {:ok, _} ->
         {:ok, "Schema updated"}
 
@@ -149,9 +140,9 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     end
   end
 
-  def reset_schema({event_name, _} = schema) do
-    _ = Schemas.delete(event_name)
-    {:ok, _} = Schemas.register(schema)
+  def reset_schema({event_name, schema}) do
+    _ = Registry.delete(event_name)
+    {:ok, _} = Registry.register(event_name, schema)
   end
 
   @spec load_and_parse_schema(Path.t()) :: {String.t(), map}
@@ -189,9 +180,5 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
     |> Enum.map(&Path.join(dir, &1))
     |> Enum.concat(child_schemas)
     |> List.flatten()
-  end
-
-  defp ok_and({:ok, right}) do
-    right
   end
 end

@@ -35,15 +35,28 @@ defmodule KaufmannEx.EventHandlerTest do
 
     def given_event(%{name: :"another.test.event"}), do: {:noreply, []}
 
-    # def given_event(_), do: []
+    def given_event(%{name: "a.string.name" <> _}), do: {:reply, [:response_event, %{}]}
+
+    def given_event(%{name: "with.a.json.response"}),
+      do:
+        {:reply,
+         [
+           %{
+             event: "json.response.event",
+             payload: %{timestamp: DateTime.utc_now()},
+             topics: [:callback, "rapids", [topic: :default, format: :json]]
+           }
+         ]}
   end
 
   test "defines &handled_events/0" do
-    assert TestEventHandler.handled_events() == [
+    assert TestEventHandler.handled_events() |> Enum.sort() == [
+             "a.string.name",
              "another.test.event",
-             "test.event.error",
+             "event.with.response",
              "event.with.response.topic",
-             "event.with.response"
+             "test.event.error",
+             "with.a.json.response"
            ]
   end
 
@@ -114,6 +127,25 @@ defmodule KaufmannEx.EventHandlerTest do
                  %Event{
                    name: :"test.event.error",
                    payload: "raise_error",
+                   meta: %{}
+                 },
+                 TestEventHandler
+               )
+    end
+
+    test "handles binary event names" do
+      assert [
+               %Event{
+                 publish_request: %Request{
+                   event_name: :"event.error.test.event.error",
+                   body: %{}
+                 }
+               }
+             ] =
+               EventHandler.handle_event(
+                 %Event{
+                   name: "a.string.name#with_an_id",
+                   payload: %{},
                    meta: %{}
                  },
                  TestEventHandler

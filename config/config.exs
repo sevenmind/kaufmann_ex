@@ -3,33 +3,31 @@
 use Mix.Config
 
 config :kafka_ex,
-  brokers: System.get_env("KAFKA_BROKERS"),
+  brokers: "kafka:9092",
   use_ssl: false,
-  consumer_group: System.get_env("CONSUMER_GROUP"),
+  consumer_group: "kaufmann-consumer",
   commit_threshold: 10,
   commit_interval: 100,
   sync_timeout: 10_000
 
 config :kaufmann_ex,
-  consumer_group: System.get_env("CONSUMER_GROUP"),
-  default_topic: System.get_env("KAFKA_TOPIC"),
+  consumer_group: "kaufmann-consumer",
+  default_topic: "kaufmann-chat",
   event_handler_mod: nil,
   producer_mod: KaufmannEx.Publisher,
   schema_path: "priv/schemas",
-  schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
+  schema_registry_uri: "http://schema_registry:8081",
   service_name: "SampleService",
   service_id: "SampleHost",
   max_demand: 50,
-  commit_strategy: :async_commit
+  commit_strategy: :async_commit,
+  transcoder: [
+    default: KaufmannEx.Transcoder.SevenAvro,
+    json: KaufmannEx.Transcoder.Json
+  ]
 
 config :logger,
   level: :info
-
-# config(:exometer_core, report: [reporters: [{:exometer_report_tty, []}]])
-# config(:elixometer,
-#   reporter: :exometer_report_tty,
-#   env: Mix.env,
-#   metric_prefix: "kaufmann_ex")
 
 env_config = Path.expand("#{Mix.env()}.exs", __DIR__)
 
