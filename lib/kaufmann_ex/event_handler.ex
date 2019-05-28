@@ -154,13 +154,17 @@ defmodule KaufmannEx.EventHandler do
 
       {:unhandled, _} ->
         # try casting the event name to atom
-        event_name =
-          event.name
-          |> String.split("#")
-          |> Enum.at(0)
-          |> String.to_atom()
+        if is_binary(event.name) do
+          event_name =
+            event.name
+            |> String.split("#")
+            |> Enum.at(0)
+            |> String.to_atom()
 
-        handle_event_and_response(%Event{event | name: event_name}, event_handler)
+          handle_event_and_response(%Event{event | name: event_name}, event_handler)
+        else
+          []
+        end
 
       {:error, error} ->
         wrap_error_event(event, error)
@@ -189,7 +193,7 @@ defmodule KaufmannEx.EventHandler do
     Logger.warn("Error: #{inspect(error)}")
 
     [
-      {:"event.error.#{event.name}",
+      {"event.error.#{event.name}",
        %{
          error: %{error: inspect(error), message_payload: inspect(event.payload)}
        }}
@@ -203,6 +207,9 @@ defmodule KaufmannEx.EventHandler do
 
   defp format_event(event, {event_name, payload, topic}),
     do: wrap_event(event_name, payload, event, [topic])
+
+  defp format_event(event, %{event: event_name, payload: payload, topics: nil}),
+    do: wrap_event(event_name, payload, event)
 
   defp format_event(event, %{event: event_name, payload: payload, topics: topics}),
     do: wrap_event(event_name, payload, event, topics)

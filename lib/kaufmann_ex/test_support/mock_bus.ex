@@ -98,10 +98,18 @@ defmodule KaufmannEx.TestSupport.MockBus do
           context: _context,
           topic: topic
         } <- events do
-      send(self(), {:produce, {event_name, %{payload: payload, meta: meta}, topic}})
+      testable_event_name =
+        case event_name do
+          name when is_atom(name) -> name
+          name when is_binary(name) -> name |> String.split("#") |> Enum.at(0)
+        end
+
+      send(self(), {:produce, {testable_event_name, %{payload: payload, meta: meta}, topic}})
 
       # Ensure event effect is consumed by event handler
-      handle_and_send_event(%Event{name: event_name, payload: payload, meta: meta})
+      if topic == :default do
+        handle_and_send_event(%Event{name: event_name, payload: payload, meta: meta})
+      end
     end
 
     :ok
