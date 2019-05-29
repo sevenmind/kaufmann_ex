@@ -16,7 +16,7 @@ defmodule KaufmannEx.Supervisor do
 
   def init(_opts \\ []) do
     consumer_group_name = KaufmannEx.Config.consumer_group()
-    topics = KaufmannEx.Config.default_topics()
+    topics = KaufmannEx.Config.subscription_topics()
 
     children = [
       {Registry, keys: :unique, name: Registry.ConsumerRegistry},

@@ -40,6 +40,15 @@ defmodule KaufmannEx.Config do
   @spec default_topics() :: [String.t()]
   def default_topics, do: Application.get_env(:kaufmann_ex, :default_topics, [default_topic()])
 
+  @doc """
+    `Application.get_env(:kaufmann_ex, :subscription_topics, default_topics())`
+
+    Determines which topics the Kaufmann Supervisor will subscribe to
+  """
+  @spec subscription_topics() :: [String.t()]
+  def subscription_topics,
+    do: Application.get_env(:kaufmann_ex, :subscription_topics, default_topics())
+
   @spec default_publish_topic() :: String.t() | nil
   def default_publish_topic,
     do: Application.get_env(:kaufmann_ex, :default_publish_topic, default_topic())
