@@ -9,7 +9,7 @@ defmodule KaufmannEx.Publisher do
   alias KaufmannEx.Publisher.TopicSelector
   alias KaufmannEx.Schemas.Event
 
-  alias KafkaEx.Protocol.Fetch.Message
+  alias KafkaEx.Protocol.Produce.Message
   alias KafkaEx.Protocol.Produce.Request, as: KafkaRequest
 
   @doc """

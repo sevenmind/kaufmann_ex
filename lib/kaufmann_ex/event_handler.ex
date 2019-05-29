@@ -196,7 +196,7 @@ defmodule KaufmannEx.EventHandler do
       {"event.error.#{event.name}",
        %{
          error: %{error: inspect(error), message_payload: inspect(event.payload)}
-       }}
+       }, [:default, :callback]}
     ]
   end
 

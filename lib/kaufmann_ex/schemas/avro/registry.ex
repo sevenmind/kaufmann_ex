@@ -60,7 +60,16 @@ defmodule KaufmannEx.Schemas.Avro.Registry do
     |> Schemex.latest(subject)
   end
 
-  defp if_partial_schema("query." <> <<_::binary-size(4)>> <> event_name), do: event_name
-  defp if_partial_schema("event.error." <> event_name), do: event_name
-  defp if_partial_schema(event_name), do: event_name
+  defp if_partial_schema("query." <> <<_::binary-size(4)>> <> _ = event_name),
+    do: if_partial_schema(String.slice(event_name, 0..8))
+
+  defp if_partial_schema("event.error." <> _ = event_name),
+    do: if_partial_schema(String.slice(event_name, 0..10))
+
+  defp if_partial_schema(event_name),
+    do:
+      event_name
+      |> String.split("#")
+      |> Enum.at(0)
+      |> String.to_atom()
 end
