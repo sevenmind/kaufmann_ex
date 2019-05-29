@@ -13,6 +13,7 @@ defmodule KaufmannEx.Consumer.Flow do
   alias KaufmannEx.Schemas.Event
 
   def start_link({producer_stage, topic, partition, _extra_consumer_args}) do
+    Logger.debug("starting consumer for #{topic}##{partition}")
     event_handler = Config.event_handler()
     stages = Config.stages()
     workers = spawn_workers(topic, partition, stages)

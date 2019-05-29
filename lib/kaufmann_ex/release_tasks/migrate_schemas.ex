@@ -101,8 +101,8 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
 
   def load_metadata(path) when is_binary(path) do
     meta_data_schema =
-      path
-      |> Path.join("event_metadata.avsc")
+      Path.wildcard([path, "/**/event_metadata.avsc"])
+      |> Enum.at(0)
       |> load_and_parse_schema()
 
     {:ok, _, _} = register_schema(meta_data_schema)
@@ -167,18 +167,6 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   end
 
   def scan_dir(dir) do
-    files = File.ls!(dir)
-
-    child_schemas =
-      files
-      |> Enum.map(&Path.join(dir, &1))
-      |> Enum.filter(&File.dir?/1)
-      |> Enum.map(&scan_dir/1)
-
-    files
-    |> Enum.filter(&String.match?(&1, ~r/\.avsc/))
-    |> Enum.map(&Path.join(dir, &1))
-    |> Enum.concat(child_schemas)
-    |> List.flatten()
+    Path.wildcard([dir, "/**/*.avsc"])
   end
 end

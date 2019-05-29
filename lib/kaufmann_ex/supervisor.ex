@@ -41,8 +41,7 @@ defmodule KaufmannEx.Supervisor do
              ]
            ]},
         type: :supervisor
-      },
-      KaufmannEx.Publisher.Supervisor
+      }
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
