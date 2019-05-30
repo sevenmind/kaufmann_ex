@@ -58,7 +58,7 @@ defmodule Sample.ReInitTest do
 
   def publish_events do
     KaufmannEx.Publisher.publish(
-      :"event.test",
+      "event.test",
       %{
         meta: %{
           callback_id: nil,

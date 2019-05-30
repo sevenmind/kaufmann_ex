@@ -57,6 +57,6 @@ defmodule KaufmannEx.Schemas.ErrorEvent do
   """
   @spec coerce_event_name(atom) :: atom
   def coerce_event_name(command_name) do
-    :"event.error.#{command_name}"
+    "event.error.#{command_name}"
   end
 end

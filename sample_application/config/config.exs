@@ -25,6 +25,6 @@ config :kaufmann_ex,
   max_demand: 50,
   stages: 4,
   transcoder: [
-    default: KaufmannEx.Transcode.SevenAvro,
-    json: KaufmannEx.Transcode.Json
+    default: KaufmannEx.Transcoder.SevenAvro,
+    json: KaufmannEx.Transcoder.Json
   ]

@@ -11,10 +11,10 @@ defmodule KaufmannEx.EventHandler do
     @behaviour KaufmannEx.EventHandler
 
     @impl true
-    def given_event(%Event{name: :"test.commnad", meta: meta} = event) do
+    def given_event(%Event{name: "test.commnad", meta: meta} = event) do
       message_body = do_some_work()
 
-      {:reply, [{:"test.event", message_body, topic}]}
+      {:reply, [{"test.event", message_body, topic}]}
     end
   end
   ```
@@ -50,10 +50,10 @@ defmodule KaufmannEx.EventHandler do
   tuple from your event handler.
 
   ```
-   def given_event(%Event{name: :"somthing.bad.happends", meta: meta} = event) do
+   def given_event(%Event{name: "somthing.bad.happends", meta: meta} = event) do
       message_body = do_some_work()
 
-      {:reply, [{:"test.event", message_body, topic}]}
+      {:reply, [{"test.event", message_body, topic}]}
     rescue
       error ->
         {:error, error}
@@ -139,32 +139,25 @@ defmodule KaufmannEx.EventHandler do
   end
 
   defp handle_event_and_response(event, event_handler) do
+    event_name = event.name
+
     case event_handler.given_event(event) do
-      {:noreply, _} ->
-        []
-
-      :noreply ->
-        []
-
       {:reply, events} when is_list(events) ->
         events
 
       {:reply, event} when is_tuple(event) or is_map(event) ->
         [event]
 
-      {:unhandled, _} ->
+      {:unhandled, _} when is_binary(event_name) ->
         # try casting the event name to atom
-        if is_binary(event.name) do
-          event_name =
-            event.name
-            |> String.split("#")
-            |> Enum.at(0)
-            |> String.to_atom()
+        # In case someone followed the legacy pattern
+        event_name =
+          event.name
+          |> String.split("#")
+          |> Enum.at(0)
+          |> String.to_atom()
 
-          handle_event_and_response(%Event{event | name: event_name}, event_handler)
-        else
-          []
-        end
+        handle_event_and_response(%Event{event | name: event_name}, event_handler)
 
       {:error, error} ->
         wrap_error_event(event, error)
@@ -195,7 +188,7 @@ defmodule KaufmannEx.EventHandler do
     [
       {"event.error.#{event.name}",
        %{
-         error: %{error: inspect(error), message_payload: inspect(event.payload)}
+         error: error
        }, [:default, :callback]}
     ]
   end

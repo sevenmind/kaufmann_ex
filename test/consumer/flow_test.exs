@@ -27,8 +27,8 @@ defmodule KaufmannEx.Consumer.FlowTest do
     use KaufmannEx.EventHandler
     alias KaufmannEx.Schemas.Event
 
-    def given_event(%Event{name: :"event.test", payload: pl}) do
-      {:reply, [{:"event.test", pl}]}
+    def given_event(%Event{name: "event.test", payload: pl}) do
+      {:reply, [{"event.test", pl}]}
     end
   end
 

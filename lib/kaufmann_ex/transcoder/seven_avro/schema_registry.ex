@@ -1,4 +1,4 @@
-defmodule KaufmannEx.Schemas.Avro.Registry do
+defmodule KaufmannEx.Transcoder.SevenAvro.Schema.Registry do
   @moduledoc """
     Interact with a remote Confluent Schema Registry. Wraps `Schemex`
   """
@@ -13,14 +13,9 @@ defmodule KaufmannEx.Schemas.Avro.Registry do
     end
   end
 
-  def latest(subject) do
+  defmemo latest(subject) do
     schema_registry_uri()
     |> Schemex.latest(subject)
-  end
-
-  def encodable?(subject, payload) do
-    {:ok, schema} = parsed_schema(subject)
-    AvroEx.encodable?(schema, payload)
   end
 
   def test(subject, schema) do
@@ -47,7 +42,6 @@ defmodule KaufmannEx.Schemas.Avro.Registry do
     schema_registry_uri()
     |> Schemex.subjects()
   end
-
 
   defmemo defined_event?(subject) do
     case schema_registry_uri()

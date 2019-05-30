@@ -1,0 +1,43 @@
+{
+  "type": "record",
+  "name": "event.error",
+  "doc": "Generic schema for all error events",
+  "fields": [
+    {
+      "name": "meta",
+      "doc": "standard event metadata",
+      "type": "seven.cloud.services.event_metadata"
+    },
+    {
+      "name": "payload",
+      "doc": "payload record",
+      "type": {
+        "name": "Payload",
+        "type": "record",
+        "fields": [
+          {
+            "name": "error",
+            "type": [
+              "null",
+              "string",
+              {
+                "type": "map",
+                "values": [
+                  "string",
+                  {
+                    "type": "array",
+                    "items": {
+                      "type": "map",
+                      "values": "string"
+                    }
+                  }
+                ]
+              }
+            ],
+            "doc": "Error results of the afformentioned event. Format is up to the specific implementation"
+          }
+        ]
+      }
+    }
+  ]
+}

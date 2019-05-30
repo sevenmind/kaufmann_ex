@@ -1,6 +1,7 @@
 defmodule KaufmannEx.TestSupport.MockSchemaRegistryTest do
   use ExUnit.Case
 
+  alias KaufmannEx.Publisher.Request
   alias KaufmannEx.TestSupport.MockBus
   alias KaufmannEx.TestSupport.MockSchemaRegistry
 
@@ -22,9 +23,9 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistryTest do
 
   describe "encodable?/2" do
     test "when valid schema" do
-      assert MockSchemaRegistry.encodable?("test.event.publish", %{
+      assert MockSchemaRegistry.encodable?(%Request{event_name: "test.event.publish",
                payload: "Hello",
-               meta: MockBus.fake_meta("test.event.publish")
+               metadata: MockBus.fake_meta("test.event.publish")
              })
     end
   end

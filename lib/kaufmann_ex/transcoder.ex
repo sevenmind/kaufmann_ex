@@ -1,8 +1,8 @@
-defmodule KaufmannEx.Transcode do
+defmodule KaufmannEx.Transcoder do
   @moduledoc """
   Behaviour for a kaufmann transcoder.
 
-  Transcode may
+  Transcoder may
   """
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
@@ -12,6 +12,9 @@ defmodule KaufmannEx.Transcode do
 
   # Used in tests to validate test events match schema expectations
   @callback schema_extension :: binary
+  @callback encodable?(Request.t()) :: boolean
   @callback encodable?(map, map) :: boolean
   @callback read_schema(binary) :: any()
+
+  @callback defined_event?(binary) :: boolean
 end

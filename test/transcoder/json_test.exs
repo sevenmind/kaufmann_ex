@@ -1,9 +1,9 @@
-defmodule KaufmannEx.Transcode.JsonTest do
+defmodule KaufmannEx.Transcoder.JsonTest do
   use ExUnit.Case
 
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
-  alias KaufmannEx.Transcode.Json
+  alias KaufmannEx.Transcoder.Json
 
   describe "decode_event/1" do
     test "parses event" do

@@ -5,41 +5,26 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   Looks for Schemas at `Application.get_env(:kaufmann_ex, :schema_path)`
   """
 
-  import ExUnit.Assertions
+  alias KaufmannEx.Publisher.Request
+  alias KaufmannEx.Schemas.Event
 
-  @spec defined_event?(String.t()) :: boolean
+  @spec defined_event?(Event.t() | Request.t() | String.t()) :: boolean
+  def defined_event?(%Event{name: name}), do: name
+  def defined_event?(%Request{event_name: name}), do: name
+
   def defined_event?(schema_name) do
-    case find_schema(all_schemas(), schema_name) do
-      nil -> false
-      _ -> true
-    end
+    Enum.any?(
+      KaufmannEx.Config.transcoders(),
+      &apply(&1, :defined_event?, [schema_name])
+    )
   end
 
-  @spec find_schema(any, any) :: any
-  def find_schema(paths, schema_name) do
-    Enum.find(paths, &(Path.rootname(Path.basename(&1)) == schema_name))
-  end
-
-  @spec encodable?(String.t(), any) :: boolean
-  def encodable?(schema_name, payload) do
-    # find schema file
-    schema_path = find_schema(all_schemas(), schema_name)
-    # identify transcoder
-
-    assert schema_path != nil, "no valid schema found for event #{schema_name}"
-
-    file_extension = Path.extname(schema_path)
-
-    transcoder =
-      Enum.find(KaufmannEx.Config.transcoders(), &(&1.schema_extension == file_extension))
-
-    assert transcoder != nil, "no valid transcoder found for schema #{file_extension}"
-
-    # validate schema
-
-    schema_path
-    |> transcoder.read_schema
-    |> transcoder.encodable?(payload)
+  @spec encodable?(Request.t()) :: boolean
+  def encodable?(publish_request) do
+    Enum.any?(
+             KaufmannEx.Config.transcoders(),
+             &apply(&1, :encodable?, [publish_request])
+           )
   end
 
   defp all_schemas do

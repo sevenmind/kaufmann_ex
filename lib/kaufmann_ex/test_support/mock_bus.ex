@@ -24,9 +24,9 @@ defmodule KaufmannEx.TestSupport.MockBus do
       use KaufmannEx.TestSupport.MockBus
 
       test "event emission" do
-        given_event(:"TestCommand", %{new_key: "test"})
+        given_event("TestCommand", %{new_key: "test"})
 
-        then_event(:"Testevent", %{new_key: "test"})
+        then_event("Testevent", %{new_key: "test"})
 
         then_no_event
       end
@@ -43,6 +43,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   require Map.Helpers
   import ExUnit.Assertions
+  alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
   alias KaufmannEx.TestSupport.MockSchemaRegistry
 
@@ -72,21 +73,29 @@ defmodule KaufmannEx.TestSupport.MockBus do
            }?"
 
     # Inject fake MetaData into event
-    event = %Event{
-      name: event_name,
-      meta: event_metadata(event_name, %{callback_id: callback_id}),
+    event = %Request{
+      event_name: event_name,
+      metadata: event_metadata(event_name, %{callback_id: callback_id}),
       payload: payload
     }
 
     # If message isn't encodable, big problems
-    assert_matches_schema(
-      event_name,
-      payload,
-      event_metadata(event_name, %{callback_id: callback_id})
-    )
+    assert_matches_schema(event)
 
     handle_and_send_event(event)
   end
+
+  defp handle_and_send_event(%Request{
+         event_name: event_name,
+         payload: payload,
+         metadata: metadata
+       }),
+       do:
+         handle_and_send_event(%Event{
+           payload: payload,
+           name: event_name,
+           meta: metadata
+         })
 
   defp handle_and_send_event(event) do
     events = EventHandler.handle_event(event, event_consumer())
@@ -128,7 +137,12 @@ defmodule KaufmannEx.TestSupport.MockBus do
       timeout
     )
 
-    assert_matches_schema(event_name, message_payload, meta)
+    # Inject fake MetaData into event
+    assert_matches_schema(%Request{
+      event_name: event_name,
+      metadata: meta,
+      payload: message_payload
+    })
 
     if expected_payload != %{} do
       assert message_payload == expected_payload
@@ -156,15 +170,20 @@ defmodule KaufmannEx.TestSupport.MockBus do
   @doc """
   Assert a named event is encodable by its specified schema
   """
-  @spec assert_matches_schema(atom, any, map) :: boolean
-  def assert_matches_schema(event_name, payload, meta) do
-    schema_name = schema_name_if_query(event_name)
-    assert MockSchemaRegistry.defined_event?(schema_name), "Schema #{schema_name} not registered"
+  @spec assert_matches_schema(Request.t()) :: boolean
+  def assert_matches_schema(
+        %Request{
+          event_name: event_name
+        } = request
+      ) do
+    assert MockSchemaRegistry.defined_event?(request), "Schema #{event_name} not registered"
 
-    encodable_payload = Map.Helpers.stringify_keys(%{payload: payload, meta: meta})
+    # encodable_payload = Map.Helpers.stringify_keys(%{payload: payload, meta: meta})
 
-    assert MockSchemaRegistry.encodable?(schema_name, encodable_payload),
-           "Payload does not match schema for #{schema_name}, #{inspect(encodable_payload)}"
+    assert MockSchemaRegistry.encodable?(request),
+           "Payload does not match schema for #{event_name}, #{inspect(request)}"
+
+    true
   end
 
   def event_metadata(event_name, context \\ %{}) do

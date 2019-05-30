@@ -1,10 +1,10 @@
-defmodule KaufmannEx.Transcode.SevenAvroTest do
+defmodule KaufmannEx.Transcoder.SevenAvroTest do
   use ExUnit.Case
 
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
   alias KaufmannEx.TestSupport.MockBus
-  alias KaufmannEx.Transcode.SevenAvro
+  alias KaufmannEx.Transcoder.SevenAvro
 
   setup_all do
     # {:ok, memo_pid} = Application.ensure_all_started(:memoize)

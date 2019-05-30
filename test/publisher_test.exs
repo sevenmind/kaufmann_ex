@@ -4,6 +4,11 @@ defmodule KaufmannEx.PublisherTest do
   import Mock
 
   setup do
+    Application.put_env(:kaufmann_ex, :transcoder,
+      default: KaufmannEx.Transcoder.SevenAvro,
+      json: KaufmannEx.Transcoder.Json
+    )
+
     bypass = Bypass.open()
     Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
     TestHelper.mock_get_schema(bypass, "event.test")

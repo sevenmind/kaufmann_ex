@@ -1,3 +1,23 @@
 {
-  "type": "object"
+  "definitions": {},
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "$id": "http://example.com/root.json",
+  "type": "object",
+  "title": "The Root Schema",
+  "description": "An explanation about the purpose of this instance.",
+  "required": [
+    "value"
+  ],
+  "properties": {
+    "value": {
+      "type": "string",
+      "title": "The Value Schema",
+      "description": "An explanation about the purpose of this instance.",
+      "default": "",
+      "examples": [
+        "Hello"
+      ],
+      "pattern": "^(.*)$"
+    }
+  }
 }

@@ -17,6 +17,8 @@ end
 defmodule KaufmannEx.TestSupport.MockBusTest do
   @moduledoc false
   use KaufmannEx.TestSupport.MockBus
+
+  alias KaufmannEx.Schemas.Event
   alias KaufmannEx.TestSupport.MockBusTest.ExamplePublisher
   alias KaufmannEx.TestSupport.MockSchemaRegistry
 
@@ -24,19 +26,26 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     @moduledoc false
     use KaufmannEx.EventHandler
 
-    def given_event(%KaufmannEx.Schemas.Event{payload: "no_event"} = event) do
+    def given_event(%Event{payload: "no_event"} = event) do
       {:noreply, []}
     end
 
-    def given_event(%{name: "event_a", payload: payload}) do
+    def given_event(%Event{name: "event_a", payload: payload}) do
       {:reply, {"event_b", payload}}
     end
 
-    def given_event(%{name: "event_b", payload: payload}) do
+    def given_event(%Event{name: "event_b", payload: payload}) do
       {:reply, {"event_c", payload}}
     end
 
-    def given_event(%KaufmannEx.Schemas.Event{name: "test.event.publish", payload: pl} = event) do
+    def given_event(%Event{name: "test.event.publish", payload: "raise_error"} = event) do
+      raise ArgumentError, "You know what you did"
+    rescue
+      error ->
+        {:error, error.message}
+    end
+
+    def given_event(%Event{name: "test.event.publish", payload: pl} = event) do
       {:reply, {"test.event.another", pl}}
     end
 
@@ -69,9 +78,15 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
                    end
     end
 
-    test "validates payload" do
+    test "validates avro payload" do
       assert_raise ExUnit.AssertionError, fn ->
         given_event("test.event.publish", %{invalid_key: "unexpected value"})
+      end
+    end
+
+    test "validates json payload" do
+      assert_raise ExUnit.AssertionError, fn ->
+        given_event("event_a", %{invalid_key: "unexpected value"})
       end
     end
 
@@ -81,9 +96,9 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     end
 
     test "when events trigger more events" do
-      given_event("event_a", "Hello")
-      then_event("event_b", "Hello")
-      then_event("event_c", "Hello")
+      given_event("event_a", %{value: "Hello"})
+      then_event("event_b", %{value: "Hello"})
+      then_event("event_c", %{value: "Hello"})
     end
   end
 
@@ -146,6 +161,14 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
         error in [ExUnit.AssertionError] ->
           "No events expected" = error.message
       end
+    end
+  end
+
+  describe "if an event raises an error" do
+    test "returns event.error" do
+      given_event("test.event.publish", "raise_error")
+
+      then_event("event.error.test.event.publish")
     end
   end
 end

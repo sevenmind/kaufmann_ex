@@ -117,14 +117,14 @@ defmodule MyApp.EventHandler do
   @behaviour KaufmannEx.EventHandler
 
   @impl true
-  def given_event(%Event{name: :"test.command", payload: payload}) do
+  def given_event(%Event{name: "test.command", payload: payload}) do
     message_body = do_some_work(payload)
 
-    {:reply, [{:"test.event", message_body, topic}]}
+    {:reply, [{"test.event", message_body, topic}]}
   end
 
   # In the event of an error a ErrorEvent is emitted
-  def given_event(%Event{name: :"this.event.raises.and.error", payload: payload}) do
+  def given_event(%Event{name: "this.event.raises.and.error", payload: payload}) do
     {:error, :unhandled_event}
   end
 end
