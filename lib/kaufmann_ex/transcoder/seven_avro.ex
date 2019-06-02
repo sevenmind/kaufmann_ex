@@ -65,8 +65,11 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
         payload -> %{payload: payload, meta: meta}
       end
 
+    schema_name = scope_event_name(event_name)
+
     {:ok, encoded} =
-      with {:ok, schema} <- Registry.parsed_schema(event_name),
+      with {:ok, %{"schema" => raw_schema}} <- Registry.latest(schema_name),
+           {:ok, schema} <- AvroEx.parse_schema(raw_schema),
            {:ok, encoded} <- Schema.encode(schema, %{payload: payload, meta: meta}) do
         Telem.report_encode_duration(
           start_time: start_time,
@@ -117,6 +120,7 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
 
   @impl true
   def read_schema(nil), do: nil
+
   def read_schema(path) do
     path
     |> File.read!()
@@ -171,7 +175,7 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
 
   defp scope_event_name(event_name) when is_atom(event_name), do: Atom.to_string(event_name)
 
-  defp scope_event_name("query." <> <<_::binary-size(4)>> <> _ = event_name),
+  defp scope_event_name("query." <> _ = event_name),
     do: scope_event_name(String.slice(event_name, 0..8))
 
   defp scope_event_name("event.error." <> _ = event_name),
