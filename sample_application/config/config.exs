@@ -8,9 +8,7 @@ config :kafka_ex,
     }
   ],
   use_ssl: false,
-  consumer_group: System.get_env("CONSUMER_GROUP"),
-  commit_interval: 100_000,
-  commit_threshold: 100
+  consumer_group: System.get_env("CONSUMER_GROUP")
 
 config :kaufmann_ex,
   event_handler_mod: Sample.EventHandler,
@@ -22,4 +20,13 @@ config :kaufmann_ex,
   schema_registry_uri: System.get_env("SCHEMA_REGISTRY_PATH"),
   service_name: "SampleService",
   service_id: "SampleHost",
-  event_handler_demand: 50
+  transcoder: [
+    default: KaufmannEx.Transcoder.SevenAvro,
+    json: KaufmannEx.Transcoder.Json
+  ]
+
+env_config = Path.expand("#{Mix.env()}.exs", __DIR__)
+
+if File.exists?(env_config) do
+  import_config(env_config)
+end

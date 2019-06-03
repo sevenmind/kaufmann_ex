@@ -1,0 +1,56 @@
+{
+  "type": "record",
+  "name": "query.res",
+  "doc": "Generic schema for all Query Response messages",
+  "fields": [
+    {
+      "name": "meta",
+      "doc": "standard event metadata",
+      "type": "seven.cloud.services.event_metadata"
+    },
+    {
+      "name": "payload",
+      "doc": "payload record",
+      "type": {
+        "name": "Payload",
+        "type": "record",
+        "fields": [
+          {
+            "name": "results",
+            "type": [
+              "null",
+              "string",
+              {
+                "type": "map",
+                "values": [
+                  "string",
+                  {
+                    "type": "array",
+                    "items": "string"
+                  }
+                ]
+              },
+              {
+                "type": "array",
+                "items": [
+                  "string",
+                  {
+                    "type": "map",
+                    "values": [
+                      "string",
+                      {
+                        "type": "array",
+                        "items": "string"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ],
+            "doc": "results of the preceeding query. abritrary formatting"
+          }
+        ]
+      }
+    }
+  ]
+}

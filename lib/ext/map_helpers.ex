@@ -10,12 +10,11 @@ defmodule Map.Helpers do
   """
   def underscore_keys(nil), do: nil
 
-  def underscore_keys(%{} = map) do
-    map
-    |> Enum.map(fn {k, v} -> {Macro.underscore(k), underscore_keys(v)} end)
-    |> Enum.map(fn {k, v} -> {String.replace(k, "-", "_"), v} end)
-    |> Enum.into(%{})
-  end
+  def underscore_keys(%{} = map),
+    do:
+      Enum.into(map, %{}, fn {k, v} ->
+        {k |> Macro.underscore() |> String.replace("-", "_"), underscore_keys(v)}
+      end)
 
   # Walk the list and atomize the keys of
   # of any map members
@@ -38,11 +37,8 @@ defmodule Map.Helpers do
     struct
   end
 
-  def atomize_keys(%{} = map) do
-    map
-    |> Enum.map(fn {k, v} -> {atomize_string(k), atomize_keys(v)} end)
-    |> Enum.into(%{})
-  end
+  def atomize_keys(%{} = map),
+    do: Enum.into(map, %{}, fn {k, v} -> {atomize_string(k), atomize_keys(v)} end)
 
   # Walk the list and atomize the keys of
   # of any map members
@@ -65,11 +61,8 @@ defmodule Map.Helpers do
   """
   def stringify_keys(nil), do: nil
 
-  def stringify_keys(%{} = map) do
-    map
-    |> Enum.map(fn {k, v} -> {stringify_atom(k), stringify_keys(v)} end)
-    |> Enum.into(%{})
-  end
+  def stringify_keys(%{} = map),
+    do: Enum.into(map, %{}, fn {k, v} -> {stringify_atom(k), stringify_keys(v)} end)
 
   def stringify_keys(%{__meta__: _} = schema), do: schema
   def stringify_keys(%{struct: _} = struct), do: struct

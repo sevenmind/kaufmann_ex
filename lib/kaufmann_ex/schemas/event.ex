@@ -1,0 +1,62 @@
+defmodule KaufmannEx.Schemas.Event do
+  @type t :: %KaufmannEx.Schemas.Event{
+          name: atom,
+          meta: map,
+          payload: term
+        }
+  @moduledoc false
+  defstruct [
+    :name,
+    :meta,
+    :payload,
+    :raw_event,
+    :timestamps,
+    :context,
+    :topic,
+    :partition
+  ]
+
+  @spec event_metadata(atom, map) :: map
+  def event_metadata(event_name, context \\ %{}) do
+    %{
+      message_id: Nanoid.generate(),
+      emitter_service: KaufmannEx.Config.service_name(),
+      emitter_service_id: KaufmannEx.Config.service_id(),
+      callback_id: context[:callback_id],
+      message_name: event_name |> to_string,
+      timestamp: DateTime.to_string(DateTime.utc_now()),
+      callback_topic: Map.get(context, :next_callback_topic, nil)
+    }
+  end
+end
+
+defmodule KaufmannEx.Schemas.ErrorEvent do
+  @type t :: %KaufmannEx.Schemas.ErrorEvent{
+          name: atom,
+          error: term,
+          message_payload: term,
+          meta: term | nil
+        }
+
+  @moduledoc false
+  defstruct [
+    :name,
+    :error,
+    :message_payload,
+    :meta,
+    :raw_event,
+    :timestamps,
+    :publish_request,
+    :context,
+    :topic,
+    :partition
+  ]
+
+  @doc """
+  Append "error.event." to an event name
+  """
+  @spec coerce_event_name(atom) :: atom
+  def coerce_event_name(command_name) do
+    "event.error.#{command_name}"
+  end
+end

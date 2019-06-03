@@ -1,6 +1,7 @@
 language: elixir
 elixir:
   - 1.7.3
+  - 1.8
 otp_release:
   - 21.0
 
@@ -15,7 +16,11 @@ before_script:
 
 script:
   - if [ $PULL_REQUEST_ID != false ]; then pronto run -f github_pr; fi
-  - mix test --no-start
+  - mix test
+  - mix coveralls.json
+  - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
+  - cd sample_application
+  - mix test
 
 after_script:
   - mix deps.get --only docs

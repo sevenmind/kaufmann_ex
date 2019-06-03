@@ -1,96 +1,66 @@
-version: "3.3"
+
+# Using docker-compose v2.4 for CPU limit option
+version: "2.4"
 
 services:
   kaufmann:
     build:
       context: .
-    environment: 
-      KAFKA_HOST: kafka-1
-      KAFKA_BROKERS: kafka-1:9092,kafka-2:9092,kafka-3:9092
+    environment:
+      KAFKA_HOST: kafka
+      KAFKA_BROKERS: kafka:9092
       KAFKA_TOPIC: rapids
       CONSUMER_GROUP: test-consumer-group
       SCHEMA_REGISTRY_PATH: http://schema-registry:8081
       SERVICE_NAME: TEST
       HOST_NAME: docker-compose-test
       HISTFILE: .bash_history
-    depends_on: 
-      - kafka-1
-      - kafka-2
-      - kafka-3
+    depends_on:
+      - kafka
       - schema-registry
     volumes:
       - .:/app/kaufmann
     command: ["/bin/bash"]
+    # cpus: '0.50'
+    # deploy:
+      # resources:
+        # limits:
+    # cpu_count: 1
+    # cpu_percent: 50
 
   kafka:
-    image: spotify/kafka
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
     environment:
-      NUM_PARTITIONS: 10
-      AUTO_CREATE_TOPICS: 'true'
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      KAFKA_NUM_PARTITIONS: 10
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    restart: always
+    
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    restart: always    
 
   schema-registry:
     image: confluentinc/cp-schema-registry
     depends_on:
-      - kafka-1
+      - kafka
     ports:
       - "8081:8081"
     environment:
       SCHEMA_REGISTRY_HOST_NAME: schema-registry
       SCHEMA_REGISTRY_KAFKASTORE_CONNECTION_URL: zookeeper:2181
       SCHEMA_REGISTRY_LISTENERS: http://0.0.0.0:8081
-
-
-  zookeeper:
-    image: confluentinc/cp-zookeeper
-    healthcheck:
-      test: echo stat | nc localhost 2181
-      interval: 10s
-      timeout: 10s
-      retries: 3
-    environment:
-    - ZOOKEEPER_SERVER_ID=1
-    - ZOOKEEPER_CLIENT_PORT=2181
-    - ZOOKEEPER_TICK_TIME=2000
-    - ZOOKEEPER_INIT_LIMIT=5
-    - ZOOKEEPER_SYNC_LIMIT=2
-    - ZOOKEEPER_SERVERS=zookeeper:2888:3888
-  kafka-1:
-    image: confluentinc/cp-kafka
-    healthcheck:
-      test: ps augwwx | egrep [S]upportedKafka
-    depends_on:
-    - zookeeper
-    environment:
-    - KAFKA_AUTO_CREATE_TOPICS=true
-    - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-1:9092
-    - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
-    - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-    - KAFKA_BROKER_ID=1
-    - BOOTSTRAP_SERVERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
-    - ZOOKEEPER=zookeeper:2181
-  kafka-2:
-    image: confluentinc/cp-kafka
-    healthcheck:
-      test: ps augwwx | egrep [S]upportedKafka
-    depends_on:
-    - zookeeper
-    environment:
-    - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-2:9092
-    - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
-    - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-    - KAFKA_BROKER_ID=2
-    - BOOTSTRAP_SERVERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
-    - ZOOKEEPER=zookeeper:2181
-  kafka-3:
-    image: confluentinc/cp-kafka
-    healthcheck:
-      test: ps augwwx | egrep [S]upportedKafka
-    depends_on:
-    - zookeeper
-    environment:
-    - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT://kafka-3:9092
-    - KAFKA_LISTENERS=PLAINTEXT://0.0.0.0:9092
-    - KAFKA_ZOOKEEPER_CONNECT=zookeeper:2181
-    - KAFKA_BROKER_ID=3
-    - BOOTSTRAP_SERVERS=kafka-1:9092,kafka-2:9092,kafka-3:9092
-    - ZOOKEEPER=zookeeper:2181
+    restart: always

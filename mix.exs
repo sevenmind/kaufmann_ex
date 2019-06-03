@@ -4,12 +4,13 @@ defmodule KaufmannEx.MixProject do
   def project do
     [
       app: :kaufmann_ex,
-      version: "0.3.2-beta",
-      elixir: "~> 1.6",
+      # version is -dev while there are git dependencies
+      version: "0.4.0-dev",
+      elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       aliases: aliases(),
-      test_coverage: [tool: Coverex.Task],
+      test_coverage: [tool: ExCoveralls],
       docs: [
         main: "readme",
         extras: ["README.md"]
@@ -39,28 +40,36 @@ defmodule KaufmannEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:gen_stage, "~> 0.12"},
-      {:kafka_ex, "~> 0.8.3"},
-      {:poison, "~> 3.1"},
-      {:httpoison, "~> 1.0"},
+      {:gen_stage, "~> 0.14"},
+      {:flow, "~> 0.14.3"},
+      {:kafka_ex_gen_stage_consumer,
+       git: "https://github.com/sevenmind/kafka_ex_gen_stage_consumer"},
+      # Waiting Next release of kafka_ex > 0.10
+      {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex"},
+      {:jason, "~> 1.1"},
       {:avro_ex, "~> 0.1.0-beta.6"},
+      {:ex_json_schema, "~> 0.6"},
       {:schemex, "~> 0.1.1"},
-      {:nanoid, "~> 1.0"},
+      {:nanoid, "~> 2.0"},
       {:memoize, "~> 1.2"},
-      {:ex_doc, "~> 0.16", only: :dev, runtime: false},
-      {:credo, "~> 0.9.1", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev], runtime: false},
+      {:telemetry, "~> 0.4"},
+      {:ex_doc, "~> 0.19", only: :dev, runtime: false},
+      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:bypass, "~> 1.0", only: :test},
-      {:excoveralls, "~> 0.8", only: :test},
-      {:inch_ex, only: :docs},
-      {:benchee, "~> 0.11", only: [:dev, :test]},
-      {:mock, "~> 0.3.0", only: [:test]}
+      {:excoveralls, "~> 0.11", only: :test},
+      {:benchee, "~> 1.0", only: [:dev, :test]},
+      {:mock, "~> 0.3.0", only: [:test]},
+      {:inch_ex, only: :docs}
     ]
   end
 
   defp aliases do
     [
-      test: "test --exclude integration"
+      test: [
+        "test --exclude integration --no-start"
+      ],
+      bench: "run --no-start"
     ]
   end
 end

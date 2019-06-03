@@ -1,115 +1,167 @@
-defmodule KaufmannEx.Stages.EventHandlerTest do
+defmodule KaufmannEx.EventHandlerTest do
   use ExUnit.Case
-  alias KaufmannEx.TestSupport.MockBus
   alias KafkaEx.Protocol.Fetch.Message
+  alias KaufmannEx.EventHandler
+  alias KaufmannEx.Publisher.Request
+  alias KaufmannEx.Schemas.ErrorEvent
+  alias KaufmannEx.Schemas.Event
+  alias KaufmannEx.TestSupport.MockBus
+
+  @topic :rapids
+  @partition 11
 
   defmodule TestEventHandler do
-    def given_event(
-          %KaufmannEx.Schemas.Event{name: :"test.event.publish", payload: "raise_error"} = event
-        ) do
+    use KaufmannEx.EventHandler
+    alias KaufmannEx.Schemas.Event
+
+    def given_event(%Event{name: :"event.with.response", payload: pl}) do
+      {:reply, [{:response_event, pl}]}
+    end
+
+    def given_event(%Event{name: :"event.with.response.topic", payload: pl}) do
+      {:reply, [{:response_event, pl, "some_topic"}]}
+    end
+
+    def given_event(%Event{name: :"test.event.error", payload: "raise_error"} = event) do
       raise ArgumentError, "You know what you did"
-
-      :ok
+    rescue
+      error ->
+        {:error, error.message}
     end
 
-    def given_event(%KaufmannEx.Schemas.Event{} = event) do
-      :erlang.send(:subscriber, :event_recieved)
+    def given_event(%{name: :"another.test.event"}), do: {:noreply, []}
 
-      :ok
-    end
+    def given_event(%{name: "a.string.name" <> _}), do: {:reply, [{:response_event, %{}}]}
 
-    def given_event(%KaufmannEx.Schemas.ErrorEvent{} = event) do
-      :erlang.send(:subscriber, :handled_error)
+    def given_event(%{name: "with.a.json.response"}),
+      do:
+        {:reply,
+         [
+           %{
+             event: "json.response.event",
+             payload: %{timestamp: DateTime.utc_now()},
+             topics: [:callback, "rapids", %{topic: :default, format: :json}]
+           }
+         ]}
 
-      :ok
-    end
-
-  end
-
-
-  setup do
-    {:ok, memo_pid} = Application.ensure_all_started(:memoize)
-    on_exit( fn -> Memoize.invalidate() end)
-
-    bypass = Bypass.open()
-    Application.put_env(:kaufmann_ex, :schema_registry_uri, "http://localhost:#{bypass.port}")
-
-    # Mock calls to schema registry, only expected once
-    # mock_get_metadata_schema(bypass)
-    mock_get_event_schema(bypass, "test.event.publish")
-
-    Application.put_env(:kaufmann_ex, :event_handler_mod, TestEventHandler)
-    Application.put_env(:kaufmann_ex, :schema_path, "test/support")
-
-    Process.register(self(), :subscriber)
-
-    {:ok, pid} = KaufmannEx.Stages.Producer.start_link([])
-    {:ok, s_pid} = KaufmannEx.Stages.Consumer.start_link()
-
-    {:ok, bypass: bypass, state: []}
-  end
-
-  describe "when started" do
-    test "Consumes Events to EventHandler", %{state: state} do
-      event = encode_event(:"test.event.publish", "Hello")
-
-      KaufmannEx.Stages.GenConsumer.handle_message_set([event], state)
-
-      assert_receive :event_recieved, 1000
-    end
-
-    test "handles errors gracefully", %{state: state} do
-      first_event = encode_event(:"test.event.publish", "raise_error")
-      second_event = encode_event(:"test.event.publish", "Hello")
-
-      KaufmannEx.Stages.GenConsumer.handle_message_set(
-        [
-          first_event,
-          second_event,
-          second_event,
-          second_event
-        ],
-        state
-      )
-
-      assert_receive :event_recieved, 1000
-      assert_receive :handled_error, 1000
+    def given_event(%Event{name: _name} = event) do
+      {:noreply, []}
     end
   end
 
-  def mock_get_event_schema(bypass, event_name) do
-    {:ok, schema} = File.read("test/support/#{event_name}.avsc")
-    {:ok, meta_schema} = File.read('test/support/event_metadata.avsc')
-
-    schema = schema |> Poison.decode!()
-    meta_schema = meta_schema |> Poison.decode!()
-
-    schemas = [meta_schema, schema] |> Poison.encode!()
-
-    Bypass.expect(bypass, "GET", "/subjects/#{event_name}/versions/latest", fn conn ->
-      Plug.Conn.resp(
-        conn,
-        200,
-        Poison.encode!(%{subject: event_name, version: 1, id: 1, schema: schemas})
-      )
-    end)
+  test "defines &handled_events/0" do
+    assert TestEventHandler.handled_events() |> Enum.sort() == [
+             "a.string.name",
+             "all",
+             "another.test.event",
+             "event.with.response",
+             "event.with.response.topic",
+             "test.event.error",
+             "with.a.json.response"
+           ]
   end
 
-  def mock_get_metadata_schema(bypass) do
-    {:ok, schema} = File.read('test/support/event_metadata.avsc')
-    schema = schema |> Poison.decode!() |> Poison.encode!()
+  describe "&given_event/1" do
+    test "returns noreply tuple" do
+      assert TestEventHandler.given_event(%Event{name: :"another.test.event"}) == {:noreply, []}
 
-    Bypass.expect_once(bypass, "GET", "/subjects/event_metadata/versions/latest", fn conn ->
-      Plug.Conn.resp(
-        conn,
-        200,
-        Poison.encode!(%{subject: "event_metadata", version: 1, id: 1, schema: schema})
-      )
-    end)
+      assert TestEventHandler.given_event(%Event{name: :"completely.unhandled.event"}) ==
+               {:noreply, []}
+    end
+
+    test "returns reply tuple" do
+      pl = %{}
+
+      assert TestEventHandler.given_event(%Event{name: :"event.with.response", payload: pl}) ==
+               {:reply, [{:response_event, pl}]}
+
+      assert TestEventHandler.given_event(%Event{name: :"event.with.response.topic", payload: pl}) ==
+               {:reply, [{:response_event, pl, "some_topic"}]}
+    end
   end
 
-  def encode_event(name, payload) do
-    {:ok, encoded_event} = MockBus.encoded_event(name, payload)
-    %Message{key: name |> to_string, value: encoded_event}
+  describe "&handle_event/1" do
+    test "transforms reply tuple to response events" do
+      assert [
+               %Request{
+                 event_name: :response_event,
+                 payload: %{},
+                 metadata: _
+               }
+             ] =
+               EventHandler.handle_event(
+                 %Event{name: :"event.with.response", payload: %{}, meta: %{}},
+                 TestEventHandler
+               )
+    end
+
+    test "transforms reply tuple with topic" do
+      assert [%Request{event_name: :response_event, topic: "some_topic"}] =
+               EventHandler.handle_event(
+                 %Event{
+                   name: :"event.with.response.topic",
+                   payload: %{},
+                   meta: %{}
+                 },
+                 TestEventHandler
+               )
+    end
+
+    test "wraps exceptions into ErrorEvent" do
+      assert [
+               %Request{
+                 event_name: "event.error.test.event.error",
+                 payload: %{
+                   error: "You know what you did"
+                 }
+               }
+               | _
+             ] =
+               EventHandler.handle_event(
+                 %Event{
+                   name: :"test.event.error",
+                   payload: "raise_error",
+                   meta: %{}
+                 },
+                 TestEventHandler
+               )
+    end
+
+    test "handles binary event names" do
+      assert [
+               %Request{
+                 event_name: :response_event,
+                 payload: %{}
+               }
+             ] =
+               EventHandler.handle_event(
+                 %Event{
+                   name: "a.string.name#with_an_id",
+                   payload: %{},
+                   meta: %{}
+                 },
+                 TestEventHandler
+               )
+    end
+
+    test "when multiple topics are specified" do
+      res =
+        EventHandler.handle_event(
+          %Event{
+            name: "with.a.json.response",
+            payload: %{},
+            meta: %{}
+          },
+          TestEventHandler
+        )
+
+      assert length(res) == 3
+
+      assert Enum.map(res, &Map.get(&1, :topic)) == [
+               :callback,
+               "rapids",
+               %{format: :json, topic: :default}
+             ]
+    end
   end
 end

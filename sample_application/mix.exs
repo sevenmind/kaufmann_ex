@@ -22,12 +22,9 @@ defmodule Sample.Mixfile do
 
   def deps do
     [
-      {:kafka_ex, "~> 0.8.3"},
       {:kaufmann_ex, path: ".."}
-      
     ]
   end
-
 
   defp aliases do
     [
