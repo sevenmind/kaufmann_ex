@@ -19,6 +19,8 @@ script:
   - mix test
   - mix coveralls.json
   - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
+  - cd sample_application
+  - mix test
 
 after_script:
   - mix deps.get --only docs
