@@ -1,8 +1,6 @@
 defmodule KaufmannEx do
   @moduledoc """
-  KaufmannEx is a library tieing together `KafkaEx`, `AvroEx`, and `Schemex`
-
-  KaufmannEx exists to make it easy to decode Avro encoded messages off of a kafka broker.
-
+  KaufmannEx provides easy event consumption from kafka, handling schema verification,
+  deserialization, response encoding and publish
   """
 end

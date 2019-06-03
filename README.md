@@ -15,8 +15,8 @@ The goal of KaufmannEx is to provide a simple to use library for building kafka
 based microservices.
 
 It should be simple and fast to write new microservices with
-[Avro](https://avro.apache.org/docs/current/) event schemas backed by [schema
-Registry](https://docs.confluent.io/current/schema-registry/docs/index.html).
+[Avro](https://avro.apache.org/docs/current/) or JSON event schemas  (or
+whatever).
 
 Tieing `KafkaEx`, `AvroEx`, and `Schemex`.
 
@@ -31,8 +31,7 @@ by adding `kaufmann_ex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:kafka_ex, , "~> 0.8.3"},
-    {:kaufmann_ex, "~> 0.3.0"}
+    {:kaufmann_ex, "~> 0.4.0-dev"}
   ]
 end
 ```
@@ -90,7 +89,11 @@ config :kaufmann_ex,
   event_handler_mod: MyApp.EventHandler,
   producer_mod: KaufmannEx.Publisher,
   schema_path: "priv/schemas",
-  schema_registry_uri: "http://localhost:8081"
+  schema_registry_uri: "http://localhost:8081",
+  transcoder: [
+    default: KaufmannEx.Transcoder.SevenAvro,
+    json: KaufmannEx.Transcoder.Json
+  ]
 
 config :kafka_ex,
   brokers: [
@@ -124,7 +127,7 @@ defmodule MyApp.EventHandler do
   end
 
   # In the event of an error a ErrorEvent is emitted
-  def given_event(%Event{name: "this.event.raises.and.error", payload: payload}) do
+  def given_event(%Event{name: "this.event.returns.error", payload: payload}) do
     {:error, :unhandled_event}
   end
 end
@@ -132,43 +135,21 @@ end
 
 ## Events
 
-KaufmannEx assumes every event has a matching event Avro Event Schema.
+KaufmannEx assumes every event has a matching event Avro or JSON Event Schema.
 
-All events are expected to include a `meta` metadata key.
+All AVRO events are expected to include a `meta` metadata key.
 
 If an Event causes an exception it will emit an error event with
 `"event.error.#{event.name}"` as the `event_name`. Events that raise exceptions
 are not retried or persisted beyond emitting this error event. If specific
-handling of failing events is important to you, implement a dead-letter queue
-service or similar.
+handling of failing events is important to you, implement a dead-letter service
+or similar.
 
 ## Internals
 
 KaufmannEx uses `KafkaEx.ConsumerGroup` to subscribe to kafka topic/s. Events
-are consumed by a `GenStage` producer stage to a `GenStage.ConsumerSupervisor`
-which has a limited demand (default 50) and spawns a task to process each event.
-
-```
-Kafka
-  |
-  V
-KafkaEx.ConsumerGroup
-   |   |   | (Per Partition)
-   V   V   V
-KaufmannEx.Consumer.Stage.GenConsumer
-   |
-   V
-KaufmannEx.Consumer.Stage.Producer
-    |
-    V
-KaufmannEx.Consumer.Stage.Consumer
-  |   |   | (ConsumerSupervisor spawns workers for each event received)
-  V   V   V
-KaufmannEx.Consumer.Stage.EventHandler
-  |   |   |
-  V   V   V
-Application.EventHandler.given_event/1
-```
+are consumed by a `kafka_ex_gen_stage_consumer` stage to a `Flow` event handler
+`KaufmannEx.Consumer.Flow`.
 
 ## Release Tasks
 
@@ -247,9 +228,7 @@ $RELEASE_ROOT_DIR/bin/sample command Elixir.Sample.ReleaseTasks migrate_schemas
 It is possible to lose events when a node goes down. But we try to prevent that
 from happening.
 
-1. The backpressure in Kaufmann prevents pulling more events than there is
-   capacity to immediately process. This is configurable with the kaufmann_ex,
-   :max_demand configuration variable.
+1. The backpressure in Kaufmann prevents pulling more events than processing capacity. 
 2. KuafmannEx uses the default [KafkaEx GenConsumer asynchronous offset commit
    behavior](https://hexdocs.pm/kafka_ex/KafkaEx.GenConsumer.html#module-asynchronous-offset-commits).
    Offsets are committed asynchronously on a timer or event count.
@@ -263,15 +242,14 @@ when it goes down.
 
 Kafka can only guarantee event ordering within a single partition. KaufmannEx
 will consume events in the order published, but event processing is not
-guaranteed to be sequential. 
+guaranteed to be sequential. KaufmannEx (as with kafka in general) does
+cannot provide strong consistency.
 
 
 ## Telemetry
 
 Kaufmann provides some internal
-[:temeletry](https://github.com/beam-telemetry/telemetry). 
-
-Telemetry events:
+[:temeletry](https://github.com/beam-telemetry/telemetry) events
 
 ```elixir
 [:kaufmann_ex, :schemas, :decode]
@@ -283,7 +261,3 @@ Telemetry events:
 Kaufmann provides an optional logger demonstrating consumption of these events
 in `KaufmannEx.TelemetryLogger`. This logger can be started by adding
 `KaufmannEx.TelemetryLogger` to your supervision tree.
-
-
-
-_explicit is better than implicit_
