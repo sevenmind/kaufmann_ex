@@ -8,6 +8,13 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistryTest do
   setup do
     Application.put_env(:kaufmann_ex, :schema_path, "test/support")
 
+    Application.put_env(
+      :kaufmann_ex,
+      :transcoder,
+      default: KaufmannEx.TestSupport.Transcoder.SevenAvro,
+      json: KaufmannEx.Transcoder.Json
+    )
+
     :ok
   end
 
@@ -23,7 +30,8 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistryTest do
 
   describe "encodable?/2" do
     test "when valid schema" do
-      assert MockSchemaRegistry.encodable?(%Request{event_name: "test.event.publish",
+      assert MockSchemaRegistry.encodable?(%Request{
+               event_name: "test.event.publish",
                payload: "Hello",
                metadata: MockBus.fake_meta("test.event.publish")
              })

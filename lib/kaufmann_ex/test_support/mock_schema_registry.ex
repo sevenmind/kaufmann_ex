@@ -22,9 +22,9 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   @spec encodable?(Request.t()) :: boolean
   def encodable?(publish_request) do
     Enum.any?(
-             KaufmannEx.Config.transcoders(),
-             &apply(&1, :encodable?, [publish_request])
-           )
+      KaufmannEx.Config.transcoders(),
+      &apply(&1, :encodable?, [publish_request])
+    )
   end
 
   defp all_schemas do

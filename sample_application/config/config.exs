@@ -25,8 +25,6 @@ config :kaufmann_ex,
     json: KaufmannEx.Transcoder.Json
   ]
 
-
-
 env_config = Path.expand("#{Mix.env()}.exs", __DIR__)
 
 if File.exists?(env_config) do

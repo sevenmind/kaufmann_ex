@@ -24,7 +24,7 @@ defmodule KaufmannEx.Publisher.TopicSelector do
     [Map.merge(request, callback)]
   end
 
-  def resolve_topic(%Request{topic: topic} = request)  when topic == :default or is_nil(topic)do
-    [%Request{request | topic: Config.default_topic() }]
+  def resolve_topic(%Request{topic: topic} = request) when topic == :default or is_nil(topic) do
+    [%Request{request | topic: Config.default_topic()}]
   end
 end

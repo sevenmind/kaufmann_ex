@@ -25,7 +25,6 @@ defmodule KaufmannEx.TestSupport.Transcoder.SevenAvro do
         nil
 
       schema ->
-
         %{payload: payload, meta: meta} =
           case payload do
             %{payload: payload, meta: meta} -> %{payload: payload, meta: meta}

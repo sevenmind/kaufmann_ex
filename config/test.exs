@@ -2,7 +2,6 @@ use Mix.Config
 
 config :bypass, adapter: Plug.Adapters.Cowboy2
 
-
 config :kaufmann_ex,
   consumer_group: "kaufmann-consumer",
   default_topic: "kaufmann-chat",
