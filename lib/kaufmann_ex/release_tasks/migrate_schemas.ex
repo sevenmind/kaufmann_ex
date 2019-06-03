@@ -20,7 +20,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   """
   # credo:disable-for-this-file Credo.Check.Warning.IoInspect
 
-  alias KaufmannEx.Schemas.Avro.Registry
+  alias KaufmannEx.Transcoder.SevenAvro.Schema.Registry
 
   defp ensure_startup do
     :ok = Application.ensure_started(:logger)
