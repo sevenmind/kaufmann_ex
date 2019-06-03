@@ -174,13 +174,14 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
     Enum.find(all_schemas(), &(Path.rootname(Path.basename(&1)) == schema_name))
   end
 
-  defp scope_event_name(event_name) when is_atom(event_name), do: Atom.to_string(event_name)
+  defp scope_event_name(event_name) when is_atom(event_name),
+    do: scope_event_name(Atom.to_string(event_name))
 
   defp scope_event_name("query." <> _ = event_name),
-    do: scope_event_name(String.slice(event_name, 0..8))
+    do: String.slice(event_name, 0..8)
 
   defp scope_event_name("event.error." <> _ = event_name),
-    do: scope_event_name(String.slice(event_name, 0..10))
+    do: String.slice(event_name, 0..10)
 
   defp scope_event_name(event_name),
     do:
