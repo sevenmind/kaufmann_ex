@@ -19,7 +19,6 @@ defmodule KaufmannEx.Supervisor do
     topics = KaufmannEx.Config.subscription_topics()
 
     children = [
-      {Registry, keys: :unique, name: Registry.ConsumerRegistry},
       %{
         id: KaufmannEx.ConsumerGroup,
         start:

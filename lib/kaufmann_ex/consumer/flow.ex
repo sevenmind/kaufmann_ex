@@ -16,6 +16,7 @@ defmodule KaufmannEx.Consumer.Flow do
     Logger.debug("starting consumer for #{topic}##{partition}")
     event_handler = Config.event_handler()
     worker = String.to_atom("worker_#{topic}_#{partition}")
+    {:ok, _pid} = create_worker(worker)
 
     {:ok, link_pid} =
       [producer_stage]
@@ -43,8 +44,8 @@ defmodule KaufmannEx.Consumer.Flow do
 
   defp create_worker(worker_name) do
     case KafkaEx.create_worker(worker_name) do
-      {:ok, pid} -> pid
-      {:error, {:already_started, pid}} -> pid
+      {:ok, pid} -> {:ok, pid}
+      {:error, {:already_started, pid}} -> {:ok, pid}
     end
   end
 
