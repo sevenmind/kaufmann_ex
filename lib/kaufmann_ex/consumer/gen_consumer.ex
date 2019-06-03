@@ -37,7 +37,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
     |> Enum.map(&Encoder.encode_event/1)
     |> Enum.each(&Publisher.publish_request/1)
 
-     {:async_commit, state}
+    {:async_commit, state}
   end
 
   defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
