@@ -19,6 +19,8 @@ defmodule KaufmannEx.Transcoder.SevenAvroTest do
     # Mock calls to schema registry, only expected once
     TestHelper.init_schema_cache(bypass)
     TestHelper.mock_get_schema(bypass, event_name)
+    TestHelper.mock_get_schema(bypass, "query.req")
+    TestHelper.mock_get_schema(bypass, "event.error")
 
     [bypass: bypass, event_name: event_name]
   end
@@ -35,7 +37,31 @@ defmodule KaufmannEx.Transcoder.SevenAvroTest do
         48, 48, 58, 53, 54, 46, 56, 52, 52, 52, 52, 56, 90, 0, 22, 72, 101, 108, 108, 111, 32, 87,
         111, 114, 108, 100>>
 
-    {:ok, bypass: bypass, encoded: encoded, event_name: event_name}
+    encoded_query =
+      <<2, 42, 80, 82, 119, 85, 99, 78, 66, 112, 56, 50, 100, 103, 52, 108, 106, 67, 45, 122, 67,
+        113, 116, 42, 121, 111, 57, 48, 108, 121, 104, 83, 120, 75, 119, 86, 98, 76, 100, 52, 90,
+        101, 78, 116, 122, 42, 79, 50, 97, 113, 55, 95, 84, 54, 76, 103, 110, 74, 49, 86, 111,
+        120, 101, 48, 101, 81, 117, 0, 50, 113, 117, 101, 114, 121, 46, 114, 101, 113, 46, 115,
+        111, 109, 101, 116, 104, 105, 110, 103, 46, 111, 116, 104, 101, 114, 54, 50, 48, 49, 57,
+        45, 48, 54, 45, 48, 51, 32, 49, 55, 58, 52, 51, 58, 53, 48, 46, 50, 52, 50, 49, 50, 56,
+        90, 0, 2, 22, 72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100>>
+
+    encoded_error =
+      <<2, 42, 113, 98, 66, 87, 117, 115, 101, 88, 73, 115, 90, 104, 72, 51, 118, 66, 54, 119,
+        111, 54, 120, 42, 95, 104, 84, 121, 113, 86, 86, 69, 107, 116, 121, 105, 54, 77, 45, 82,
+        106, 53, 53, 49, 97, 42, 74, 122, 114, 80, 89, 55, 71, 67, 84, 83, 106, 87, 117, 83, 89,
+        104, 98, 49, 97, 77, 88, 0, 74, 101, 118, 101, 110, 116, 46, 101, 114, 114, 111, 114, 46,
+        113, 117, 101, 114, 121, 46, 114, 101, 113, 46, 115, 111, 109, 101, 116, 104, 105, 110,
+        103, 46, 111, 116, 104, 101, 114, 54, 50, 48, 49, 57, 45, 48, 54, 45, 48, 51, 32, 49, 55,
+        58, 52, 54, 58, 53, 50, 46, 50, 56, 49, 49, 54, 51, 90, 0, 2, 10, 101, 114, 114, 111,
+        114>>
+
+    {:ok,
+     bypass: bypass,
+     encoded: encoded,
+     encoded_query: encoded_query,
+     encoded_error: encoded_error,
+     event_name: event_name}
   end
 
   describe "decode_event/1" do
@@ -79,6 +105,38 @@ defmodule KaufmannEx.Transcoder.SevenAvroTest do
                  raw_event: %{key: event_name, value: encoded <> <<55>>, offset: nil}
                })
     end
+
+    test "when event with generalized schema", %{encoded_query: encoded_query} do
+      assert %Event{
+               name: "query.req.something.other",
+               payload: %{query_params: "Hello World"},
+               raw_event: %{
+                 key: "query.req.something.other",
+                 value: ^encoded_query
+               }
+             } =
+               SevenAvro.decode_event(%Event{
+                 raw_event: %{key: "query.req.something.other", value: encoded_query, offset: nil}
+               })
+    end
+
+    test "when error event", %{encoded_error: encoded_error} do
+      assert %Event{
+               name: "event.error.query.req.something.other",
+               payload: %{error: "error"},
+               raw_event: %{
+                 key: "event.error.query.req.something.other",
+                 value: ^encoded_error
+               }
+             } =
+               SevenAvro.decode_event(%Event{
+                 raw_event: %{
+                   key: "event.error.query.req.something.other",
+                   value: encoded_error,
+                   offset: nil
+                 }
+               })
+    end
   end
 
   describe "&encode_event/1" do
@@ -92,8 +150,6 @@ defmodule KaufmannEx.Transcoder.SevenAvroTest do
     end
 
     test "when schema isn't registered" do
-      # {:error, message} = SevenAvro.encode_event("UnknownEvent", %{hello: "world"})
-
       assert_raise MatchError,
                    "no match of right hand side value: {:error, {:schema_encoding_error, %{\"error_code\" => \"40401\", \"message\" => \"Subject not found.\"}}}",
                    fn ->
@@ -115,6 +171,22 @@ defmodule KaufmannEx.Transcoder.SevenAvroTest do
                        metadata: MockBus.fake_meta()
                      })
                    end
+    end
+
+    test "when event with generalized schema", %{encoded: encoded} do
+      assert %Request{encoded: <<2>> <> _} =
+               SevenAvro.encode_event(%Request{
+                 event_name: "query.req.something.other",
+                 payload: %{query_params: "Hello World"},
+                 metadata: MockBus.fake_meta("query.req.something.other")
+               })
+
+      assert %Request{encoded: <<2>> <> _} =
+               SevenAvro.encode_event(%Request{
+                 event_name: "event.error.query.req.something.other",
+                 payload: %{error: "error"},
+                 metadata: MockBus.fake_meta("event.error.query.req.something.other")
+               })
     end
   end
 end

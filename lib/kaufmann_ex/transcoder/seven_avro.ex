@@ -18,7 +18,6 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
   def decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
     start_time = System.monotonic_time()
     schema_name = scope_event_name(key)
-    Logger.info("DECODING #{schema_name}")
 
     res =
       with {:ok, %{"schema" => raw_schema}} <- Registry.latest(schema_name),

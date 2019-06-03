@@ -1,0 +1,34 @@
+{
+  "type": "record",
+  "name": "query.req",
+  "doc": "Generic schema for all Query Request messages",
+  "fields": [
+    {
+      "name": "meta",
+      "doc": "standard event metadata",
+      "type": "seven.cloud.services.event_metadata"
+    },
+    {
+      "name": "payload",
+      "doc": "payload record",
+      "type": {
+        "name": "Payload",
+        "type": "record",
+        "fields": [
+          {
+            "name": "query_params",
+            "type": [
+              "null",
+              "string",
+              {
+                "type": "map",
+                "values": "string"
+              }
+            ],
+            "doc": "paramaters for your query. Format is up to the specific implementation"
+          }
+        ]
+      }
+    }
+  ]
+}

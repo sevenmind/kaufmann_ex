@@ -37,11 +37,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
     |> Enum.map(&Encoder.encode_event/1)
     |> Enum.each(&Publisher.publish_request/1)
 
-    for %Message{value: message} <- message_set do
-      Logger.debug(fn -> "message: " <> inspect(message) end)
-    end
-
-    {:async_commit, state}
+     {:async_commit, state}
   end
 
   defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
