@@ -15,14 +15,14 @@ defmodule KaufmannEx.Consumer.Flow do
   def start_link({producer_stage, topic, partition, _extra_consumer_args}) do
     Logger.debug("starting consumer for #{topic}##{partition}")
     event_handler = Config.event_handler()
-    stages = Config.stages()
-    workers = spawn_workers(topic, partition, stages)
+    worker = String.to_atom("worker_#{topic}_#{partition}")
 
     {:ok, link_pid} =
       [producer_stage]
-      |> Flow.from_stages(stages: stages, max_demand: Config.max_demand())
+      |> Flow.from_stages(stages: Config.stages(), max_demand: Config.max_demand())
       # wrap events into our event struct
       |> Flow.map(fn event ->
+        Logger.debug("consumed #{event.key}")
         %Event{
           raw_event: event,
           topic: topic,
@@ -35,17 +35,10 @@ defmodule KaufmannEx.Consumer.Flow do
       |> Flow.flat_map(&EventHandler.handle_event(&1, event_handler))
       |> Flow.flat_map(&TopicSelector.resolve_topic/1)
       |> Flow.map(&Encoder.encode_event/1)
-      |> Flow.map(&Publisher.publish_request(&1, workers))
-      |> drain_flow_tail
-      |> Flow.start_link()
+      |> Flow.map(&Publisher.publish_request(&1, [worker]))
+      |> Flow.start_link(name: String.to_atom("flow_#{topic}_#{partition}"))
 
     {:ok, link_pid}
-  end
-
-  defp spawn_workers(topic, partition, stages) do
-    Enum.map(0..stages, fn n ->
-      create_worker(String.to_atom("#{topic}_#{partition}_worker_#{n}"))
-    end)
   end
 
   defp create_worker(worker_name) do

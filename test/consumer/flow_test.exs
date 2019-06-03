@@ -53,9 +53,9 @@ defmodule KaufmannEx.Consumer.FlowTest do
   alias KaufmannEx.Consumer.FlowTest.EventHandler
   alias KaufmannEx.Consumer.FlowTest.GenProducer
   alias KaufmannEx.Consumer.FlowTest.KafkaMock
-  alias KaufmannEx.Schemas.Avro
-  alias KaufmannEx.Schemas.Avro.Registry
   alias KaufmannEx.TestSupport.MockBus
+  alias KaufmannEx.Transcoder.SevenAvro.Schema
+  alias KaufmannEx.Transcoder.SevenAvro.Schema.Registry
 
   setup_all do
     # Clear cached schemas
@@ -72,16 +72,26 @@ defmodule KaufmannEx.Consumer.FlowTest do
   setup %{bypass: bypass, event_name: event_name} do
     {:ok, kafka_mock} = start_supervised({KafkaMock, :kafka_ex})
 
+    prev_env = Application.get_env(:kaufmann_ex, :transcoder)
+
     on_exit(fn ->
       Memoize.invalidate()
+      Application.put_env(:kaufmann_ex, :transcoder, prev_env)
     end)
+
+    Application.put_env(
+      :kaufmann_ex,
+      :transcoder,
+      default: KaufmannEx.Transcoder.SevenAvro,
+      json: KaufmannEx.Transcoder.Json
+    )
 
     Application.put_env(:kaufmann_ex, :event_handler_mod, EventHandler)
 
     {:ok, schema} = Registry.parsed_schema(event_name)
 
     {:ok, encoded} =
-      Avro.encode(schema, %{
+      Schema.encode(schema, %{
         meta: MockBus.event_metadata(event_name),
         payload: %{message: "hello world"}
       })
