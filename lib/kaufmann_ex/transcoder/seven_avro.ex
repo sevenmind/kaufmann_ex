@@ -38,7 +38,6 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
         }
       else
         {:error, error} ->
-          Logger.warn(fn -> "Error Decoding #{key} #{inspect(error)}" end)
 
           err_event =
             event
