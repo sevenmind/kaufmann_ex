@@ -5,7 +5,7 @@ defmodule KaufmannEx.MixProject do
     [
       app: :kaufmann_ex,
       # version is -dev while there are git dependencies
-      version: "0.4.0-dev",
+      version: "0.4.1-dev",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),

@@ -49,7 +49,7 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
       {:reply, {"test.event.another", pl}}
     end
 
-    def given_event(error_event), do: []
+    def given_event(other_event), do: []
   end
 
   setup do

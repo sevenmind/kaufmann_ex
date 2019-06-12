@@ -168,13 +168,15 @@ defmodule KaufmannEx.EventHandler do
   end
 
   defp report_telemetry(start_time: start_time, event: event, event_handler: event_handler) do
+    event_name = Map.get(event, :name, "") |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
+
     :telemetry.execute(
       [:kaufmann_ex, :event_handler, :handle_event],
       %{
         duration: System.monotonic_time() - start_time
       },
       %{
-        event: Map.get(event, :name, "none"),
+        event: event_name,
         topic: event.topic,
         partition: event.partition,
         handler: event_handler

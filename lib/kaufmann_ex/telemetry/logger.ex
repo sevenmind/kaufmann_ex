@@ -15,14 +15,14 @@ defmodule KaufmannEx.Telemetry.Logger do
 
   def start_link(_) do
     :telemetry.attach_many(
-      "KaufmannEx.TelemetryLogger",
+      "KaufmannEx.Telemetry.Logger",
       [
         [:kaufmann_ex, :schema, :decode],
         [:kaufmann_ex, :event_handler, :handle_event],
         [:kaufmann_ex, :schema, :encode],
         [:kaufmann_ex, :publisher, :publish]
       ],
-      &KaufmannEx.TelemetryLogger.handle_event/4,
+      &KaufmannEx.Telemetry.Logger.handle_event/4,
       nil
     )
 
@@ -75,6 +75,9 @@ defmodule KaufmannEx.Telemetry.Logger do
   end
 
   def report_decode_time(start_time: start_time, event: event) do
+    event_name =
+      event.raw_event.key |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
+
     :telemetry.execute(
       [:kaufmann_ex, :schema, :decode],
       %{
@@ -82,7 +85,7 @@ defmodule KaufmannEx.Telemetry.Logger do
         offset: event.raw_event.offset,
         size: byte_size(event.raw_event.value)
       },
-      %{event: event.raw_event.key, topic: event.topic, partition: event.partition}
+      %{event: event_name, topic: event.topic, partition: event.partition}
     )
   end
 
@@ -91,13 +94,16 @@ defmodule KaufmannEx.Telemetry.Logger do
         encoded: encoded,
         message_name: message_name
       ) do
+    event_name =
+      message_name |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
+
     :telemetry.execute(
       [:kaufmann_ex, :schema, :encode],
       %{
         duration: System.monotonic_time() - start_time,
         size: byte_size(encoded)
       },
-      %{event: message_name}
+      %{event: event_name}
     )
   end
 end
