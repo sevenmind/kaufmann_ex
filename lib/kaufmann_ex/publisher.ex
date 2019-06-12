@@ -67,7 +67,11 @@ defmodule KaufmannEx.Publisher do
          encoded: encoded,
          request: %{topic: topic, partition: partition, event_name: event_name}
        ) do
+<<<<<<< HEAD
+    event_name = (event_name || "") |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
+=======
     event_name = event_name |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
+>>>>>>> e223c65d92b03b7523fe7c5728dcd126eb52487f
 
     :telemetry.execute(
       [:kaufmann_ex, :publisher, :publish],
