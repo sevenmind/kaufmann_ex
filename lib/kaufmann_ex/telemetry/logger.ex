@@ -76,11 +76,7 @@ defmodule KaufmannEx.Telemetry.Logger do
 
   def report_decode_time(start_time: start_time, event: event) do
     event_name =
-<<<<<<< HEAD
       (event.raw_event.key || "") |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
-=======
-      event.raw_event.key |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
->>>>>>> e223c65d92b03b7523fe7c5728dcd126eb52487f
 
     :telemetry.execute(
       [:kaufmann_ex, :schema, :decode],
@@ -99,11 +95,7 @@ defmodule KaufmannEx.Telemetry.Logger do
         message_name: message_name
       ) do
     event_name =
-<<<<<<< HEAD
       (message_name || "") |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
-=======
-      message_name |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
->>>>>>> e223c65d92b03b7523fe7c5728dcd126eb52487f
 
     :telemetry.execute(
       [:kaufmann_ex, :schema, :encode],
