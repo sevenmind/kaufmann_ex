@@ -6,12 +6,14 @@ defmodule KaufmannEx.Transcoder.Json do
   import Map.Helpers, only: [stringify_keys: 1]
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
+  alias KaufmannEx.Telemetry.Logger, as: Telem
 
   @behaviour KaufmannEx.Transcode
 
   @impl true
   def decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
-    case Jason.decode(encoded) do
+    start_time = System.monotonic_time()
+    response = case Jason.decode(encoded) do
       {:ok, %{"meta" => meta, "payload" => payload}} ->
         %Event{
           event
@@ -30,6 +32,12 @@ defmodule KaufmannEx.Transcoder.Json do
       other ->
         other
     end
+
+    if not is_tuple(response) do
+      Telem.report_decode_time(start_time: start_time, event: response)
+    end
+
+    response
   end
 
   @impl true

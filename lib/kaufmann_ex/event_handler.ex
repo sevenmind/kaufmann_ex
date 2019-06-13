@@ -169,7 +169,7 @@ defmodule KaufmannEx.EventHandler do
 
   defp report_telemetry(start_time: start_time, event: event, event_handler: event_handler) do
     event_name =
-      (Map.get(event, :name) || "")
+      (Map.get(event, :name) || "empty")
       |> String.split("#")
       |> Enum.at(0)
       |> String.split(":")
