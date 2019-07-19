@@ -5,7 +5,7 @@ defmodule KaufmannEx.MixProject do
     [
       app: :kaufmann_ex,
       # version is -dev while there are git dependencies
-      version: "0.4.1-dev",
+      version: "0.4.2-dev",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -54,7 +54,7 @@ defmodule KaufmannEx.MixProject do
       {:memoize, "~> 1.2"},
       {:telemetry, "~> 0.4"},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
-      {:credo, "~> 1.0.0", only: [:dev, :test], runtime: false},
+      {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
       {:bypass, "~> 1.0", only: :test},
       {:excoveralls, "~> 0.11", only: :test},

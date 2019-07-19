@@ -29,7 +29,6 @@ defmodule KaufmannEx.Consumer.Flow do
           partition: partition
         }
       end)
-      # Filter out unhandled events before decoding
       # Decode each event
       |> Flow.map(&decode_event/1)
       |> Flow.flat_map(&EventHandler.handle_event(&1, event_handler))
@@ -48,13 +47,11 @@ defmodule KaufmannEx.Consumer.Flow do
     end
   end
 
-  defp drain_flow_tail(flow), do: Flow.map(flow, fn _ -> [] end)
-
   defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
     # when in doubt try all the transcoders
-    Enum.map(Config.transcoders(), fn trns -> trns.decode_event(event) end)
-    |> Enum.find(fn
-      %Event{} = _ -> true
+    Enum.map(Config.transcoders(), & &1.decode_event(event))
+    |> Enum.find([], fn
+      %Event{} = _event -> true
       _ -> false
     end)
   end

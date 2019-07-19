@@ -15,7 +15,8 @@ defmodule KaufmannEx.Transcoder.JsonTest do
                Json.decode_event(%Event{
                  raw_event: %{
                    key: nil,
-                   value: ~s({"some":"event"})
+                   value: ~s({"some":"event"}),
+                   offset: 0
                  }
                })
     end
@@ -29,7 +30,8 @@ defmodule KaufmannEx.Transcoder.JsonTest do
                Json.decode_event(%Event{
                  raw_event: %{
                    key: nil,
-                   value: ~s({"meta":{"key":"value"},"payload":{"some":"field"}})
+                   value: ~s({"meta":{"key":"value"},"payload":{"some":"field"}}),
+                   offset: 0
                  }
                })
     end

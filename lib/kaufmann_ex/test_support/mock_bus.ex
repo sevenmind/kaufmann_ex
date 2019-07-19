@@ -125,6 +125,18 @@ defmodule KaufmannEx.TestSupport.MockBus do
   end
 
   @doc """
+  Directly publish an event to the current process. Any Produced event should be
+  asserted with `then_event/3`
+  """
+  def produce(topic, event_name, payload, meta) do
+    send(
+      self(),
+      {:produce,
+       {event_name, %{payload: payload, meta: meta}, topic}}
+    )
+  end
+
+  @doc """
   Asserts an event will be emitted to the bus
 
   Will test emitted payload from event matches payload
