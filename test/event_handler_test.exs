@@ -160,7 +160,7 @@ defmodule KaufmannEx.EventHandlerTest do
       assert Enum.map(res, &Map.get(&1, :topic)) == [
                :callback,
                "rapids",
-               %{format: :json, topic: :default}
+               :default
              ]
     end
   end

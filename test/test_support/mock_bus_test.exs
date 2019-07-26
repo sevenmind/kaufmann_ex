@@ -31,11 +31,11 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     end
 
     def given_event(%Event{name: "event_a", payload: payload}) do
-      {:reply, {"event_b", payload}}
+      {:reply, %{event: "event_b", payload: payload, topics: [%{topic: :default, format: :json}]}}
     end
 
     def given_event(%Event{name: "event_b", payload: payload}) do
-      {:reply, {"event_c", payload}}
+      {:reply,  %{event: "event_c", payload: payload, topics: [%{topic: :default, format: :json}]}}
     end
 
     def given_event(%Event{name: "test.event.publish", payload: "raise_error"} = event) do

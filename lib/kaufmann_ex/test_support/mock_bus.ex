@@ -109,7 +109,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
           metadata: meta,
           context: _context,
           topic: topic
-        } <- events do
+        } = request <- events do
       testable_event_name =
         case event_name do
           name when is_atom(name) -> name
@@ -120,7 +120,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
       # Ensure event effect is consumed by event handler
       if topic == :default do
-        handle_and_send_event(%Event{name: event_name, payload: payload, meta: meta})
+        handle_and_send_event(request)
       end
     end
 

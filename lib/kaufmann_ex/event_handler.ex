@@ -201,29 +201,37 @@ defmodule KaufmannEx.EventHandler do
     ]
   end
 
-  defp format_event(event, {event_name, payload}), do: wrap_event(event_name, payload, event)
+  defp format_event(original_event, {event_name, payload}),
+    do: format_event(original_event, %{event: event_name, payload: payload})
 
-  defp format_event(event, {event_name, payload, topics}) when is_list(topics),
-    do: wrap_event(event_name, payload, event, topics)
+  defp format_event(original_event, {event_name, payload, topic})
+       when is_map(topic) or is_binary(topic) or is_atom(topic),
+       do: format_event(original_event, %{event: event_name, payload: payload, topics: [topic]})
 
-  defp format_event(event, {event_name, payload, topic}),
-    do: wrap_event(event_name, payload, event, [topic])
+  defp format_event(original_event, {event_name, payload, topics}) when is_list(topics),
+    do: format_event(original_event, %{event: event_name, payload: payload, topics: topics})
 
-  defp format_event(event, %{event: event_name, payload: payload, topics: nil}),
-    do: wrap_event(event_name, payload, event)
+  defp format_event(original_event, %{event: event_name, payload: payload} = result_event) do
+    result_event
+    |> Map.get(:topics, [:default])
+    |> Enum.map(fn
+      topic when is_binary(topic) or is_atom(topic) ->
+        %Request{
+          event_name: event_name,
+          metadata: Event.event_metadata(event_name, original_event.meta),
+          payload: payload,
+          context: original_event.meta,
+          topic: topic
+        }
 
-  defp format_event(event, %{event: event_name, payload: payload, topics: topics}),
-    do: wrap_event(event_name, payload, event, topics)
-
-  defp wrap_event(event_name, payload, event, topics \\ [:default]) do
-    Enum.map(topics, fn topic ->
-      %Request{
-        event_name: event_name,
-        metadata: Event.event_metadata(event_name, event.meta),
-        payload: payload,
-        context: event.meta,
-        topic: topic
-      }
+      topic when is_map(topic) ->
+        %Request{
+          event_name: event_name,
+          metadata: Event.event_metadata(event_name, original_event.meta),
+          payload: payload,
+          context: original_event.meta
+        }
+        |> Map.merge(topic)
     end)
   end
 end
