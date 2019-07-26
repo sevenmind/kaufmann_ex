@@ -96,9 +96,9 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
     end
 
     test "when events trigger more events" do
-      given_event("event_a", %{value: "Hello"})
-      then_event("event_b", %{value: "Hello"})
-      then_event("event_c", %{value: "Hello"})
+      given_event("event_a", %{value: "Hello"}, format: :json)
+      then_event("event_b", %{"value" => "Hello"})
+      then_event("event_c", %{"value" => "Hello"})
     end
   end
 

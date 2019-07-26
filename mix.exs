@@ -5,7 +5,7 @@ defmodule KaufmannEx.MixProject do
     [
       app: :kaufmann_ex,
       # version is -dev while there are git dependencies
-      version: "0.4.2-dev",
+      version: "0.4.3-dev",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -61,6 +61,7 @@ defmodule KaufmannEx.MixProject do
       {:benchee, "~> 1.0", only: [:dev, :test]},
       {:mock, "~> 0.3.0", only: [:test]},
       {:inch_ex, only: :docs}
+      # {:exavier, git: "git@github.com:dnlserrano/exavier.git", only: [:test]}
     ]
   end
 

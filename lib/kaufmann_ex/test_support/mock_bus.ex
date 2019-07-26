@@ -63,9 +63,17 @@ defmodule KaufmannEx.TestSupport.MockBus do
 
   Schema must be defined & payload must be valid/enocodable
   """
-  @spec given_event(atom | binary, any, binary | nil) :: :ok
-  def given_event(event_name, payload, callback_id \\ nil) do
+  @spec given_event(atom | binary, any, binary | list | nil) :: :ok
+  def given_event(event_name, payload, opts \\ [])
+
+  def given_event(event_name, payload, callback_id) when is_binary(callback_id),
+    do: given_event(event_name, payload, callback_id: callback_id)
+
+  def given_event(event_name, payload, opts) do
     schema_name = schema_name_if_query(event_name)
+
+    callback_id = Keyword.get(opts, :callback_id, nil)
+    format = Keyword.get(opts, :format, nil)
 
     assert MockSchemaRegistry.defined_event?(schema_name),
            "Schema #{schema_name} not registered, Is the schema in #{
@@ -76,7 +84,8 @@ defmodule KaufmannEx.TestSupport.MockBus do
     event = %Request{
       event_name: event_name,
       metadata: event_metadata(event_name, %{callback_id: callback_id}),
-      payload: payload
+      payload: payload,
+      format: format
     }
 
     # If message isn't encodable, big problems
@@ -85,19 +94,13 @@ defmodule KaufmannEx.TestSupport.MockBus do
     handle_and_send_event(event)
   end
 
-  defp handle_and_send_event(%Request{
-         event_name: event_name,
-         payload: payload,
-         metadata: metadata
-       }),
-       do:
-         handle_and_send_event(%Event{
-           payload: payload,
-           name: event_name,
-           meta: metadata
-         })
+  defp handle_and_send_event(%Request{} = request),
+    do:
+      request
+      |> MockSchemaRegistry.encode_decode()
+      |> handle_and_send_event()
 
-  defp handle_and_send_event(event) do
+  defp handle_and_send_event(%Event{} = event) do
     events = EventHandler.handle_event(event, event_consumer())
 
     for %{
@@ -131,8 +134,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   def produce(topic, event_name, payload, meta) do
     send(
       self(),
-      {:produce,
-       {event_name, %{payload: payload, meta: meta}, topic}}
+      {:produce, {event_name, %{payload: payload, meta: meta}, topic}}
     )
   end
 
