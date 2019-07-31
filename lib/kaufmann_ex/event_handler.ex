@@ -139,7 +139,7 @@ defmodule KaufmannEx.EventHandler do
   end
 
   defp handle_event_and_response(event, event_handler) do
-    event_name = event.name
+    event_name = Map.get(event, :name, nil)
 
     case event_handler.given_event(event) do
       {:reply, events} when is_list(events) ->
