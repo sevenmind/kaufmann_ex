@@ -10,17 +10,24 @@ defmodule KaufmannEx.Supervisor do
 
   @spec start_link(any()) :: :ignore | {:error, any()} | {:ok, pid()}
   def start_link(opts \\ []) do
-    :ok = Logger.info(fn -> "#{__MODULE__} Starting" end)
-    Supervisor.start_link(__MODULE__, opts, name: __MODULE__)
+    name = Keyword.get(opts, :name, __MODULE__)
+    :ok = Logger.info(fn -> "#{name} Starting" end)
+    Supervisor.start_link(__MODULE__, opts, name: name)
   end
 
-  def init(_opts \\ []) do
-    consumer_group_name = KaufmannEx.Config.consumer_group()
-    topics = KaufmannEx.Config.subscription_topics()
+  def init(opts \\ []) do
+    consumer_group_name =
+      Keyword.get(opts, :consumer_group_name, KaufmannEx.Config.consumer_group())
+
+    topics = Keyword.get(opts, :topics, KaufmannEx.Config.subscription_topics())
+
+    consumer_group_id = Keyword.get(opts, :id, KaufmannEx.ConsumerGroup)
+    manager_name = Keyword.get(opts, :manager_name, KaufmannEx.ConsumerGroup.Manager)
+    gen_server_opts = Keyword.get(opts, :gen_server_opts, [])
 
     children = [
       %{
-        id: KaufmannEx.ConsumerGroup,
+        id: consumer_group_id,
         start:
           {KafkaEx.ConsumerGroup, :start_link,
            [
@@ -36,7 +43,9 @@ defmodule KaufmannEx.Supervisor do
                  max_bytes: 1_971_520,
                  wait_time: 100
                ],
-               commit_strategy: :async_commit
+               commit_strategy: :async_commit,
+               name: manager_name, # passed through to the ConsumerGroup.Manager
+               gen_server_opts: gen_server_opts
              ]
            ]},
         type: :supervisor
