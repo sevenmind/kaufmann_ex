@@ -227,7 +227,7 @@ defmodule KaufmannEx.EventHandler do
       topic when is_map(topic) ->
         %Request{
           event_name: event_name,
-          metadata: Event.event_metadata(event_name, original_event.meta),
+          metadata: Event.event_metadata(event_name, original_event.meta || %{}),
           payload: payload,
           context: original_event.meta
         }
