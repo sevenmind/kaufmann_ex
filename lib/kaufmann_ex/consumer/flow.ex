@@ -50,7 +50,7 @@ defmodule KaufmannEx.Consumer.Flow do
   defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
     # when in doubt try all the transcoders
     Enum.map(Config.transcoders(), & &1.decode_event(event))
-    |> Enum.find([], fn
+    |> Enum.find(event, fn
       %Event{} = _event -> true
       _ -> false
     end)
