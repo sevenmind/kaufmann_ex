@@ -42,7 +42,7 @@ defmodule KaufmannEx.Publisher do
         workers \\ [:kafka_ex]
       )
       when is_list(workers) do
-    Logger.debug("Publishing Event #{event_name} on #{topic}##{partition}")
+    Logger.debug("Publishing Event #{event_name} on #{topic}##{inspect(partition)}")
 
     message = %Message{value: encoded, key: event_name}
 
