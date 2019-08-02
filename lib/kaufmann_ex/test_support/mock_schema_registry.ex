@@ -53,7 +53,7 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
         end
       end
     )
-    |> Enum.find([], fn
+    |> Enum.find(event, fn
       %Event{} = _ -> true
       _ -> false
     end)
@@ -67,7 +67,7 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
         _ -> []
       end
     end)
-    |> Enum.find([], fn
+    |> Enum.find(request, fn
       %Request{} = _ -> true
       _ -> false
     end)
