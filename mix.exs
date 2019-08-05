@@ -5,7 +5,7 @@ defmodule KaufmannEx.MixProject do
     [
       app: :kaufmann_ex,
       # version is -dev while there are git dependencies
-      version: "0.4.3-dev",
+      version: "0.4.4-dev",
       elixir: "~> 1.7",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -48,7 +48,9 @@ defmodule KaufmannEx.MixProject do
       {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex"},
       {:jason, "~> 1.1"},
       {:avro_ex, "~> 0.1.0-beta.6"},
-      {:ex_json_schema, "~> 0.6"},
+
+      # use ex_json_schema for until merged: https://github.com/jonasschmidt/ex_json_schema/pull/43
+      {:ex_json_schema, git: "https://github.com/woylie/ex_json_schema"},
       {:schemex, "~> 0.1.1"},
       {:nanoid, "~> 2.0"},
       {:memoize, "~> 1.2"},
@@ -61,7 +63,6 @@ defmodule KaufmannEx.MixProject do
       {:benchee, "~> 1.0", only: [:dev, :test]},
       {:mock, "~> 0.3.0", only: [:test]},
       {:inch_ex, only: :docs}
-      # {:exavier, git: "git@github.com:dnlserrano/exavier.git", only: [:test]}
     ]
   end
 
