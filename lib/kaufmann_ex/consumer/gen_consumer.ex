@@ -31,21 +31,12 @@ defmodule KaufmannEx.Consumer.GenConsumer do
     end)
     # Filter out unhandled events before decoding
     # Decode each event
-    |> Enum.map(&decode_event/1)
+    |> Enum.map(&Event.decode_event/1)
     |> Enum.flat_map(&EventHandler.handle_event(&1, event_handler))
     |> Enum.flat_map(&TopicSelector.resolve_topic/1)
     |> Enum.map(&Encoder.encode_event/1)
     |> Enum.each(&Publisher.publish_request/1)
 
     {:async_commit, state}
-  end
-
-  defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
-    # when in doubt try all the transcoders
-    Enum.map(Config.transcoders(), fn trns -> trns.decode_event(event) end)
-    |> Enum.find(fn
-      %Event{} = _ -> true
-      _ -> false
-    end)
   end
 end

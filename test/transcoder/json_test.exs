@@ -24,7 +24,7 @@ defmodule KaufmannEx.Transcoder.JsonTest do
     test "maps meta key if present" do
       assert %Event{
                name: nil,
-               meta: %{"key" => "value"},
+               meta: %{key: "value"},
                payload: %{"some" => "field"}
              } =
                Json.decode_event(%Event{
@@ -40,7 +40,7 @@ defmodule KaufmannEx.Transcoder.JsonTest do
   describe "encode_event" do
     test "encodes event" do
       assert %Request{
-               encoded: "{\"this\":\"value\"}",
+               encoded: ~s({"meta":null,"this":"value"}),
                format: :json
              } = Json.encode_event(%Request{format: :json, payload: %{this: "value"}})
     end

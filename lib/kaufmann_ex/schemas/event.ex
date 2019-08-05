@@ -1,4 +1,6 @@
 defmodule KaufmannEx.Schemas.Event do
+  alias KaufmannEx.Config
+
   @type t :: %KaufmannEx.Schemas.Event{
           name: atom,
           meta: map,
@@ -27,6 +29,15 @@ defmodule KaufmannEx.Schemas.Event do
       timestamp: DateTime.to_string(DateTime.utc_now()),
       callback_topic: Map.get(context, :next_callback_topic, nil)
     }
+  end
+
+  def decode_event(%__MODULE__{raw_event: %{key: _, value: _}} = event) do
+    # when in doubt try all the transcoders
+    Enum.map(Config.transcoders(), & &1.decode_event(event))
+    |> Enum.find(event, fn
+      %__MODULE__{} = _event -> true
+      _ -> false
+    end)
   end
 end
 
