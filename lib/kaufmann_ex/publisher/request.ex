@@ -2,11 +2,20 @@ defmodule KaufmannEx.Publisher.Request do
   @moduledoc """
   A Struct wrapping a publish request
   """
-  defstruct [:event_name, :payload, :metadata, :context, :topic, :format, :partition, :encoded]
+  defstruct(
+    event_name: nil,
+    payload: nil,
+    metadata: nil,
+    partition: nil,
+    encoded: nil,
+    context: %{},
+    format: :default,
+    topic: :default
+  )
 
   @type t :: %__MODULE__{
           event_name: atom | binary,
-          payload: Map,
+          payload: Map | binary,
           metadata: Map,
           context: Map,
           topic: binary | atom | map,

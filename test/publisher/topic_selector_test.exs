@@ -17,13 +17,8 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelectorTest do
     test "selects default topic when no topic specified" do
       assert [
                %KaufmannEx.Publisher.Request{
-                 context: %{},
-                 encoded: nil,
                  event_name: :whatever,
-                 format: nil,
-                 metadata: nil,
                  partition: nil,
-                 payload: %{},
                  topic: "default_topic"
                }
              ] =
@@ -40,7 +35,7 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelectorTest do
                  context: %{},
                  encoded: nil,
                  event_name: :whatever,
-                 format: nil,
+                 format: :default,
                  metadata: nil,
                  partition: nil,
                  payload: %{},
@@ -58,7 +53,6 @@ defmodule KaufmannEx.Publisher.Stage.TopicSelectorTest do
     test "respects passed topic" do
       assert [
                %KaufmannEx.Publisher.Request{
-                 format: nil,
                  partition: nil,
                  topic: "specified_topic"
                }
