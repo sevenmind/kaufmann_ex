@@ -158,8 +158,15 @@ defmodule KaufmannEx.TestSupport.MockBus do
       payload: message_payload
     })
 
-    if expected_payload != %{} do
-      assert message_payload == expected_payload
+    case expected_payload do
+      %{} ->
+        nil
+
+      pl when is_map(pl) ->
+        assert Map.drop(message_payload, [:meta, "meta"]) == expected_payload
+
+      _ ->
+        assert message_payload == expected_payload
     end
 
     %{payload: message_payload, meta: meta, topic: topic} |> Map.Helpers.atomize_keys()

@@ -1,37 +1,40 @@
 defmodule KaufmannEx.Transcoder.Json do
   @moduledoc """
-  avro encoding & serialization in use in sevenmind
+  JSON Encoder wrapper
   """
 
+  require Logger
   import Map.Helpers, only: [stringify_keys: 1]
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
   alias KaufmannEx.Telemetry.Logger, as: Telem
 
-  @behaviour KaufmannEx.Transcode
+  @behaviour KaufmannEx.Transcoder
 
   @impl true
   def decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
     start_time = System.monotonic_time()
-    response = case Jason.decode(encoded) do
-      {:ok, %{"meta" => meta, "payload" => payload}} ->
-        %Event{
-          event
-          | name: key,
-            meta: meta,
-            payload: payload
-        }
 
-      {:ok, payload} ->
-        %Event{
-          event
-          | name: key,
-            payload: payload
-        }
+    response =
+      case Jason.decode(encoded) do
+        {:ok, %{"meta" => meta, "payload" => payload}} ->
+          %Event{
+            event
+            | name: key,
+              meta: Map.Helpers.atomize_keys(meta),
+              payload: Map.drop(payload, ["meta", :meta])
+          }
 
-      other ->
-        other
-    end
+        {:ok, payload} ->
+          %Event{
+            event
+            | name: key,
+              payload: payload
+          }
+
+        other ->
+          other
+      end
 
     if not is_tuple(response) do
       Telem.report_decode_time(start_time: start_time, event: response)
@@ -41,8 +44,34 @@ defmodule KaufmannEx.Transcoder.Json do
   end
 
   @impl true
-  def encode_event(%Request{format: :json, payload: payload} = request) do
-    %Request{request | encoded: Jason.encode!(payload)}
+  def encode_event(
+        %Request{format: :json, payload: payload, metadata: meta, event_name: event_name} =
+          request
+      ) do
+    start_time = System.monotonic_time()
+
+    payload =
+      case payload do
+        %{meta: _meta} = _ -> payload
+        payload -> Map.put(payload, :meta, meta)
+      end
+
+    with {:ok, encoded} <- Jason.encode(payload) do
+      Telem.report_encode_duration(
+        start_time: start_time,
+        encoded: encoded,
+        message_name: event_name
+      )
+
+      %Request{request | encoded: encoded}
+    else
+      {:error, error_message} ->
+        Logger.warn(fn ->
+          "Error Encoding #{event_name} - #{inspect(error_message)}, #{inspect(payload)}"
+        end)
+
+        {:error, {:encoding_error, error_message}}
+    end
   end
 
   @impl true
@@ -69,6 +98,7 @@ defmodule KaufmannEx.Transcoder.Json do
     ExJsonSchema.Validator.valid?(schema, stringify_keys(map))
   end
 
+  @impl true
   def defined_event?(event_name) do
     event_name
     |> find_schema

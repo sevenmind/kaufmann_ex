@@ -30,7 +30,7 @@ defmodule KaufmannEx.Consumer.Flow do
         }
       end)
       # Decode each event
-      |> Flow.map(&decode_event/1)
+      |> Flow.map(&Event.decode_event/1)
       |> Flow.flat_map(&EventHandler.handle_event(&1, event_handler))
       |> Flow.flat_map(&TopicSelector.resolve_topic/1)
       |> Flow.map(&Encoder.encode_event/1)
@@ -45,14 +45,5 @@ defmodule KaufmannEx.Consumer.Flow do
       {:ok, pid} -> {:ok, pid}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end
-  end
-
-  defp decode_event(%Event{raw_event: %{key: _, value: _}} = event) do
-    # when in doubt try all the transcoders
-    Enum.map(Config.transcoders(), & &1.decode_event(event))
-    |> Enum.find(event, fn
-      %Event{} = _event -> true
-      _ -> false
-    end)
   end
 end
