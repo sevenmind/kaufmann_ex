@@ -16,21 +16,37 @@ defmodule KaufmannEx.Publisher do
   Execute Encode & publish inline, for when you just need to send something to
   kafka right now.
   """
-  def publish(event_name, body, context \\ %{}, topic \\ :default, format \\ :default) do
-    %Request{
-      event_name: event_name,
-      payload: body,
-      context: context,
-      topic: topic,
-      format: format,
-      metadata: Event.event_metadata(event_name, context)
-    }
+  def publish(event_name, body, context \\ %{}, topic \\ :default, format \\ :default),
+    do:
+      publish(%Request{
+        event_name: event_name,
+        payload: body,
+        context: context,
+        topic: topic,
+        format: format,
+        metadata: Event.event_metadata(event_name, context)
+      })
+
+  @doc """
+  Publish a `Publish.Request` directly to Kafka
+  """
+  @spec publish(Request.t()) :: :ok
+  def publish(%Request{} = request) do
+    request
+    |> populate_metadata()
     |> TopicSelector.resolve_topic()
     |> Enum.map(&Encoder.encode_event/1)
     |> Enum.each(&publish_request/1)
 
     :ok
   end
+
+  defp populate_metadata(
+         %Request{event_name: event_name, context: context, metadata: nil} = request
+       ),
+       do: %Request{request | metadata: Event.event_metadata(event_name, context)}
+
+  defp populate_metadata(%Request{} = request), do: request
 
   def publish_request(
         %Request{
@@ -67,7 +83,8 @@ defmodule KaufmannEx.Publisher do
          encoded: encoded,
          request: %{topic: topic, partition: partition, event_name: event_name}
        ) do
-    event_name = (event_name || "") |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
+    event_name =
+      (event_name || "") |> String.split("#") |> Enum.at(0) |> String.split(":") |> Enum.at(0)
 
     :telemetry.execute(
       [:kaufmann_ex, :publisher, :publish],
