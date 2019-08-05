@@ -12,67 +12,79 @@ defmodule KaufmannEx.Transcoder.Json do
   @behaviour KaufmannEx.Transcoder
 
   @impl true
-  def decode_event(%Event{raw_event: %{key: key, value: encoded}} = event) do
+  def decode_event(%Event{raw_event: %{key: _key, value: encoded}} = event) do
     start_time = System.monotonic_time()
 
-    response =
-      case Jason.decode(encoded) do
-        {:ok, %{"meta" => meta, "payload" => payload}} ->
-          %Event{
-            event
-            | name: key,
-              meta: Map.Helpers.atomize_keys(meta),
-              payload: Map.drop(payload, ["meta", :meta])
-          }
-
-        {:ok, payload} ->
-          %Event{
-            event
-            | name: key,
-              payload: payload
-          }
-
-        other ->
-          other
-      end
-
-    if not is_tuple(response) do
-      Telem.report_decode_time(start_time: start_time, event: response)
-    end
-
-    response
+    encoded
+    |> Jason.decode()
+    |> format_decoded_event(event)
+    |> report_decode_time(start_time)
   end
+
+  defp format_decoded_event(
+         {:ok, %{"meta" => meta, "payload" => payload}},
+         %Event{raw_event: %{key: key}} = event
+       ) do
+    %Event{
+      event
+      | name: key,
+        meta: Map.Helpers.atomize_keys(meta),
+        payload: Map.drop(payload, ["meta", :meta])
+    }
+  end
+
+  defp format_decoded_event({:ok, payload}, %Event{raw_event: %{key: key}} = event),
+    do: %Event{
+      event
+      | name: key,
+        payload: payload
+    }
+
+  defp format_decoded_event(other, _event), do: other
+
+  defp report_decode_time(%Event{} = event, start_time) do
+    Telem.report_decode_time(start_time: start_time, event: event)
+
+    event
+  end
+
+  defp report_decode_time(other, _start_time), do: other
 
   @impl true
-  def encode_event(
-        %Request{format: :json, payload: payload, metadata: meta, event_name: event_name} =
-          request
-      ) do
+  def encode_event(%Request{format: :json, payload: payload, metadata: meta} = request) do
     start_time = System.monotonic_time()
 
-    payload =
-      case payload do
-        %{meta: _meta} = _ -> payload
-        payload -> Map.put(payload, :meta, meta)
-      end
-
-    with {:ok, encoded} <- Jason.encode(payload) do
-      Telem.report_encode_duration(
-        start_time: start_time,
-        encoded: encoded,
-        message_name: event_name
-      )
-
-      %Request{request | encoded: encoded}
-    else
-      {:error, error_message} ->
-        Logger.warn(fn ->
-          "Error Encoding #{event_name} - #{inspect(error_message)}, #{inspect(payload)}"
-        end)
-
-        {:error, {:encoding_error, error_message}}
-    end
+    payload
+    |> Map.put_new(:meta, meta)
+    |> Jason.encode()
+    |> format_encoded_event(request)
+    |> report_encode_duration(start_time)
   end
+
+  defp format_encoded_event({:ok, encoded}, %Request{} = request),
+    do: %Request{request | encoded: encoded}
+
+  defp format_encoded_event({:error, error_message}, %Request{} = request) do
+    Logger.warn(fn ->
+      "Error Encoding #{request.event_name} - #{inspect(error_message)}, #{
+        inspect(request.payload)
+      }"
+    end)
+
+    {:error, {:encoding_error, error_message}}
+  end
+
+  defp report_encode_duration(%Request{} = request, start_time) do
+    Telem.report_encode_duration(
+      start_time: start_time,
+      encoded: request.encoded,
+      message_name: request.event_name
+    )
+
+    request
+  end
+
+  defp report_encode_duration(other, _start_time), do: other
 
   @impl true
   def schema_extension, do: ".json"
