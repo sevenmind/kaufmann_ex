@@ -26,6 +26,10 @@ defmodule KaufmannEx.Publisher.TopicSelector do
       iex> KaufmannEx.Publisher.TopicSelector.resolve_topic(%KaufmannEx.Publisher.Request{topic: :callback, context: %{callback_topic: nil}})
       []
 
+      # When nil context
+      iex> KaufmannEx.Publisher.TopicSelector.resolve_topic(%KaufmannEx.Publisher.Request{topic: :callback, context: nil})
+      []
+
       # when defined callback_topic
       iex> KaufmannEx.Publisher.TopicSelector.resolve_topic(%KaufmannEx.Publisher.Request{topic: :callback, context: %{callback_topic: %{topic: "topic", partition: 10}}})
       [%KaufmannEx.Publisher.Request{topic: "topic", partition: 10, context: %{callback_topic: %{partition: 10, topic: "topic"}}}]
@@ -58,7 +62,7 @@ defmodule KaufmannEx.Publisher.TopicSelector do
     [Map.merge(request, callback)]
   end
 
-  def resolve_topic(%Request{topic: :callback, context: %{callback_topic: _}} = _), do: []
+  def resolve_topic(%Request{topic: :callback, context: _} = _), do: []
 
   def resolve_topic(%Request{topic: topic} = request) when topic == :default or is_nil(topic) do
     [%Request{request | topic: Config.default_topic()}]
