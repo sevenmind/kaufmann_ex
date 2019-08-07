@@ -29,7 +29,10 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   end
 
   @spec encode_decode(Request.t()) :: Event.t()
-  def encode_decode(%Request{format: format} = request) when format == :json or format == :avro do
+  def encode_decode(%Request{format: nil} = request),
+    do: encode_decode(%Request{request | format: :default})
+
+  def encode_decode(%Request{format: format} = request) do
     transcoder = Config.transcoder(format)
 
     %Request{encoded: encoded, event_name: event_name, metadata: meta} =
@@ -41,47 +44,4 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
     })
   end
 
-  def encode_decode(%Request{} = request) do
-    %Request{encoded: encoded, event_name: event_name, metadata: meta} = brute_encode(request)
-
-    brute_decode(%Event{raw_event: %{key: event_name, value: encoded, offset: 0}, meta: meta})
-  end
-
-  defp all_schemas do
-    KaufmannEx.Config.schema_path()
-    |> List.flatten()
-    |> Enum.flat_map(&Path.wildcard([&1, "/**"]))
-  end
-
-  defp brute_decode(%Event{raw_event: %{key: _, value: _}} = event) do
-    # when in doubt try all the transcoders
-    Enum.map(
-      Config.transcoders(),
-      fn tr ->
-        try do
-          tr.decode_event(event)
-        rescue
-          _ -> []
-        end
-      end
-    )
-    |> Enum.find(event, fn
-      %Event{} = _ -> true
-      _ -> false
-    end)
-  end
-
-  defp brute_encode(%Request{} = request) do
-    Enum.map(Config.transcoders(), fn tr ->
-      try do
-        tr.encode_event(request)
-      rescue
-        _ -> []
-      end
-    end)
-    |> Enum.find(request, fn
-      %Request{} = _ -> true
-      _ -> false
-    end)
-  end
 end
