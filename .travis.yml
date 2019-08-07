@@ -3,21 +3,15 @@ elixir:
   - 1.8
   - 1.9
 otp_release:
-  - 21.0
   - 22.0
 
 env:
- global:
-   - MIX_ENV=test
-   - PRONTO_PULL_REQUEST_ID=$TRAVIS_PULL_REQUEST
-
+  global:
+    - MIX_ENV=test
 before_script:
-  - rvm install ruby-2.3.1
-  - gem install pronto-credo
+  - mix deps.compile
 
 script:
-  - if [ $PULL_REQUEST_ID != false ]; then pronto run -f github_pr; fi
-  - mix test
   - mix coveralls.json
   - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
   - cd sample_application
@@ -28,7 +22,10 @@ after_script:
   - MIX_ENV=docs mix inch.report
 
 cache:
- directories:
-   - /home/travis/.rvm/
-   - /home/travis/otp/
-   - /home/travis/.kiex/
+  directories:
+    - /home/travis/otp/
+    - /home/travis/.kiex/
+    - deps
+    - _build
+    - sample_application/deps
+    - sample_application/_build
