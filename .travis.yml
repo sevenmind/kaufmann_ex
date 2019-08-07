@@ -16,8 +16,7 @@ before_script:
   - gem install pronto-credo
 
 script:
-  - if [ $PULL_REQUEST_ID != false ]; then pronto run -f github_pr; fi
-  - mix test
+  - if [  -z "$PULL_REQUEST_ID" ]; then pronto run -f github_pr; fi
   - mix coveralls.json
   - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
   - cd sample_application
@@ -32,3 +31,5 @@ cache:
    - /home/travis/.rvm/
    - /home/travis/otp/
    - /home/travis/.kiex/
+   - /home/travis/deps/
+   - /home/travis/_build/
