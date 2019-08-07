@@ -8,14 +8,8 @@ otp_release:
 env:
  global:
    - MIX_ENV=test
-   - PRONTO_PULL_REQUEST_ID=$TRAVIS_PULL_REQUEST
-
-before_script:
-  - rvm install ruby-2.3.1
-  - gem install pronto-credo
 
 script:
-  - if [  -z "$PULL_REQUEST_ID" ]; then pronto run -f github_pr; fi
   - mix coveralls.json
   - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
   - cd sample_application
@@ -27,7 +21,6 @@ after_script:
 
 cache:
  directories:
-   - /home/travis/.rvm/
    - /home/travis/otp/
    - /home/travis/.kiex/
    - /home/travis/deps/
