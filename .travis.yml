@@ -8,7 +8,9 @@ otp_release:
 env:
  global:
    - MIX_ENV=test
-
+before_script:
+  - mix deps.compile
+  
 script:
   - mix coveralls.json
   - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
