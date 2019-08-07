@@ -5,6 +5,8 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   Looks for Schemas at `Application.get_env(:kaufmann_ex, :schema_path)`
   """
 
+  import ExUnit.Assertions
+
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
@@ -35,6 +37,11 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   def encode_decode(%Request{format: format} = request) do
     transcoder = Config.transcoder(format)
 
+    assert transcoder, """
+      undefined format: #{inspect(format)}
+      Format must match a transcoder specified in Application env `:kaufmann_ex, :transcoder`
+    """
+
     %Request{encoded: encoded, event_name: event_name, metadata: meta} =
       transcoder.encode_event(request)
 
@@ -43,5 +50,4 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
       meta: meta
     })
   end
-
 end
