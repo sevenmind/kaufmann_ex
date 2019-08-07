@@ -29,6 +29,18 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   end
 
   @spec encode_decode(Request.t()) :: Event.t()
+  def encode_decode(%Request{format: format} = request) when format == :json or format == :avro do
+    transcoder = Config.transcoder(format)
+
+    %Request{encoded: encoded, event_name: event_name, metadata: meta} =
+      transcoder.encode_event(request)
+
+    transcoder.decode_event(%Event{
+      raw_event: %{key: event_name, value: encoded, offset: 0},
+      meta: meta
+    })
+  end
+
   def encode_decode(%Request{} = request) do
     %Request{encoded: encoded, event_name: event_name, metadata: meta} = brute_encode(request)
 
