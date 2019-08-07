@@ -5,6 +5,8 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   Looks for Schemas at `Application.get_env(:kaufmann_ex, :schema_path)`
   """
 
+  import ExUnit.Assertions
+
   alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
@@ -29,47 +31,23 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
   end
 
   @spec encode_decode(Request.t()) :: Event.t()
-  def encode_decode(%Request{} = request) do
-    %Request{encoded: encoded, event_name: event_name, metadata: meta} = brute_encode(request)
+  def encode_decode(%Request{format: nil} = request),
+    do: encode_decode(%Request{request | format: :default})
 
-    brute_decode(%Event{raw_event: %{key: event_name, value: encoded, offset: 0}, meta: meta})
-  end
+  def encode_decode(%Request{format: format} = request) do
+    transcoder = Config.transcoder(format)
 
-  defp all_schemas do
-    KaufmannEx.Config.schema_path()
-    |> List.flatten()
-    |> Enum.flat_map(&Path.wildcard([&1, "/**"]))
-  end
+    assert transcoder, """
+      undefined format: #{inspect(format)}
+      Format must match a transcoder specified in Application env `:kaufmann_ex, :transcoder`
+    """
 
-  defp brute_decode(%Event{raw_event: %{key: _, value: _}} = event) do
-    # when in doubt try all the transcoders
-    Enum.map(
-      Config.transcoders(),
-      fn tr ->
-        try do
-          tr.decode_event(event)
-        rescue
-          _ -> []
-        end
-      end
-    )
-    |> Enum.find(event, fn
-      %Event{} = _ -> true
-      _ -> false
-    end)
-  end
+    %Request{encoded: encoded, event_name: event_name, metadata: meta} =
+      transcoder.encode_event(request)
 
-  defp brute_encode(%Request{} = request) do
-    Enum.map(Config.transcoders(), fn tr ->
-      try do
-        tr.encode_event(request)
-      rescue
-        _ -> []
-      end
-    end)
-    |> Enum.find(request, fn
-      %Request{} = _ -> true
-      _ -> false
-    end)
+    transcoder.decode_event(%Event{
+      raw_event: %{key: event_name, value: encoded, offset: 0},
+      meta: meta
+    })
   end
 end
