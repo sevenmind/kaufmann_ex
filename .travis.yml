@@ -6,8 +6,8 @@ otp_release:
   - 22.0
 
 env:
- global:
-   - MIX_ENV=test
+  global:
+    - MIX_ENV=test
 before_script:
   - mix deps.compile
 
@@ -22,8 +22,10 @@ after_script:
   - MIX_ENV=docs mix inch.report
 
 cache:
- directories:
-   - /home/travis/otp/
-   - /home/travis/.kiex/
-   - deps
-   - _build
+  directories:
+    - /home/travis/otp/
+    - /home/travis/.kiex/
+    - deps
+    - _build
+    - sample_application/deps
+    - sample_application/_build
