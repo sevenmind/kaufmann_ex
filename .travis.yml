@@ -10,7 +10,7 @@ env:
    - MIX_ENV=test
 before_script:
   - mix deps.compile
-  
+
 script:
   - mix coveralls.json
   - bash <(curl -s https://codecov.io/bash) -t "$CODECOV_TOKEN"
@@ -25,5 +25,5 @@ cache:
  directories:
    - /home/travis/otp/
    - /home/travis/.kiex/
-   - /home/travis/deps/
-   - /home/travis/_build/
+   - deps
+   - _build
