@@ -33,6 +33,18 @@ defmodule KaufmannEx.Transcoder.Json do
     }
   end
 
+  defp format_decoded_event(
+         {:ok, %{"meta" => meta} = payload},
+         %Event{raw_event: %{key: key}} = event
+       ) do
+    %Event{
+      event
+      | name: key,
+        meta: Map.Helpers.atomize_keys(meta),
+        payload: Map.drop(payload, ["meta", :meta])
+    }
+  end
+
   defp format_decoded_event({:ok, payload}, %Event{raw_event: %{key: key}} = event),
     do: %Event{
       event
