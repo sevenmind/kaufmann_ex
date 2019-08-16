@@ -63,6 +63,10 @@ defmodule KaufmannEx.Transcoder.Json do
   defp report_decode_time(other, _start_time), do: other
 
   @impl true
+
+  def encode_event(%Request{format: :json, payload: %{__struct__: _} = payload} = request),
+    do: encode_event(%Request{request | payload: Map.from_struct(payload)})
+
   def encode_event(%Request{format: :json, payload: payload, metadata: meta} = request) do
     start_time = System.monotonic_time()
 
