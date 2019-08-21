@@ -1,6 +1,6 @@
 %{
   "avro_ex": {:git, "https://github.com/beam-community/avro_ex.git", "9a02fd6af486fa1e2d94aed9c3c3b0ecc6805f8e", []},
-  "avro_ex_v0": {:hex, :avro_ex_v0, "0.1.0-beta.6", "4c872a4090884286613a3b5528a2bd0a15c4621cee80ca2f6b9fc59e289ee66a", [:mix], [{:ecto, "~> 2.1.0 or ~> 2.2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:poison, "~> 3.1.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
+  "avro_ex_v0": {:hex, :avro_ex_v0, "0.1.0-beta.6.1", "26530b408c3773cc5a94826fad92d1951ddac35e0df9e099555f5b2c95e24fcb", [:mix], [{:ecto, "~> 2.1.0 or ~> 2.2.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:poison, "~> 3.1.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "benchee": {:hex, :benchee, "1.0.1", "66b211f9bfd84bd97e6d1beaddf8fc2312aaabe192f776e8931cb0c16f53a521", [:mix], [{:deep_merge, "~> 1.0", [hex: :deep_merge, repo: "hexpm", optional: false]}], "hexpm"},
   "bunt": {:hex, :bunt, "0.2.0", "951c6e801e8b1d2cbe58ebbd3e616a869061ddadcc4863d0a2182541acae9a38", [:mix], [], "hexpm"},
   "bypass": {:hex, :bypass, "1.0.0", "b78b3dcb832a71aca5259c1a704b2e14b55fd4e1327ff942598b4e7d1a7ad83d", [:mix], [{:plug, "~> 1.7", [hex: :plug, repo: "hexpm", optional: false]}, {:plug_cowboy, "~> 1.0 or ~> 2.0", [hex: :plug_cowboy, repo: "hexpm", optional: false]}], "hexpm"},
