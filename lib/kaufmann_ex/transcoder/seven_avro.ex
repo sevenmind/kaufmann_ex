@@ -24,7 +24,7 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
     res =
       with {:ok, %{"schema" => raw_schema}} <- Registry.latest(schema_name),
            {:ok, schema} <- AvroEx.parse_schema(raw_schema),
-           {:ok, decoded} <- Schema.decode(schema, encoded) do
+           {:ok, decoded} <- Schema.decode(schema, encoded, schema_name) do
         %{meta: meta, payload: payload} =
           case atomize_keys(decoded) do
             %{meta: meta, payload: payload} -> %{meta: meta, payload: payload}
