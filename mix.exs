@@ -47,7 +47,9 @@ defmodule KaufmannEx.MixProject do
       # Waiting Next release of kafka_ex > 0.10
       {:kafka_ex, git: "https://github.com/kafkaex/kafka_ex"},
       {:jason, "~> 1.1"},
-      {:avro_ex, "~> 0.1.0-beta.6"},
+      {:avro_ex_v0, "~> 0.1.0-beta.6.1"},
+      {:avro_ex, git: "https://github.com/beam-community/avro_ex.git"},
+      {:ecto,  "~> 3.0", override: true},
 
       # use ex_json_schema for until merged: https://github.com/jonasschmidt/ex_json_schema/pull/43
       {:ex_json_schema, git: "https://github.com/woylie/ex_json_schema"},

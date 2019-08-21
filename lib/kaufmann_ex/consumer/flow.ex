@@ -23,6 +23,7 @@ defmodule KaufmannEx.Consumer.Flow do
       |> Flow.from_stages(stages: Config.stages(), max_demand: Config.max_demand())
       # wrap events into our event struct
       |> Flow.map(fn event ->
+        Logger.info("Consumed Event #{event.key} from #{topic}##{partition}")
         %Event{
           raw_event: event,
           topic: topic,

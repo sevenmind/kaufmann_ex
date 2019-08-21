@@ -8,6 +8,7 @@ defmodule Sample.Mixfile do
       elixir: "~> 1.6",
       elixirc_paths: ["lib"],
       deps_path: "../deps",
+      lockfile: "../mix.lock",
       aliases: aliases(),
       deps: deps()
     ]

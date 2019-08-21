@@ -19,10 +19,12 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
     start_time = System.monotonic_time()
     schema_name = scope_event_name(key)
 
+    Logger.debug("Decoding event #{key}")
+
     res =
       with {:ok, %{"schema" => raw_schema}} <- Registry.latest(schema_name),
            {:ok, schema} <- AvroEx.parse_schema(raw_schema),
-           {:ok, decoded} <- Schema.decode(schema, encoded) do
+           {:ok, decoded} <- Schema.decode(schema, encoded, schema_name) do
         %{meta: meta, payload: payload} =
           case atomize_keys(decoded) do
             %{meta: meta, payload: payload} -> %{meta: meta, payload: payload}
@@ -56,6 +58,8 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
   def encode_event(
         %Request{format: _, payload: payload, event_name: event_name, metadata: meta} = request
       ) do
+    Logger.debug("Encoding event #{event_name}")
+
     start_time = System.monotonic_time()
 
     %{payload: payload, meta: meta} =

@@ -45,7 +45,7 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
     %Request{encoded: encoded, event_name: event_name, metadata: meta} =
       transcoder.encode_event(request)
 
-    transcoder.decode_event(%Event{
+    %Event{} = transcoder.decode_event(%Event{
       raw_event: %{key: event_name, value: encoded, offset: 0},
       meta: meta
     })
