@@ -61,6 +61,8 @@ defmodule Map.Helpers do
   """
   def stringify_keys(nil), do: nil
 
+  def stringify_keys(%MapSet{} = map_set), do: Enum.to_list(map_set) |> stringify_keys
+
   def stringify_keys(%{} = map),
     do: Enum.into(map, %{}, fn {k, v} -> {stringify_atom(k), stringify_keys(v)} end)
 
