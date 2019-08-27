@@ -10,6 +10,8 @@ defmodule Map.Helpers do
   """
   def underscore_keys(nil), do: nil
 
+  def underscore_keys(%MapSet{} = map_set), do: Enum.to_list(map_set) |> underscore_keys
+
   def underscore_keys(%{} = map),
     do:
       Enum.into(map, %{}, fn {k, v} ->
