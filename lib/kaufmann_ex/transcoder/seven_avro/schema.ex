@@ -11,7 +11,6 @@ defmodule KaufmannEx.Transcoder.SevenAvro.Schema do
   rescue
     # avro_ex can become confused when trying to decode some schemas.
     error ->
-
       # Previous versions of AvroEx have some quirkey decoding behavior
       v0_decode(schema, encoded, key)
   end

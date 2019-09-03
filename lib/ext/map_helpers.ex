@@ -10,6 +10,8 @@ defmodule Map.Helpers do
   """
   def underscore_keys(nil), do: nil
 
+  def underscore_keys(%MapSet{} = map_set), do: Enum.to_list(map_set) |> underscore_keys
+
   def underscore_keys(%{} = map),
     do:
       Enum.into(map, %{}, fn {k, v} ->
@@ -60,6 +62,8 @@ defmodule Map.Helpers do
   Convert map atom keys to strings
   """
   def stringify_keys(nil), do: nil
+
+  def stringify_keys(%MapSet{} = map_set), do: Enum.to_list(map_set) |> stringify_keys
 
   def stringify_keys(%{} = map),
     do: Enum.into(map, %{}, fn {k, v} -> {stringify_atom(k), stringify_keys(v)} end)
