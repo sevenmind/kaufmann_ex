@@ -119,9 +119,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
       send(self(), {:produce, {testable_event_name, %{payload: payload, meta: meta}, topic}})
 
       # Ensure event effect is consumed by event handler
-      if topic == :default do
-        handle_and_send_event(request)
-      end
+      handle_and_send_event(request)
     end
 
     :ok
