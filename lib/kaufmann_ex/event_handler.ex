@@ -136,13 +136,16 @@ defmodule KaufmannEx.EventHandler do
 
     results = handle_event_and_response(event, args)
 
-    report_telemetry(start_time: start_time, event: event)
+    report_telemetry(
+      start_time: start_time,
+      event: event,
+      event_handler: (args || [])[:event_handler]
+    )
 
     Enum.flat_map(results, &format_event(event, &1))
   end
 
   defp handle_event_and_response(event, args) do
-
     event_handler = Keyword.get(args || [], :event_handler, Config.event_handler())
 
     event_name = Map.get(event, :name, nil)
