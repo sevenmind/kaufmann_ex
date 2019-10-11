@@ -12,9 +12,8 @@ defmodule KaufmannEx.Consumer.Flow do
   alias KaufmannEx.Publisher.{Encoder, TopicSelector}
   alias KaufmannEx.Schemas.Event
 
-  def start_link({producer_stage, topic, partition, _extra_consumer_args}) do
+  def start_link({producer_stage, topic, partition, args}) do
     Logger.debug("starting consumer for #{topic}##{partition}")
-    event_handler = Config.event_handler()
     worker = String.to_atom("worker_#{topic}_#{partition}")
     {:ok, _pid} = create_worker(worker)
 
@@ -24,6 +23,7 @@ defmodule KaufmannEx.Consumer.Flow do
       # wrap events into our event struct
       |> Flow.map(fn event ->
         Logger.info("Consumed Event #{event.key} from #{topic}##{partition}")
+
         %Event{
           raw_event: event,
           topic: topic,
@@ -32,7 +32,7 @@ defmodule KaufmannEx.Consumer.Flow do
       end)
       # Decode each event
       |> Flow.map(&Event.decode_event/1)
-      |> Flow.flat_map(&EventHandler.handle_event(&1, event_handler))
+      |> Flow.flat_map(&EventHandler.handle_event(&1, args))
       |> Flow.flat_map(&TopicSelector.resolve_topic/1)
       |> Flow.map(&Encoder.encode_event/1)
       |> Flow.map(&Publisher.publish_request(&1, [worker]))

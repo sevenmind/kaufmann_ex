@@ -97,9 +97,11 @@ defmodule KaufmannEx.EventHandler do
       end
 
       def given_event(event), do: {:unhandled, []}
+      def given_event(event, _meta), do: given_event(event)
 
       defoverridable handled_events: 0,
-                     given_event: 1
+                     given_event: 1,
+                     given_event: 2
     end
   end
 
@@ -138,10 +140,12 @@ defmodule KaufmannEx.EventHandler do
     Enum.flat_map(results, &format_event(event, &1))
   end
 
-  defp handle_event_and_response(event, event_handler) do
+  defp handle_event_and_response(event, args) do
+    event_handler = Keyword.get(args, :event_handler, Config.event_handler())
+
     event_name = Map.get(event, :name, nil)
 
-    case event_handler.given_event(event) do
+    case event_handler.given_event(event, args) do
       {:reply, events} when is_list(events) ->
         events
 
