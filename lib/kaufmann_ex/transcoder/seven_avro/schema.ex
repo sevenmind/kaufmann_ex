@@ -11,6 +11,7 @@ defmodule KaufmannEx.Transcoder.SevenAvro.Schema do
   rescue
     # avro_ex can become confused when trying to decode some schemas.
     error ->
+      Logger.debug("Error decoding event #{key} with Avro, trying AvroV0")
       # Previous versions of AvroEx have some quirkey decoding behavior
       v0_decode(schema, encoded, key)
   end
@@ -21,8 +22,9 @@ defmodule KaufmannEx.Transcoder.SevenAvro.Schema do
   rescue
     # avro_ex can become confused when trying to decode some schemas.
     error ->
-      trace = Exception.format(:error, error, __STACKTRACE__)
-      Logger.warn("Could not decode event \n\t #{trace}")
+      Logger.debug("Error decoding event #{key} with AvroV0 giving up")
+      # trace = Exception.format(:error, error, __STACKTRACE__)
+      # Logger.debug("Could not decode event \n\t #{trace}")
 
       {:error, :unmatching_schema}
   end
@@ -32,9 +34,9 @@ defmodule KaufmannEx.Transcoder.SevenAvro.Schema do
   rescue
     # avro_ex can become confused when trying to encode some schemas.
     error ->
-      trace = Exception.format(:error, error, __STACKTRACE__)
+      # trace = Exception.format(:error, error, __STACKTRACE__)
 
-      Logger.warn("Could not encode event \n\t #{trace}")
+      # Logger.debug("Could not encode event \n\t #{trace}")
       {:error, :unmatching_schema}
   end
 
