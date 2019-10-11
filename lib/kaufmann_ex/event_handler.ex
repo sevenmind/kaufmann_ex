@@ -131,18 +131,19 @@ defmodule KaufmannEx.EventHandler do
   defp dig_for_binary(_), do: []
 
   @spec handle_event(Event.t(), atom) :: [any]
-  def handle_event(event, event_handler) do
+  def handle_event(event, args) do
     start_time = System.monotonic_time()
 
-    results = handle_event_and_response(event, event_handler)
+    results = handle_event_and_response(event, args)
 
-    report_telemetry(start_time: start_time, event: event, event_handler: event_handler)
+    report_telemetry(start_time: start_time, event: event)
 
     Enum.flat_map(results, &format_event(event, &1))
   end
 
   defp handle_event_and_response(event, args) do
-    event_handler = Keyword.get(args, :event_handler, Config.event_handler())
+
+    event_handler = Keyword.get(args || [], :event_handler, Config.event_handler())
 
     event_name = Map.get(event, :name, nil)
 
