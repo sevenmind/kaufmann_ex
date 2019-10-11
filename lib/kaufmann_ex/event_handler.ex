@@ -61,6 +61,7 @@ defmodule KaufmannEx.EventHandler do
   ```
 
   """
+  alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
 
