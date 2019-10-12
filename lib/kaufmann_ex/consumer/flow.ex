@@ -22,8 +22,6 @@ defmodule KaufmannEx.Consumer.Flow do
       |> Flow.from_stages(stages: Config.stages(), max_demand: Config.max_demand())
       # wrap events into our event struct
       |> Flow.map(fn event ->
-        Logger.info("Consumed Event #{event.key} from #{topic}##{partition}")
-
         %Event{
           raw_event: event,
           topic: topic,
@@ -36,7 +34,7 @@ defmodule KaufmannEx.Consumer.Flow do
       |> Flow.flat_map(&TopicSelector.resolve_topic/1)
       |> Flow.map(&Encoder.encode_event/1)
       |> Flow.map(&Publisher.publish_request(&1, [worker]))
-      |> Flow.start_link(name: String.to_atom("flow_#{topic}_#{partition}"))
+      |> Flow.start_link(name: Module.concat([__MODULE__, producer_stage]))
 
     {:ok, link_pid}
   end
