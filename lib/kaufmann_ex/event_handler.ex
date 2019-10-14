@@ -166,7 +166,7 @@ defmodule KaufmannEx.EventHandler do
           |> Enum.at(0)
           |> String.to_atom()
 
-        handle_event_and_response(%Event{event | name: event_name}, event_handler)
+        handle_event_and_response(%Event{event | name: event_name}, args)
 
       {:error, error} ->
         wrap_error_event(event, error)
