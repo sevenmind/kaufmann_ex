@@ -130,7 +130,7 @@ defmodule KaufmannEx.EventHandler do
   defp dig_for_binary(bin) when is_binary(bin), do: [bin]
   defp dig_for_binary(_), do: []
 
-  @spec handle_event(Event.t(), atom) :: [any]
+  @spec handle_event(Event.t(), list) :: [any]
   def handle_event(event, args) do
     start_time = System.monotonic_time()
 

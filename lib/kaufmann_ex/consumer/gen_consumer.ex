@@ -32,7 +32,7 @@ defmodule KaufmannEx.Consumer.GenConsumer do
     # Filter out unhandled events before decoding
     # Decode each event
     |> Enum.map(&Event.decode_event/1)
-    |> Enum.flat_map(&EventHandler.handle_event(&1, event_handler))
+    |> Enum.flat_map(&EventHandler.handle_event(&1, Enum.to_list(state)))
     |> Enum.flat_map(&TopicSelector.resolve_topic/1)
     |> Enum.map(&Encoder.encode_event/1)
     |> Enum.each(&Publisher.publish_request/1)
