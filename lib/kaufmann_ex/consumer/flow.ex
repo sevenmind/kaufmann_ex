@@ -34,7 +34,7 @@ defmodule KaufmannEx.Consumer.Flow do
       |> Flow.flat_map(&TopicSelector.resolve_topic/1)
       |> Flow.map(&Encoder.encode_event/1)
       |> Flow.map(&Publisher.publish_request(&1, [worker]))
-      |> Flow.start_link(name: Module.concat([__MODULE__, producer_stage]))
+      |> Flow.start_link(name: flow_name(producer_stage))
 
     {:ok, link_pid}
   end
@@ -44,5 +44,13 @@ defmodule KaufmannEx.Consumer.Flow do
       {:ok, pid} -> {:ok, pid}
       {:error, {:already_started, pid}} -> {:ok, pid}
     end
+  end
+
+  defp flow_name(producer) when is_atom(producer) do
+    Module.concat([__MODULE__, producer])
+  end
+
+  defp flow_name(producer) when is_pid(producer) do
+    Module.concat([__MODULE__, inspect(producer)])
   end
 end

@@ -6,8 +6,8 @@ defmodule KaufmannEx.Consumer.FlowTest do
   defmodule GenProducer do
     use GenStage
 
-    def start_link(number) do
-      GenStage.start_link(__MODULE__, number)
+    def start_link(state) do
+      GenStage.start_link(__MODULE__, state)
     end
 
     def init(counter) do

@@ -14,6 +14,37 @@ defmodule KaufmannEx.TestSupport.MockBusTest.ExamplePublisher do
   def event_metadata(event_name, context), do: MockBus.fake_meta(event_name, nil)
 end
 
+defmodule ExampleEventHandler do
+  @moduledoc false
+  use KaufmannEx.EventHandler
+  alias KaufmannEx.Schemas.Event
+
+  def given_event(%Event{payload: "no_event"} = event) do
+    {:noreply, []}
+  end
+
+  def given_event(%Event{name: "event_a", payload: payload}) do
+    {:reply, %{event: "event_b", payload: payload, topics: [%{topic: :default, format: :json}]}}
+  end
+
+  def given_event(%Event{name: "event_b", payload: payload}) do
+    {:reply, %{event: "event_c", payload: payload, topics: [%{topic: :default, format: :json}]}}
+  end
+
+  def given_event(%Event{name: "test.event.publish", payload: "raise_error"} = event) do
+    raise ArgumentError, "You know what you did"
+  rescue
+    error ->
+      {:error, error.message}
+  end
+
+  def given_event(%Event{name: "test.event.publish", payload: pl} = event) do
+    {:reply, {"test.event.another", pl}}
+  end
+
+  def given_event(other_event), do: []
+end
+
 defmodule KaufmannEx.TestSupport.MockBusTest do
   @moduledoc false
   use KaufmannEx.TestSupport.MockBus
@@ -21,36 +52,6 @@ defmodule KaufmannEx.TestSupport.MockBusTest do
   alias KaufmannEx.Schemas.Event
   alias KaufmannEx.TestSupport.MockBusTest.ExamplePublisher
   alias KaufmannEx.TestSupport.MockSchemaRegistry
-
-  defmodule ExampleEventHandler do
-    @moduledoc false
-    use KaufmannEx.EventHandler
-
-    def given_event(%Event{payload: "no_event"} = event) do
-      {:noreply, []}
-    end
-
-    def given_event(%Event{name: "event_a", payload: payload}) do
-      {:reply, %{event: "event_b", payload: payload, topics: [%{topic: :default, format: :json}]}}
-    end
-
-    def given_event(%Event{name: "event_b", payload: payload}) do
-      {:reply,  %{event: "event_c", payload: payload, topics: [%{topic: :default, format: :json}]}}
-    end
-
-    def given_event(%Event{name: "test.event.publish", payload: "raise_error"} = event) do
-      raise ArgumentError, "You know what you did"
-    rescue
-      error ->
-        {:error, error.message}
-    end
-
-    def given_event(%Event{name: "test.event.publish", payload: pl} = event) do
-      {:reply, {"test.event.another", pl}}
-    end
-
-    def given_event(other_event), do: []
-  end
 
   setup do
     # event_handler_mod must be set

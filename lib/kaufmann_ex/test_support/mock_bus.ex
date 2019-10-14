@@ -51,11 +51,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
   def given_event(payload) do
     handle_and_send_event(%Event{
       payload: payload
-    })
-  end
-
-  defp event_consumer do
-    Application.fetch_env!(:kaufmann_ex, :event_handler_mod)
+    }, [])
   end
 
   @doc """
@@ -91,17 +87,17 @@ defmodule KaufmannEx.TestSupport.MockBus do
     # If message isn't encodable, big problems
     assert_matches_schema(event)
 
-    handle_and_send_event(event)
+    handle_and_send_event(event, opts)
   end
 
-  defp handle_and_send_event(%Request{} = request),
+  defp handle_and_send_event(%Request{} = request, opts),
     do:
       request
       |> MockSchemaRegistry.encode_decode()
-      |> handle_and_send_event()
+      |> handle_and_send_event(opts)
 
-  defp handle_and_send_event(%Event{} = event) do
-    events = EventHandler.handle_event(event, event_consumer())
+  defp handle_and_send_event(%Event{} = event, opts) do
+    events = EventHandler.handle_event(event, opts)
 
     for %{
           event_name: event_name,
@@ -119,7 +115,7 @@ defmodule KaufmannEx.TestSupport.MockBus do
       send(self(), {:produce, {testable_event_name, %{payload: payload, meta: meta}, topic}})
 
       # Ensure event effect is consumed by event handler
-      handle_and_send_event(request)
+      handle_and_send_event(request, opts)
     end
 
     :ok
