@@ -42,7 +42,8 @@ defmodule KaufmannEx.Supervisor do
                auto_offset_reset: :latest,
                fetch_options: [
                  max_bytes: 1_971_520,
-                 wait_time: 100
+                 wait_time: 100,
+                 auto_commit: false
                ],
                commit_strategy: :async_commit,
                # passed through to the ConsumerGroup.Manager
