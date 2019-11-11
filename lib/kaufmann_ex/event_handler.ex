@@ -61,6 +61,7 @@ defmodule KaufmannEx.EventHandler do
   ```
 
   """
+  alias KaufmannEx.Config
   alias KaufmannEx.Publisher.Request
   alias KaufmannEx.Schemas.Event
 
@@ -97,9 +98,11 @@ defmodule KaufmannEx.EventHandler do
       end
 
       def given_event(event), do: {:unhandled, []}
+      def given_event(event, _meta), do: given_event(event)
 
       defoverridable handled_events: 0,
-                     given_event: 1
+                     given_event: 1,
+                     given_event: 2
     end
   end
 
@@ -127,21 +130,27 @@ defmodule KaufmannEx.EventHandler do
   defp dig_for_binary(bin) when is_binary(bin), do: [bin]
   defp dig_for_binary(_), do: []
 
-  @spec handle_event(Event.t(), atom) :: [any]
-  def handle_event(event, event_handler) do
+  @spec handle_event(Event.t(), list) :: [any]
+  def handle_event(event, args) do
     start_time = System.monotonic_time()
 
-    results = handle_event_and_response(event, event_handler)
+    results = handle_event_and_response(event, args)
 
-    report_telemetry(start_time: start_time, event: event, event_handler: event_handler)
+    report_telemetry(
+      start_time: start_time,
+      event: event,
+      event_handler: (args || [])[:event_handler]
+    )
 
     Enum.flat_map(results, &format_event(event, &1))
   end
 
-  defp handle_event_and_response(event, event_handler) do
+  defp handle_event_and_response(event, args) do
+    event_handler = Keyword.get(args || [], :event_handler, Config.event_handler())
+
     event_name = Map.get(event, :name, nil)
 
-    case event_handler.given_event(event) do
+    case event_handler.given_event(event, args) do
       {:reply, events} when is_list(events) ->
         events
 
@@ -157,7 +166,7 @@ defmodule KaufmannEx.EventHandler do
           |> Enum.at(0)
           |> String.to_atom()
 
-        handle_event_and_response(%Event{event | name: event_name}, event_handler)
+        handle_event_and_response(%Event{event | name: event_name}, args)
 
       {:error, error} ->
         wrap_error_event(event, error)

@@ -24,6 +24,7 @@ defmodule KaufmannEx.Supervisor do
     consumer_group_id = Keyword.get(opts, :id, KaufmannEx.ConsumerGroup)
     manager_name = Keyword.get(opts, :manager_name, KaufmannEx.ConsumerGroup.Manager)
     gen_server_opts = Keyword.get(opts, :gen_server_opts, [])
+    extra_consumer_args = Keyword.get(opts, :extra_consumer_args, [])
 
     children = [
       %{
@@ -41,11 +42,14 @@ defmodule KaufmannEx.Supervisor do
                auto_offset_reset: :latest,
                fetch_options: [
                  max_bytes: 1_971_520,
-                 wait_time: 100
+                 wait_time: 100,
+                 auto_commit: false
                ],
                commit_strategy: :async_commit,
-               name: manager_name, # passed through to the ConsumerGroup.Manager
-               gen_server_opts: gen_server_opts
+               # passed through to the ConsumerGroup.Manager
+               name: manager_name,
+               gen_server_opts: gen_server_opts,
+               extra_consumer_args: extra_consumer_args
              ]
            ]},
         type: :supervisor

@@ -10,7 +10,8 @@ defmodule KaufmannEx.Publisher.Request do
     encoded: nil,
     context: %{},
     format: :default,
-    topic: :default
+    topic: :default,
+    worker_name: nil
   )
 
   @type t :: %__MODULE__{
@@ -21,6 +22,7 @@ defmodule KaufmannEx.Publisher.Request do
           topic: binary | atom | map,
           partition: non_neg_integer | nil,
           format: atom,
-          encoded: binary | nil
+          encoded: binary | nil,
+          worker_name: atom | nil
         }
 end

@@ -91,7 +91,7 @@ defmodule KaufmannEx.EventHandlerTest do
              ] =
                EventHandler.handle_event(
                  %Event{name: :"event.with.response", payload: %{}, meta: %{}},
-                 TestEventHandler
+                 event_handler: TestEventHandler
                )
     end
 
@@ -103,7 +103,7 @@ defmodule KaufmannEx.EventHandlerTest do
                    payload: %{},
                    meta: %{}
                  },
-                 TestEventHandler
+                 event_handler: TestEventHandler
                )
     end
 
@@ -123,7 +123,7 @@ defmodule KaufmannEx.EventHandlerTest do
                    payload: "raise_error",
                    meta: %{}
                  },
-                 TestEventHandler
+                 event_handler: TestEventHandler
                )
     end
 
@@ -140,7 +140,7 @@ defmodule KaufmannEx.EventHandlerTest do
                    payload: %{},
                    meta: %{}
                  },
-                 TestEventHandler
+                 event_handler: TestEventHandler
                )
     end
 
@@ -152,7 +152,7 @@ defmodule KaufmannEx.EventHandlerTest do
             payload: %{},
             meta: %{}
           },
-          TestEventHandler
+          event_handler: TestEventHandler
         )
 
       assert length(res) == 3

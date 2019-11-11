@@ -48,16 +48,21 @@ defmodule KaufmannEx.Publisher do
 
   defp populate_metadata(%Request{} = request), do: request
 
+  def publish_request(request, workers) when is_list(workers) do
+    request
+    |> Map.put(:worker_name, Enum.random(workers))
+    |> publish_request
+  end
+
   def publish_request(
         %Request{
           encoded: encoded,
           topic: topic,
           partition: partition,
-          event_name: event_name
-        } = request,
-        workers \\ [:kafka_ex]
-      )
-      when is_list(workers) do
+          event_name: event_name,
+          worker_name: worker_name
+        } = request
+      ) do
     Logger.debug("Publishing Event #{event_name} on #{topic}##{inspect(partition)}")
 
     message = %Message{value: encoded, key: event_name}
@@ -71,7 +76,7 @@ defmodule KaufmannEx.Publisher do
 
     start_time = System.monotonic_time()
 
-    res = KafkaEx.produce(produce_request, worker_name: Enum.random(workers))
+    res = KafkaEx.produce(produce_request, worker_name: worker_name || :kafka_ex)
 
     report_publish_time(start_time: start_time, encoded: encoded, request: request)
 
