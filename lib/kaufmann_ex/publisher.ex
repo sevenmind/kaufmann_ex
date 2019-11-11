@@ -95,7 +95,7 @@ defmodule KaufmannEx.Publisher do
       [:kaufmann_ex, :publisher, :publish],
       %{
         duration: System.monotonic_time() - start_time,
-        size: byte_size(encoded)
+        size: byte_size(encoded || "")
       },
       %{event: event_name, topic: topic, partition: partition}
     )
