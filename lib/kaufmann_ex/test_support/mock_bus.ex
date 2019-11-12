@@ -68,8 +68,8 @@ defmodule KaufmannEx.TestSupport.MockBus do
   def given_event(event_name, payload, opts) do
     schema_name = schema_name_if_query(event_name)
 
-    callback_id = Keyword.get(opts, :callback_id, nil)
-    format = Keyword.get(opts, :format, nil)
+    callback_id = Access.get(opts, :callback_id, nil)
+    format = Access.get(opts, :format, nil)
 
     assert MockSchemaRegistry.defined_event?(schema_name),
            "Schema #{schema_name} not registered, Is the schema in #{
