@@ -40,7 +40,6 @@ defmodule KaufmannEx.Transcoder.SevenAvro do
         }
       else
         {:error, error} ->
-
           err_event =
             event
             |> Map.from_struct()

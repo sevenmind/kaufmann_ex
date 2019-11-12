@@ -89,14 +89,14 @@ defmodule KaufmannEx.Publisher.TopicSelectorTest do
 
     test "when topic is :callback but no callback is specified in metadata" do
       assert [] =
-        TopicSelector.resolve_topic(%Request{
-          event_name: :whatever,
-          payload: %{},
-          topic: :callback,
-          context: %{
-            callback_topic: nil
-          }
-        })
+               TopicSelector.resolve_topic(%Request{
+                 event_name: :whatever,
+                 payload: %{},
+                 topic: :callback,
+                 context: %{
+                   callback_topic: nil
+                 }
+               })
     end
 
     test "selects topic specifying topics and format" do
