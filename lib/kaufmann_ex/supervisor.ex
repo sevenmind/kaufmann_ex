@@ -26,6 +26,19 @@ defmodule KaufmannEx.Supervisor do
     gen_server_opts = Keyword.get(opts, :gen_server_opts, [])
     extra_consumer_args = Keyword.get(opts, :extra_consumer_args, [])
 
+    heartbeat_interval = Keyword.get(opts, :heartbeat_interval, 1_000)
+    commit_interval = Keyword.get(opts, :commit_interval, 10_000)
+    auto_offset_reset = Keyword.get(opts, :auto_offset_reset, :latest)
+
+    fetch_options =
+      Keyword.get(opts, :fetch_options,
+        max_bytes: 1_971_520,
+        wait_time: 100,
+        auto_commit: false
+      )
+
+    commit_strategy = Keyword.get(opts, :commit_strategy, :async_commit)
+
     children = [
       %{
         id: consumer_group_id,
@@ -36,16 +49,12 @@ defmodule KaufmannEx.Supervisor do
              consumer_group_name,
              topics,
              [
-               heartbeat_interval: 1_000,
-               commit_interval: 10_000,
+               heartbeat_interval: heartbeat_interval,
+               commit_interval: commit_interval,
                # Probably inadvisable in many uses
-               auto_offset_reset: :latest,
-               fetch_options: [
-                 max_bytes: 1_971_520,
-                 wait_time: 100,
-                 auto_commit: false
-               ],
-               commit_strategy: :async_commit,
+               auto_offset_reset: auto_offset_reset,
+               fetch_options: fetch_options,
+               commit_strategy: commit_strategy,
                # passed through to the ConsumerGroup.Manager
                name: manager_name,
                gen_server_opts: gen_server_opts,
