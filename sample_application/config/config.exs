@@ -23,7 +23,7 @@ config :kaufmann_ex,
   transcoder: [
     json: KaufmannEx.Transcoder.Json,
     default: KaufmannEx.Transcoder.Json,
-    avro: KaufmannEx.Transcoder.SevenAvro,
+    avro: KaufmannEx.Transcoder.SevenAvro
   ]
 
 env_config = Path.expand("#{Mix.env()}.exs", __DIR__)

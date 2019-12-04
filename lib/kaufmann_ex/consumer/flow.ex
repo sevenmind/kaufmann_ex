@@ -58,36 +58,30 @@ defmodule KaufmannEx.Consumer.Flow do
           }
       end)
       |> Flow.map(&KafkaEx.DefaultPartitioner.assign_partition(&1, metadata))
+      # partition events by topic & partition
       |> Flow.partition(
         min_demand: 1,
         key: &(&1.topic <> to_string(&1.partition)),
         window: window,
-        stages: 1
+        stages: Config.stages()
       )
-      |> Flow.reduce(
-        fn -> %{} end,
-        fn
-          value, %KafkaRequest{} = publish_request ->
-            %KafkaRequest{
-              publish_request
-              | messages: Enum.concat(value.messages, publish_request.messages)
-            }
-
-          value, acc ->
-            value
-        end
-      )
+      # partition may publish events for multiple topics
+      |> Flow.group_by(&(&1.topic <> to_string(&1.partition)))
+      # publish events on window trigger
       |> Flow.on_trigger(fn
-        %KafkaRequest{messages: []} = produce_request ->
-          {[], produce_request}
+        events ->
+          events
+          |> Enum.map(fn {_partition_id, producer_requests} ->
+            Enum.reduce(producer_requests, &combine_kafka_publish_requests/2)
+          end)
+          |> Enum.each(fn %KafkaRequest{} = produce_request ->
+            start_time = System.monotonic_time()
 
-        %KafkaRequest{} = produce_request ->
-          log_produce_to_kafka(produce_request)
-          {:ok, _} = KafkaEx.produce(produce_request, worker_name: worker)
+            {:ok, _} = KafkaEx.produce(produce_request, worker_name: worker)
 
-          {[], %KafkaRequest{produce_request | messages: []}}
+            log_produce_to_kafka(produce_request, System.monotonic_time() - start_time)
+          end)
 
-        %{} ->
           {[], %{}}
       end)
       |> Flow.start_link(name: flow_name(producer_stage), demand: :forward)
@@ -110,10 +104,20 @@ defmodule KaufmannEx.Consumer.Flow do
     Module.concat([__MODULE__, inspect(producer)])
   end
 
-  defp log_produce_to_kafka(%{messages: messages, topic: topic, partition: partition}) do
-    Logger.debug("Publishing #{length(messages)} events on #{topic}##{inspect(partition)}",
+  defp log_produce_to_kafka(%{messages: messages, topic: topic, partition: partition}, duration) do
+    time = :erlang.convert_time_unit(duration, :native, :microsecond)
+
+    Logger.info(
+      "Publishing #{length(messages)} events on #{topic}##{inspect(partition)} in #{time}μs",
       topic: topic,
       partition: partition
     )
+  end
+
+  defp combine_kafka_publish_requests(%KafkaRequest{} = value, %KafkaRequest{} = publish_request) do
+    %KafkaRequest{
+      publish_request
+      | messages: Enum.concat(value.messages, publish_request.messages)
+    }
   end
 end
