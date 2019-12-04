@@ -65,6 +65,10 @@ defmodule KaufmannEx.TestSupport.MockBus do
   @spec given_event(atom | binary, any, list) :: :ok
   def given_event(event_name, payload, opts \\ [])
 
+  def given_event(nil, payload, opts) do
+    handle_and_send_event(%Event{payload: payload}, opts)
+  end
+
   def given_event(event_name, payload, opts) do
     schema_name = schema_name_if_query(event_name)
 
