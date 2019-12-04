@@ -21,8 +21,9 @@ config :kaufmann_ex,
   service_name: "SampleService",
   service_id: "SampleHost",
   transcoder: [
-    default: KaufmannEx.Transcoder.SevenAvro,
-    json: KaufmannEx.Transcoder.Json
+    json: KaufmannEx.Transcoder.Json,
+    default: KaufmannEx.Transcoder.Json,
+    avro: KaufmannEx.Transcoder.SevenAvro,
   ]
 
 env_config = Path.expand("#{Mix.env()}.exs", __DIR__)

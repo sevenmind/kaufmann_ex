@@ -100,7 +100,7 @@ defmodule KaufmannEx.Config do
   Application.get_env(:kaufmann_ex, :max_demand, 1)
   """
   @spec stages() :: integer()
-  def stages, do: Application.get_env(:kaufmann_ex, :stages, 16)
+  def stages, do: Application.get_env(:kaufmann_ex, :stages, 1)
 
   @doc """
   Application.get_env(:kaufmann_ex, :gen_consumer_mod)

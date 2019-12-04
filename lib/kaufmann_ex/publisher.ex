@@ -48,12 +48,6 @@ defmodule KaufmannEx.Publisher do
 
   defp populate_metadata(%Request{} = request), do: request
 
-  def publish_request(request, workers) when is_list(workers) do
-    request
-    |> Map.put(:worker_name, Enum.random(workers))
-    |> publish_request
-  end
-
   def publish_request(
         %Request{
           encoded: encoded,
@@ -65,12 +59,12 @@ defmodule KaufmannEx.Publisher do
       ) do
     Logger.debug("Publishing Event #{event_name} on #{topic}##{inspect(partition)}")
 
-    message = %Message{value: encoded, key: event_name}
-
     produce_request = %KafkaRequest{
       partition: partition,
       topic: topic,
-      messages: [message],
+      messages: [
+        %Message{value: encoded, key: event_name}
+      ],
       required_acks: 1
     }
 

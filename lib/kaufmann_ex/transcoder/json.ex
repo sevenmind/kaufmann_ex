@@ -64,10 +64,10 @@ defmodule KaufmannEx.Transcoder.Json do
 
   @impl true
 
-  def encode_event(%Request{format: :json, payload: %{__struct__: _} = payload} = request),
+  def encode_event(%Request{format: _, payload: %{__struct__: _} = payload} = request),
     do: encode_event(%Request{request | payload: Map.from_struct(payload)})
 
-  def encode_event(%Request{format: :json, payload: payload, metadata: meta} = request) do
+  def encode_event(%Request{format: _, payload: payload, metadata: meta} = request) do
     start_time = System.monotonic_time()
 
     payload
