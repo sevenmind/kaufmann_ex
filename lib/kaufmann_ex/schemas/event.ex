@@ -33,10 +33,12 @@ defmodule KaufmannEx.Schemas.Event do
 
   def decode_event(%__MODULE__{raw_event: %{key: _, value: _}} = event) do
     # when in doubt try all the transcoders
-    Enum.map(Config.transcoders(), & &1.decode_event(event))
-    |> Enum.find(event, fn
-      %__MODULE__{} = _event -> true
-      _ -> false
+
+    Enum.find_value(Config.transcoders(), event, fn coder ->
+      case coder.decode_event(event) do
+        %__MODULE__{} = event -> event
+        _ -> false
+      end
     end)
   end
 end
