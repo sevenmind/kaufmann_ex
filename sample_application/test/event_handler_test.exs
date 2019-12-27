@@ -7,5 +7,9 @@ defmodule Sample.EventHandlerTest do
     assert %{
              payload: %{message: "Hello World"}
            } = then_event("event.test")
+
+    Enum.each(0..10, fn _ ->
+      then_event("another.event.here.test")
+    end)
   end
 end

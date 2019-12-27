@@ -11,10 +11,32 @@ defmodule Sample.EventHandler do
     {:reply, [{"event.test", payload}]}
   end
 
+  def given_event(%Event{name: "event.test", payload: payload} = event) do
+    # Do something with event payload 😁
+
+    {:reply,
+     [
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload},
+       {"another.event.here.test", payload}
+     ]}
+  end
+
   def given_event(%Event{name: "another.event.here.test", payload: payload} = event) do
     # Do something with event payload 😁
 
-    {:reply, [{"another.event.here", payload}]}
+    {:reply,
+     [
+       {"another.event.here", payload}
+     ]}
   end
 
   # Handle unexpected Event

@@ -41,7 +41,7 @@ defmodule KaufmannEx.MixProject do
   defp deps do
     [
       {:gen_stage, "~> 0.14"},
-      {:flow, "~> 0.14.3"},
+      {:flow, "~> 0.15"},
       {:kafka_ex_gen_stage_consumer,
        git: "https://github.com/sevenmind/kafka_ex_gen_stage_consumer"},
       # Waiting Next release of kafka_ex > 0.10

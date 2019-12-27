@@ -11,6 +11,6 @@ config :kaufmann_ex,
   service_name: "SampleService",
   service_id: "SampleHost",
   transcoder: [
-    default: KaufmannEx.TestSupport.Transcoder.SevenAvro,
-    json: KaufmannEx.Transcoder.Json
+    avro: KaufmannEx.TestSupport.Transcoder.SevenAvro,
+    default: KaufmannEx.Transcoder.Json
   ]

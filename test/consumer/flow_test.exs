@@ -101,7 +101,9 @@ defmodule KaufmannEx.Consumer.FlowTest do
 
   describe "start_link" do
     test "tries to start" do
-      with_mock KafkaEx, [], create_worker: fn _ -> {:ok, spawn(fn -> 1 + 2 end)} end do
+      with_mock KafkaEx, [],
+        create_worker: fn _ -> {:ok, spawn(fn -> 1 + 2 end)} end,
+        metadata: fn _ -> %{} end do
         {:ok, pid} = start_supervised({GenProducer, 0})
 
         assert {:ok, flow_pid} =
@@ -112,6 +114,7 @@ defmodule KaufmannEx.Consumer.FlowTest do
     test "sends an event", %{encoded: encoded, event_name: event_name, kafka_mock: kafka_mock} do
       with_mock KafkaEx, [],
         create_worker: fn _ -> {:ok, kafka_mock} end,
+        metadata: fn _ -> %{} end,
         produce: fn _, _ -> :ok end do
         {:ok, pid} = start_supervised({GenProducer, 0})
 
