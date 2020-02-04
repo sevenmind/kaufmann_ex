@@ -52,7 +52,7 @@ defmodule KaufmannEx.MixProject do
       {:ecto, "~> 3.0", override: true},
 
       # use ex_json_schema for until merged: https://github.com/jonasschmidt/ex_json_schema/pull/43
-      {:ex_json_schema, git: "https://github.com/woylie/ex_json_schema"},
+      {:ex_json_schema, "~> 0.7"},
       {:schemex, "~> 0.1.1"},
       {:nanoid, "~> 2.0"},
       {:memoize, "~> 1.2"},
