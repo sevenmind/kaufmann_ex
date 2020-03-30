@@ -16,9 +16,9 @@ defmodule KaufmannEx.Publisher.Request do
 
   @type t :: %__MODULE__{
           event_name: atom | binary,
-          payload: Map | binary,
-          metadata: Map,
-          context: Map,
+          payload: map | binary,
+          metadata: map,
+          context: map,
           topic: binary | atom | map,
           partition: non_neg_integer | nil,
           format: atom,
