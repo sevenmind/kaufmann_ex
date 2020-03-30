@@ -97,7 +97,7 @@ defmodule KaufmannEx.EventHandler do
         unquote(handled_events)
       end
 
-      def given_event(event), do: {:unhandled, []}
+      def given_event(event), do: {:noreply, []}
       def given_event(event, _meta), do: given_event(event)
 
       defoverridable handled_events: 0,
@@ -108,6 +108,10 @@ defmodule KaufmannEx.EventHandler do
 
   @doc "Event handler callback, accepts an Event, returns an Event with a Publish_request key or nothing"
   @callback given_event(Event.t()) ::
+              {:reply | :noreply, [Request.t()]} | {:error, any}
+
+  @doc "Event handler callback, accepts an Event, returns an Event with a Publish_request key or nothing"
+  @callback given_event(Event.t(), map) ::
               {:reply | :noreply, [Request.t()]} | {:error, any}
 
   @doc "lists handled events, used for filtering unhandled events in consumption"
@@ -157,7 +161,7 @@ defmodule KaufmannEx.EventHandler do
       {:reply, event} when is_tuple(event) or is_map(event) ->
         [event]
 
-      {:unhandled, _} when is_binary(event_name) ->
+      {:noreply, _} when is_binary(event_name) ->
         # try casting the event name to atom
         # In case someone followed the legacy pattern
         event_name =
