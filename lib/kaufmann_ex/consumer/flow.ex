@@ -25,7 +25,8 @@ defmodule KaufmannEx.Consumer.Flow do
         %Event{
           raw_event: event,
           topic: topic,
-          partition: partition
+          partition: partition,
+          consumer_group: args[:consumer_group]
         }
       end)
       # Decode each event

@@ -180,7 +180,11 @@ defmodule KaufmannEx.EventHandler do
     end
   end
 
-  defp report_telemetry(start_time: start_time, event: event, event_handler: event_handler) do
+  defp report_telemetry(
+         start_time: start_time,
+         event: event,
+         event_handler: event_handler
+       ) do
     event_name =
       (Map.get(event, :name) || "empty")
       |> to_string
@@ -198,7 +202,8 @@ defmodule KaufmannEx.EventHandler do
         event: event_name,
         topic: event.topic,
         partition: event.partition,
-        handler: event_handler
+        handler: event_handler,
+        consumer_group: event.consumer_group
       }
     )
   end

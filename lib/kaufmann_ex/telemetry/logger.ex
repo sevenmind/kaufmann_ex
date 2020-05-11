@@ -89,7 +89,12 @@ defmodule KaufmannEx.Telemetry.Logger do
         offset: event.raw_event.offset,
         size: byte_size(event.raw_event.value)
       },
-      %{event: event_name, topic: event.topic, partition: event.partition}
+      %{
+        event: event_name,
+        topic: event.topic,
+        partition: event.partition,
+        consumer_group: event.consumer_group
+      }
     )
   end
 

@@ -24,7 +24,13 @@ defmodule KaufmannEx.Supervisor do
     consumer_group_id = Keyword.get(opts, :id, KaufmannEx.ConsumerGroup)
     manager_name = Keyword.get(opts, :manager_name, KaufmannEx.ConsumerGroup.Manager)
     gen_server_opts = Keyword.get(opts, :gen_server_opts, [])
-    extra_consumer_args = Keyword.get(opts, :extra_consumer_args, [])
+
+    extra_consumer_args =
+      Keyword.get(opts, :extra_consumer_args, [])
+      |> Enum.into(%{
+        topics: topics,
+        consumer_group: consumer_group_name
+      })
 
     heartbeat_interval = Keyword.get(opts, :heartbeat_interval, 1_000)
     commit_interval = Keyword.get(opts, :commit_interval, 10_000)
