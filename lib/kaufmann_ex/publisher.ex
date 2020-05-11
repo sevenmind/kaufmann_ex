@@ -37,8 +37,6 @@ defmodule KaufmannEx.Publisher do
     |> TopicSelector.resolve_topic()
     |> Enum.map(&Encoder.encode_event/1)
     |> Enum.each(&publish_request/1)
-
-    :ok
   end
 
   defp populate_metadata(

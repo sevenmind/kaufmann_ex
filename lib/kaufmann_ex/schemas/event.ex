@@ -15,7 +15,8 @@ defmodule KaufmannEx.Schemas.Event do
     :timestamps,
     :context,
     :topic,
-    :partition
+    :partition,
+    :consumer_group
   ]
 
   @spec event_metadata(atom, map) :: map
@@ -60,7 +61,8 @@ defmodule KaufmannEx.Schemas.ErrorEvent do
     :publish_request,
     :context,
     :topic,
-    :partition
+    :partition,
+    :consumer_group
   ]
 
   @doc """

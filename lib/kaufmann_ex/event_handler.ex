@@ -143,7 +143,8 @@ defmodule KaufmannEx.EventHandler do
     report_telemetry(
       start_time: start_time,
       event: event,
-      event_handler: Access.get(args, :event_handler)
+      event_handler: Access.get(args, :event_handler),
+      consumer_group: Access.get(args, :consumer_group_name)
     )
 
     Enum.flat_map(results, &format_event(event, &1))
@@ -180,7 +181,12 @@ defmodule KaufmannEx.EventHandler do
     end
   end
 
-  defp report_telemetry(start_time: start_time, event: event, event_handler: event_handler) do
+  defp report_telemetry(
+         start_time: start_time,
+         event: event,
+         event_handler: event_handler,
+         consumer_group: consumer_group
+       ) do
     event_name =
       (Map.get(event, :name) || "empty")
       |> to_string
@@ -198,7 +204,8 @@ defmodule KaufmannEx.EventHandler do
         event: event_name,
         topic: event.topic,
         partition: event.partition,
-        handler: event_handler
+        handler: event_handler,
+        consumer_group: consumer_group
       }
     )
   end
