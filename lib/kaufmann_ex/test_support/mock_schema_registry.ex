@@ -42,6 +42,10 @@ defmodule KaufmannEx.TestSupport.MockSchemaRegistry do
       Format must match a transcoder specified in Application env `:kaufmann_ex, :transcoder`
     """
 
+    assert transcoder.encodable?(request), """
+    Request #{request.event_name} cannot be encoded with #{transcoder}
+    """
+
     %Request{encoded: encoded, event_name: event_name, metadata: meta} =
       transcoder.encode_event(request)
 

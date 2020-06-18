@@ -25,11 +25,15 @@ defmodule KaufmannEx.Transcoder.Json do
          {:ok, %{"meta" => meta, "payload" => payload}},
          %Event{raw_event: %{key: key}} = event
        ) do
+    payload
+    |> Map.merge(Map.Helpers.atomize_keys(payload))
+    |> Map.drop([:meta, "Meta"])
+
     %Event{
       event
       | name: key,
         meta: Map.Helpers.atomize_keys(meta),
-        payload: Map.drop(payload, ["meta", :meta])
+        payload: payload
     }
   end
 
@@ -37,11 +41,15 @@ defmodule KaufmannEx.Transcoder.Json do
          {:ok, %{"meta" => meta} = payload},
          %Event{raw_event: %{key: key}} = event
        ) do
+    payload
+    |> Map.merge(Map.Helpers.atomize_keys(payload))
+    |> Map.drop([:meta, "Meta"])
+
     %Event{
       event
       | name: key,
         meta: Map.Helpers.atomize_keys(meta),
-        payload: Map.drop(payload, ["meta", :meta])
+        payload: payload
     }
   end
 
@@ -64,10 +72,10 @@ defmodule KaufmannEx.Transcoder.Json do
 
   @impl true
 
-  def encode_event(%Request{format: :json, payload: %{__struct__: _} = payload} = request),
+  def encode_event(%Request{payload: %{__struct__: _} = payload} = request),
     do: encode_event(%Request{request | payload: Map.from_struct(payload)})
 
-  def encode_event(%Request{format: :json, payload: payload, metadata: meta} = request) do
+  def encode_event(%Request{payload: payload, metadata: meta} = request) do
     start_time = System.monotonic_time()
 
     payload
@@ -106,19 +114,14 @@ defmodule KaufmannEx.Transcoder.Json do
   def schema_extension, do: ".json"
 
   @impl true
-  def encodable?(%Request{
-        event_name: event_name,
-        payload: payload
-      }) do
-    case find_schema(event_name) do
-      nil ->
-        false
-
-      path ->
-        path
-        |> read_schema
-        |> encodable?(payload)
+  def encodable?(request) do
+    case encode_event(request) do
+      %Request{} = _ -> true
+      {:error, _} -> false
     end
+  rescue
+    BadMapError ->
+      false
   end
 
   @impl true
