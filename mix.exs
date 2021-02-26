@@ -40,8 +40,8 @@ defmodule KaufmannEx.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:gen_stage, "~> 0.14"},
-      {:flow, "~> 0.14.3"},
+      {:gen_stage, "~> 1.0"},
+      {:flow, "~> 1.0"},
       {:kafka_ex_gen_stage_consumer,
        git: "https://github.com/sevenmind/kafka_ex_gen_stage_consumer"},
       # Waiting Next release of kafka_ex > 0.10
@@ -59,8 +59,8 @@ defmodule KaufmannEx.MixProject do
       {:telemetry, "~> 0.4"},
       {:ex_doc, "~> 0.19", only: :dev, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev], runtime: false},
-      {:bypass, "~> 1.0", only: :test},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:bypass, "~> 2.0", only: :test},
       {:excoveralls, "~> 0.11", only: :test},
       {:benchee, "~> 1.0", only: [:dev, :test]},
       {:mock, "~> 0.3.0", only: [:test]},

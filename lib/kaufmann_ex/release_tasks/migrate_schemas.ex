@@ -18,6 +18,7 @@ defmodule KaufmannEx.ReleaseTasks.MigrateSchemas do
   KaufmannEx.ReleaseTasks.MigrateSchemas.reset_schemas(:app_name)
   ```
   """
+
   # credo:disable-for-this-file Credo.Check.Warning.IoInspect
 
   alias KaufmannEx.Transcoder.SevenAvro.Schema.Registry
