@@ -2,8 +2,8 @@ defmodule KaufmannEx.Schemas.Event do
   alias KaufmannEx.Config
 
   @type t :: %KaufmannEx.Schemas.Event{
-          name: atom,
-          meta: map,
+          name: atom | binary,
+          meta: map | nil,
           payload: term
         }
   @moduledoc false
@@ -44,7 +44,7 @@ end
 
 defmodule KaufmannEx.Schemas.ErrorEvent do
   @type t :: %KaufmannEx.Schemas.ErrorEvent{
-          name: atom,
+          name: atom | binary,
           error: term,
           message_payload: term,
           meta: term | nil
