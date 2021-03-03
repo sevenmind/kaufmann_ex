@@ -63,7 +63,6 @@ defmodule KaufmannEx.Transcoder.Json do
   defp report_decode_time(other, _start_time), do: other
 
   @impl true
-
   def encode_event(%Request{format: :json, payload: %{__struct__: _} = payload} = request),
     do: encode_event(%Request{request | payload: Map.from_struct(payload)})
 
@@ -78,8 +77,8 @@ defmodule KaufmannEx.Transcoder.Json do
     |> report_encode_duration(start_time)
   end
 
-  def encode_event(%Request{payload: payload}) when is_binary(payload) do
-    payload
+  def encode_event(%Request{payload: payload} = request) when is_binary(payload) do
+    %Request{request | encoded: payload}
   end
 
   defp format_encoded_event({:ok, encoded}, %Request{} = request),
