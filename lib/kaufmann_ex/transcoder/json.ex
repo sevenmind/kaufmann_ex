@@ -67,7 +67,8 @@ defmodule KaufmannEx.Transcoder.Json do
   def encode_event(%Request{format: :json, payload: %{__struct__: _} = payload} = request),
     do: encode_event(%Request{request | payload: Map.from_struct(payload)})
 
-  def encode_event(%Request{format: :json, payload: payload, metadata: meta} = request) do
+  def encode_event(%Request{format: :json, payload: payload, metadata: meta} = request)
+      when is_map(payload) do
     start_time = System.monotonic_time()
 
     payload
@@ -75,6 +76,10 @@ defmodule KaufmannEx.Transcoder.Json do
     |> Jason.encode()
     |> format_encoded_event(request)
     |> report_encode_duration(start_time)
+  end
+
+  def encode_event(%Request{payload: payload}) when is_binary(payload) do
+    payload
   end
 
   defp format_encoded_event({:ok, encoded}, %Request{} = request),
