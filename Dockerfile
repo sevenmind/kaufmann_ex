@@ -1,5 +1,4 @@
 FROM elixir:alpine
-MAINTAINER Grant Mclendon <grant@7mind.de>
 
 # need build-utils for building deps, bash for QOL
 RUN apk update && \
