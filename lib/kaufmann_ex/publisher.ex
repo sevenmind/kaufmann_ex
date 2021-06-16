@@ -67,12 +67,22 @@ defmodule KaufmannEx.Publisher do
 
     message = %Message{value: encoded, key: event_name}
 
-    produce_request = %KafkaRequest{
-      partition: partition,
-      topic: topic,
-      messages: [message],
-      required_acks: 1
-    }
+    produce_request =
+      if is_nil(partition) do
+        %KafkaRequest{
+          # partition: partition,
+          topic: topic,
+          messages: [message],
+          required_acks: 1
+        }
+      else
+        %KafkaRequest{
+          partition: partition,
+          topic: topic,
+          messages: [message],
+          required_acks: 1
+        }
+      end
 
     start_time = System.monotonic_time()
 

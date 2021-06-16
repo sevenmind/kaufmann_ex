@@ -137,8 +137,12 @@ defmodule KaufmannEx.EventHandler do
   @spec handle_event(Event.t(), list) :: [any]
   def handle_event(event, args) do
     start_time = System.monotonic_time()
+    event_handler = Access.get(args, :event_handler, Config.event_handler())
 
-    results = handle_event_and_response(event, args)
+    results =
+      event
+      |> event_handler.given_event(args)
+      |> handle_response(event, args)
 
     report_telemetry(
       start_time: start_time,
@@ -149,36 +153,29 @@ defmodule KaufmannEx.EventHandler do
     Enum.flat_map(results, &format_event(event, &1))
   end
 
-  defp handle_event_and_response(event, args) do
-    event_handler = Access.get(args, :event_handler, Config.event_handler())
-
-    event_name = Map.get(event, :name, nil)
-
-    case event_handler.given_event(event, args) do
-      {:reply, events} when is_list(events) ->
-        events
-
-      {:reply, event} when is_tuple(event) or is_map(event) ->
-        [event]
-
-      {:noreply, _} when is_binary(event_name) ->
-        # try casting the event name to atom
-        # In case someone followed the legacy pattern
-        event_name =
-          event.name
-          |> String.split("#")
-          |> Enum.at(0)
-          |> String.to_atom()
-
-        handle_event_and_response(%Event{event | name: event_name}, args)
-
-      {:error, error} ->
-        wrap_error_event(event, error)
-
-      _ ->
-        []
-    end
+  def handle_response({:reply, events}, _, _) when is_list(events) do
+    events
   end
+
+  def handle_response({:reply, event}, _, _) when is_tuple(event) or is_map(event) do
+    [event]
+  end
+
+  def handle_response({:noreply, _}, %{name: event_name} = event, args)
+      when is_binary(event_name) do
+    # try casting the event name to atom in case someone followed the legacy pattern
+    event_name =
+      event_name
+      |> String.split("#")
+      |> Enum.at(0)
+      |> String.to_atom()
+
+    handle_event(%Event{event | name: event_name}, args)
+  end
+
+  def handle_response({:error, error}, event, _), do: wrap_error_event(event, error)
+
+  def handle_response(_, _, _), do: []
 
   defp report_telemetry(
          start_time: start_time,
@@ -219,17 +216,17 @@ defmodule KaufmannEx.EventHandler do
     ]
   end
 
-  defp format_event(original_event, {event_name, payload}),
+  def format_event(original_event, {event_name, payload}),
     do: format_event(original_event, %{event: event_name, payload: payload})
 
-  defp format_event(original_event, {event_name, payload, topic})
-       when is_map(topic) or is_binary(topic) or is_atom(topic),
-       do: format_event(original_event, %{event: event_name, payload: payload, topics: [topic]})
+  def format_event(original_event, {event_name, payload, topic})
+      when is_map(topic) or is_binary(topic) or is_atom(topic),
+      do: format_event(original_event, %{event: event_name, payload: payload, topics: [topic]})
 
-  defp format_event(original_event, {event_name, payload, topics}) when is_list(topics),
+  def format_event(original_event, {event_name, payload, topics}) when is_list(topics),
     do: format_event(original_event, %{event: event_name, payload: payload, topics: topics})
 
-  defp format_event(original_event, %{event: event_name, payload: payload} = result_event) do
+  def format_event(original_event, %{event: event_name, payload: payload} = result_event) do
     result_event
     |> Map.get(:topics, [:default])
     |> Enum.map(fn
