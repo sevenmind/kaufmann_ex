@@ -5,7 +5,7 @@ defmodule KaufmannEx.MixProject do
     [
       app: :kaufmann_ex,
       # version is -dev while there are git dependencies
-      version: "0.4.5-dev",
+      version: "0.4.6-dev",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -45,7 +45,7 @@ defmodule KaufmannEx.MixProject do
       {:kafka_ex_gen_stage_consumer,
        git: "https://github.com/sevenmind/kafka_ex_gen_stage_consumer"},
       # Waiting Next release of kafka_ex > 0.10
-      {:kafka_ex, "~> 0.12.0"},
+      {:kafka_ex, "~> 0.12"},
       {:jason, "~> 1.1"},
       {:avro_ex_v0, "~> 0.1.0-beta.6.1"},
       {:avro_ex, git: "https://github.com/beam-community/avro_ex.git"},
